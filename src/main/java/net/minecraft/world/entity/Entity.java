@@ -318,6 +318,12 @@ public abstract class Entity implements INamableTileEntity, EntityAccess, IComma
     // Main use case currently is for SPIGOT-7487, preventing dropping of leash when leash is removed
     public boolean pluginRemoved = false;
     public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
+    // Spigot start
+    public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
+    public final boolean defaultActivationState;
+    public long activatedTick = Integer.MIN_VALUE;
+    public void inactiveTick() { }
+    // Spigot end
 
     public float getBukkitYaw() {
         return this.yRot;
@@ -355,6 +361,13 @@ public abstract class Entity implements INamableTileEntity, EntityAccess, IComma
         this.position = Vec3D.ZERO;
         this.blockPosition = BlockPosition.ZERO;
         this.chunkPosition = ChunkCoordIntPair.ZERO;
+        // Spigot start
+        if (world != null) {
+            this.defaultActivationState = org.spigotmc.ActivationRange.initializeEntityActivationState(this, world.spigotConfig);
+        } else {
+            this.defaultActivationState = false;
+        }
+        // Spigot end
         this.entityData = new DataWatcher(this);
         this.entityData.define(Entity.DATA_SHARED_FLAGS_ID, (byte) 0);
         this.entityData.define(Entity.DATA_AIR_SUPPLY_ID, this.getMaxAirSupply());

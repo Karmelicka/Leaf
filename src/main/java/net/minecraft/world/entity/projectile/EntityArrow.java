@@ -78,6 +78,18 @@ public abstract class EntityArrow extends IProjectile {
     private List<Entity> piercedAndKilledEntities;
     public ItemStack pickupItemStack;
 
+    // Spigot Start
+    @Override
+    public void inactiveTick()
+    {
+        if ( this.inGround )
+        {
+            this.life += 1;
+        }
+        super.inactiveTick();
+    }
+    // Spigot End
+
     protected EntityArrow(EntityTypes<? extends EntityArrow> entitytypes, World world, ItemStack itemstack) {
         super(entitytypes, world);
         this.pickup = EntityArrow.PickupStatus.DISALLOWED;
