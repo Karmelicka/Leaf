@@ -89,6 +89,7 @@ public class CraftingManager extends ResourceDataJson {
 
     // CraftBukkit start
     public void addRecipe(RecipeHolder<?> irecipe) {
+        org.spigotmc.AsyncCatcher.catchOp("Recipe Add"); // Spigot
         Object2ObjectLinkedOpenHashMap<MinecraftKey, RecipeHolder<?>> map = this.recipes.get(irecipe.value().getType()); // CraftBukkit
 
         if (byName.containsKey(irecipe.id()) || map.containsKey(irecipe.id())) {
