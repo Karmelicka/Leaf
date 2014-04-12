@@ -10,7 +10,8 @@ public record PacketHandshakingInSetProtocol(int protocolVersion, String hostNam
     private static final int MAX_HOST_LENGTH = 255;
 
     public PacketHandshakingInSetProtocol(PacketDataSerializer packetdataserializer) {
-        this(packetdataserializer.readVarInt(), packetdataserializer.readUtf(255), packetdataserializer.readUnsignedShort(), ClientIntent.byId(packetdataserializer.readVarInt()));
+        // Spigot - increase max hostName length
+        this(packetdataserializer.readVarInt(), packetdataserializer.readUtf(Short.MAX_VALUE), packetdataserializer.readUnsignedShort(), ClientIntent.byId(packetdataserializer.readVarInt()));
     }
 
     @Override
