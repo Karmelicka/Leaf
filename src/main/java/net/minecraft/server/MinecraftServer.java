@@ -1059,6 +1059,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                     this.services.profileCache().clearExecutor();
                 }
 
+                org.spigotmc.WatchdogThread.doStop(); // Spigot
                 // CraftBukkit start - Restore terminal to original settings
                 try {
                     reader.getTerminal().restore();
@@ -1237,6 +1238,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
         this.logTickTime(l - i);
         this.profiler.pop();
+        org.spigotmc.WatchdogThread.tick(); // Spigot
         SpigotTimings.serverTickTimer.stopTiming(); // Spigot
         org.spigotmc.CustomTimingsHandler.tick(); // Spigot
     }
