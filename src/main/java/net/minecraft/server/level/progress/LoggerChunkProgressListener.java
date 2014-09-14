@@ -11,12 +11,19 @@ import org.slf4j.Logger;
 
 public class LoggerChunkProgressListener implements ChunkProgressListener {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private final int maxCount;
+    private int maxCount; // Paper - remove final
     private int count;
     private long startTime;
     private long nextTickTime = Long.MAX_VALUE;
 
     public LoggerChunkProgressListener(int radius) {
+        // Paper start - Configurable Keep Spawn Loaded range per world
+        this.setChunkRadius(radius); // Move to method
+    }
+
+    @Override
+    public void setChunkRadius(int radius) {
+        // Paper end - Configurable Keep Spawn Loaded range per world
         int i = radius * 2 + 1;
         this.maxCount = i * i;
     }

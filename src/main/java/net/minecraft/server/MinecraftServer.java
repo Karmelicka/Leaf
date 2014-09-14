@@ -768,30 +768,33 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
     // CraftBukkit start
     public void prepareLevels(ChunkProgressListener worldloadlistener, ServerLevel worldserver) {
+        ServerChunkCache chunkproviderserver = worldserver.getChunkSource(); // Paper - Configurable Keep Spawn Loaded range per world
         // WorldServer worldserver = this.overworld();
         this.forceTicks = true;
         // CraftBukkit end
+        if (worldserver.getWorld().getKeepSpawnInMemory()) { // Paper - Configurable Keep Spawn Loaded range per world
 
         MinecraftServer.LOGGER.info("Preparing start region for dimension {}", worldserver.dimension().location());
         BlockPos blockposition = worldserver.getSharedSpawnPos();
 
         worldloadlistener.updateSpawnPos(new ChunkPos(blockposition));
-        ServerChunkCache chunkproviderserver = worldserver.getChunkSource();
+        //ChunkProviderServer chunkproviderserver = worldserver.getChunkProvider(); // Paper - Configurable Keep Spawn Loaded range per world; move up
 
         this.nextTickTimeNanos = Util.getNanos();
-        // CraftBukkit start
-        if (worldserver.getWorld().getKeepSpawnInMemory()) {
-            chunkproviderserver.addRegionTicket(TicketType.START, new ChunkPos(blockposition), 11, Unit.INSTANCE);
+        // Paper start - Configurable Keep Spawn Loaded range per world
+        int radiusBlocks = worldserver.paperConfig().spawn.keepSpawnLoadedRange * 16;
+        int radiusChunks = radiusBlocks / 16 + ((radiusBlocks & 15) != 0 ? 1 : 0);
+        int totalChunks = ((radiusChunks) * 2 + 1);
+        totalChunks *= totalChunks;
+        worldloadlistener.setChunkRadius(radiusBlocks / 16);
 
-            while (chunkproviderserver.getTickingGenerated() != 441) {
-                // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
-                this.executeModerately();
-            }
-        }
+        worldserver.addTicketsForSpawn(radiusBlocks, blockposition);
+        // Paper end - Configurable Keep Spawn Loaded range per world
 
         // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
         this.executeModerately();
         // Iterator iterator = this.levels.values().iterator();
+        } // Paper - Configurable Keep Spawn Loaded range per world
 
         if (true) {
             ServerLevel worldserver1 = worldserver;
@@ -814,7 +817,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
         this.executeModerately();
         // CraftBukkit end
-        worldloadlistener.stop();
+        if (worldserver.getWorld().getKeepSpawnInMemory()) worldloadlistener.stop(); // Paper - Configurable Keep Spawn Loaded range per world
         // CraftBukkit start
         // this.updateMobSpawningFlags();
         worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
