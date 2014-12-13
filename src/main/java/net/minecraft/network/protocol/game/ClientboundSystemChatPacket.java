@@ -7,6 +7,12 @@ import net.minecraft.network.protocol.Packet;
 
 public record ClientboundSystemChatPacket(IChatBaseComponent content, boolean overlay) implements Packet<PacketListenerPlayOut> {
 
+    // Spigot start
+    public ClientboundSystemChatPacket(net.md_5.bungee.api.chat.BaseComponent[] content, boolean overlay) {
+        this(IChatBaseComponent.ChatSerializer.fromJson(net.md_5.bungee.chat.ComponentSerializer.toString(content)), overlay);
+    }
+    // Spigot end
+
     public ClientboundSystemChatPacket(PacketDataSerializer packetdataserializer) {
         this(packetdataserializer.readComponentTrusted(), packetdataserializer.readBoolean());
     }
