@@ -181,6 +181,23 @@ public final class ItemStack {
         return this.getItem().getTooltipImage(this);
     }
 
+    // Paper start
+    private static final java.util.Comparator<? super CompoundTag> enchantSorter = java.util.Comparator.comparing(o -> o.getString("id"));
+    private void processEnchantOrder(@Nullable CompoundTag tag) {
+        if (tag == null || !tag.contains("Enchantments", net.minecraft.nbt.Tag.TAG_LIST)) {
+            return;
+        }
+        ListTag list = tag.getList("Enchantments", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        if (list.size() < 2) {
+            return;
+        }
+        try {
+            //noinspection unchecked
+            list.sort((java.util.Comparator<? super net.minecraft.nbt.Tag>) enchantSorter); // Paper
+        } catch (Exception ignored) {}
+    }
+    // Paper end
+
     public ItemStack(ItemLike item) {
         this(item, 1);
     }
@@ -227,6 +244,7 @@ public final class ItemStack {
         this.count = nbttagcompound.getByte("Count");
         if (nbttagcompound.contains("tag", 10)) {
             this.tag = nbttagcompound.getCompound("tag").copy();
+            this.processEnchantOrder(this.tag); // Paper
             this.getItem().verifyTagAfterLoad(this.tag);
         }
 
@@ -846,6 +864,7 @@ public final class ItemStack {
 
     public void setTag(@Nullable CompoundTag nbt) {
         this.tag = nbt;
+        this.processEnchantOrder(this.tag); // Paper
         if (this.getItem().canBeDepleted()) {
             this.setDamageValue(this.getDamageValue());
         }
@@ -1143,6 +1162,7 @@ public final class ItemStack {
         ListTag nbttaglist = this.tag.getList("Enchantments", 10);
 
         nbttaglist.add(EnchantmentHelper.storeEnchantment(EnchantmentHelper.getEnchantmentId(enchantment), (byte) level));
+        processEnchantOrder(this.tag); // Paper
     }
 
     public boolean isEnchanted() {
