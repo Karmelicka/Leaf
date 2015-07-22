@@ -610,6 +610,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
 
                     packetlistener1.onDisconnect(ichatbasecomponent);
                 }
+                this.pendingActions.clear(); // Free up packet queue.
 
             }
         }
