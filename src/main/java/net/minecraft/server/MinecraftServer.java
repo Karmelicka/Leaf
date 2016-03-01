@@ -1615,7 +1615,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
     @DontObfuscate
     public String getServerModName() {
-        return "Spigot"; // Spigot - Spigot > // CraftBukkit - cb > vanilla!
+        return "Paper"; // Paper
     }
 
     public SystemReport fillSystemReport(SystemReport details) {
