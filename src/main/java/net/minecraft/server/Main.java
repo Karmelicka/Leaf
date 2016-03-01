@@ -105,6 +105,17 @@ public class Main {
             */ // CraftBukkit end
 
         try {
+            // Paper start
+            if (Boolean.getBoolean("Paper.isRunDev")) {
+                net.minecraft.server.packs.VanillaPackResourcesBuilder.developmentConfig = builder -> {
+                    try {
+                        builder.pushAssetPath(net.minecraft.server.packs.PackType.SERVER_DATA, net.minecraft.server.packs.VanillaPackResourcesBuilder.safeGetPath(java.util.Objects.requireNonNull(Main.class.getResource("/data/.paperassetsroot"), "Missing required .paperassetsroot file").toURI()).getParent());
+                    } catch (java.net.URISyntaxException | IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                };
+            }
+            // Paper end
 
             Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
 
