@@ -181,6 +181,7 @@ public abstract class Player extends LivingEntity {
     @Nullable
     public FishingHook fishing;
     protected float hurtDir;
+    public boolean affectsSpawning = true; // Paper - Affects Spawning API
 
     // CraftBukkit start
     public boolean fauxSleeping;
