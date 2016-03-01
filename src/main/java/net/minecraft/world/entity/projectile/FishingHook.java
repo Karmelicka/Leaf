@@ -93,6 +93,10 @@ public class FishingHook extends Projectile {
         this.noCulling = true;
         this.luck = Math.max(0, luckOfTheSeaLevel);
         this.lureSpeed = Math.max(0, lureLevel);
+        // Paper start - Configurable fishing time ranges
+        minWaitTime = world.paperConfig().fishingTimeRange.minimum;
+        maxWaitTime = world.paperConfig().fishingTimeRange.maximum;
+        // Paper end - Configurable fishing time ranges
     }
 
     public FishingHook(EntityType<? extends FishingHook> type, Level world) {
@@ -410,7 +414,7 @@ public class FishingHook extends Projectile {
             } else {
                 // CraftBukkit start - logic to modify fishing wait time
                 this.timeUntilLured = Mth.nextInt(this.random, this.minWaitTime, this.maxWaitTime);
-                this.timeUntilLured -= (this.applyLure) ? this.lureSpeed * 20 * 5 : 0;
+                this.timeUntilLured -= (this.applyLure) ? (this.lureSpeed * 20 * 5 >= this.maxWaitTime ? this.timeUntilLured - 1 : this.lureSpeed * 20 * 5) : 0; // Paper - Fix Lure infinite loop
                 // CraftBukkit end
             }
         }
