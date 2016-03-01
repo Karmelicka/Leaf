@@ -143,6 +143,16 @@ public class FallingBlockEntity extends Entity {
             }
 
             this.move(MoverType.SELF, this.getDeltaMovement());
+            // Paper start - Configurable falling blocks height nerf
+            if (this.level().paperConfig().fixes.fallingBlockHeightNerf.test(v -> this.getY() > v)) {
+                if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                    this.spawnAtLocation(block);
+                }
+
+                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
+                return;
+            }
+            // Paper end - Configurable falling blocks height nerf
             if (!this.level().isClientSide) {
                 BlockPos blockposition = this.blockPosition();
                 boolean flag = this.blockState.getBlock() instanceof ConcretePowderBlock;
