@@ -78,6 +78,7 @@ public class Bootstrap {
                     CauldronInteraction.bootStrap();
                     // Paper start
                     BuiltInRegistries.bootStrap(() -> {
+                        io.papermc.paper.world.worldgen.OptionallyFlatBedrockConditionSource.bootstrap(); // Paper - Flat bedrock generator settings
                         io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
                     });
                     // Paper end
