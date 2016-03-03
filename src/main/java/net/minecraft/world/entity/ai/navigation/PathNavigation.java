@@ -193,9 +193,29 @@ public abstract class PathNavigation {
         return this.moveTo(this.createPath(x, y, z, 1), speed);
     }
 
+    // Paper start - Perf: Optimise pathfinding
+    private int lastFailure = 0;
+    private int pathfindFailures = 0;
+    // Paper end - Perf: Optimise pathfinding
+
     public boolean moveTo(Entity entity, double speed) {
+        // Paper start - Perf: Optimise pathfinding
+        if (this.pathfindFailures > 10 && this.path == null && net.minecraft.server.MinecraftServer.currentTick < this.lastFailure + 40) {
+            return false;
+        }
+        // Paper end - Perf: Optimise pathfinding
         Path path = this.createPath(entity, 1);
-        return path != null && this.moveTo(path, speed);
+        // Paper start - Perf: Optimise pathfinding
+        if (path != null && this.moveTo(path, speed)) {
+            this.lastFailure = 0;
+            this.pathfindFailures = 0;
+            return true;
+        } else {
+            this.pathfindFailures++;
+            this.lastFailure = net.minecraft.server.MinecraftServer.currentTick;
+            return false;
+        }
+        // Paper end - Perf: Optimise pathfinding
     }
 
     public boolean moveTo(@Nullable Path path, double speed) {
