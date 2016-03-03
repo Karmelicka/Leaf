@@ -545,6 +545,12 @@ public class FriendlyByteBuf extends ByteBuf {
         return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.localizedCodec(this.adventure$locale), text);
         // Paper end - adventure; support writing adventure components directly and server-side translations
     }
+    // Paper start - deprecated Tab List & Title APIs
+    @Deprecated
+    public FriendlyByteBuf writeComponent(final net.md_5.bungee.api.chat.BaseComponent[] component) {
+        return this.writeComponent(java.util.Objects.requireNonNull(Component.Serializer.fromJson(net.md_5.bungee.chat.ComponentSerializer.toString(component))));
+    }
+    // Paper end - deprecated Tab List & Title APIs
 
     public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
         return ((T[]) enumClass.getEnumConstants())[this.readVarInt()]; // CraftBukkit - fix decompile error
