@@ -29,7 +29,8 @@ public class PacketUtils {
             engine.executeIfPossible(() -> {
                 if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerCommonPacketListenerImpl && ((ServerCommonPacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
                 if (listener.shouldHandleMessage(packet)) {
-                    try {
+                    co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
+                    try (co.aikar.timings.Timing ignored = timing.startTiming()) { // Paper - timings
                         packet.handle(listener);
                     } catch (Exception exception) {
                         label25:

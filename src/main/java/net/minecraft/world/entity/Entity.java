@@ -135,7 +135,6 @@ import org.bukkit.craftbukkit.event.CraftPortalEvent;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Vehicle;
-import org.spigotmc.CustomTimingsHandler; // Spigot
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
@@ -315,7 +314,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     // Marks an entity, that it was removed by a plugin via Entity#remove
     // Main use case currently is for SPIGOT-7487, preventing dropping of leash when leash is removed
     public boolean pluginRemoved = false;
-    public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
     // Spigot start
     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
     public final boolean defaultActivationState;
@@ -823,7 +821,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     public void move(MoverType movementType, Vec3 movement) {
-        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.startTiming(); // Spigot
         if (this.noPhysics) {
             this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
         } else {
@@ -984,7 +981,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 this.level().getProfiler().pop();
             }
         }
-        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.stopTiming(); // Spigot
     }
 
     private boolean isStateClimbable(BlockState state) {

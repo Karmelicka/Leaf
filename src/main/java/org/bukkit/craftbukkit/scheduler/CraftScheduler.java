@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.scheduler;
 
+import co.aikar.timings.MinecraftTimings; // Paper
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
@@ -196,7 +197,8 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     public BukkitTask scheduleInternalTask(Runnable run, int delay, String taskName) {
-        final CraftTask task = new CraftTask(run, nextId(), taskName);
+        final CraftTask task = new CraftTask(run, nextId(), "Internal - " + (taskName != null ? taskName : "Unknown"));
+        task.internal = true;
         return handle(task, delay);
     }
 
@@ -277,7 +279,7 @@ public class CraftScheduler implements BukkitScheduler {
                         }
                         return false;
                     }
-                });
+                }){{this.timings=co.aikar.timings.MinecraftTimings.getCancelTasksTimer();}}; // Paper
         this.handle(task, 0L);
         for (CraftTask taskPending = this.head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
             if (taskPending == task) {
@@ -312,7 +314,7 @@ public class CraftScheduler implements BukkitScheduler {
                             }
                         }
                     }
-                });
+                }){{this.timings=co.aikar.timings.MinecraftTimings.getCancelTasksTimer(plugin);}}; // Paper
         this.handle(task, 0L);
         for (CraftTask taskPending = this.head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
             if (taskPending == task) {
@@ -419,9 +421,7 @@ public class CraftScheduler implements BukkitScheduler {
             if (task.isSync()) {
                 this.currentTask = task;
                 try {
-                    task.timings.startTiming(); // Spigot
                     task.run();
-                    task.timings.stopTiming(); // Spigot
                 } catch (final Throwable throwable) {
                     // Paper start
                     String msg = String.format(
@@ -455,8 +455,10 @@ public class CraftScheduler implements BukkitScheduler {
                 this.runners.remove(task.getTaskId());
             }
         }
+        MinecraftTimings.bukkitSchedulerFinishTimer.startTiming(); // Paper
         this.pending.addAll(temp);
         temp.clear();
+        MinecraftTimings.bukkitSchedulerFinishTimer.stopTiming(); // Paper
         this.debugHead = this.debugHead.getNextHead(currentTick);
     }
 
@@ -493,6 +495,7 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     private void parsePending() {
+        MinecraftTimings.bukkitSchedulerPendingTimer.startTiming();
         CraftTask head = this.head;
         CraftTask task = head.getNext();
         CraftTask lastTask = head;
@@ -511,6 +514,7 @@ public class CraftScheduler implements BukkitScheduler {
             task.setNext(null);
         }
         this.head = lastTask;
+        MinecraftTimings.bukkitSchedulerPendingTimer.stopTiming();
     }
 
     private boolean isReady(final int currentTick) {
