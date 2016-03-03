@@ -357,6 +357,7 @@ public class OldUsersConverter {
                             root = NbtIo.readCompressed(new java.io.FileInputStream(file5), NbtAccounter.unlimitedHeap());
                         } catch (Exception exception) {
                             exception.printStackTrace();
+                            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                         }
 
                         if (root != null) {
@@ -370,6 +371,7 @@ public class OldUsersConverter {
                                 NbtIo.writeCompressed(root, new java.io.FileOutputStream(file2));
                             } catch (Exception exception) {
                                 exception.printStackTrace();
+                                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                             }
                        }
                         // CraftBukkit end
