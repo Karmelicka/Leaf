@@ -841,6 +841,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
         if (nbt.contains("Team", 8)) {
             String s = nbt.getString("Team");
             PlayerTeam scoreboardteam = this.level().getScoreboard().getPlayerTeam(s);
+            if (!this.level().paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof net.minecraft.world.entity.player.Player)) { scoreboardteam = null; } // Paper - Perf: Disable Scoreboards for non players by default
             boolean flag = scoreboardteam != null && this.level().getScoreboard().addPlayerToTeam(this.getStringUUID(), scoreboardteam);
 
             if (!flag) {

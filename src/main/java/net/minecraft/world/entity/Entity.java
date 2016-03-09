@@ -2820,6 +2820,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
 
     @Nullable
     public PlayerTeam getTeam() {
+        if (!this.level().paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof Player)) { return null; } // Paper - Perf: Disable Scoreboards for non players by default
         return this.level().getScoreboard().getPlayersTeam(this.getScoreboardName());
     }
 
