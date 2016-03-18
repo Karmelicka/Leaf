@@ -458,6 +458,7 @@ public final class CraftServer implements Server {
         if (type == PluginLoadOrder.STARTUP) {
             this.helpMap.clear();
             this.helpMap.initializeGeneralTopics();
+            if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions(); // Paper
         }
 
         Plugin[] plugins = this.pluginManager.getPlugins();
@@ -477,7 +478,7 @@ public final class CraftServer implements Server {
             this.commandMap.registerServerAliases();
             DefaultPermissions.registerCorePermissions();
             CraftDefaultPermissions.registerCorePermissions();
-            this.loadCustomPermissions();
+            if (!io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) this.loadCustomPermissions(); // Paper
             this.helpMap.initializeCommands();
             this.syncCommands();
         }
