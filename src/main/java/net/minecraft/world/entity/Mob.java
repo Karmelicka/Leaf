@@ -278,6 +278,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
         return this.target;
     }
 
+    public org.bukkit.craftbukkit.entity.CraftMob getBukkitMob() { return (org.bukkit.craftbukkit.entity.CraftMob) super.getBukkitEntity(); } // Paper
     public void setTarget(@Nullable LivingEntity target) {
         // CraftBukkit start - fire event
         this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);

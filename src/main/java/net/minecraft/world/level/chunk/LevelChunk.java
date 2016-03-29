@@ -114,6 +114,109 @@ public class LevelChunk extends ChunkAccess {
     public boolean needsDecoration;
     // CraftBukkit end
 
+    // Paper start
+    public @Nullable net.minecraft.server.level.ChunkHolder playerChunk;
+
+    static final int NEIGHBOUR_CACHE_RADIUS = 3;
+    public static int getNeighbourCacheRadius() {
+        return NEIGHBOUR_CACHE_RADIUS;
+    }
+
+    boolean loadedTicketLevel;
+    private long neighbourChunksLoadedBitset;
+    private final LevelChunk[] loadedNeighbourChunks = new LevelChunk[(NEIGHBOUR_CACHE_RADIUS * 2 + 1) * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)];
+
+    private static int getNeighbourIndex(final int relativeX, final int relativeZ) {
+        // index = (relativeX + NEIGHBOUR_CACHE_RADIUS) + (relativeZ + NEIGHBOUR_CACHE_RADIUS) * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)
+        // optimised variant of the above by moving some of the ops to compile time
+        return relativeX + (relativeZ * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)) + (NEIGHBOUR_CACHE_RADIUS + NEIGHBOUR_CACHE_RADIUS * ((NEIGHBOUR_CACHE_RADIUS * 2 + 1)));
+    }
+
+    public final LevelChunk getRelativeNeighbourIfLoaded(final int relativeX, final int relativeZ) {
+        return this.loadedNeighbourChunks[getNeighbourIndex(relativeX, relativeZ)];
+    }
+
+    public final boolean isNeighbourLoaded(final int relativeX, final int relativeZ) {
+        return (this.neighbourChunksLoadedBitset & (1L << getNeighbourIndex(relativeX, relativeZ))) != 0;
+    }
+
+    public final void setNeighbourLoaded(final int relativeX, final int relativeZ, final LevelChunk chunk) {
+        if (chunk == null) {
+            throw new IllegalArgumentException("Chunk must be non-null, neighbour: (" + relativeX + "," + relativeZ + "), chunk: " + this.chunkPos);
+        }
+        final long before = this.neighbourChunksLoadedBitset;
+        final int index = getNeighbourIndex(relativeX, relativeZ);
+        this.loadedNeighbourChunks[index] = chunk;
+        this.neighbourChunksLoadedBitset |= (1L << index);
+        this.onNeighbourChange(before, this.neighbourChunksLoadedBitset);
+    }
+
+    public final void setNeighbourUnloaded(final int relativeX, final int relativeZ) {
+        final long before = this.neighbourChunksLoadedBitset;
+        final int index = getNeighbourIndex(relativeX, relativeZ);
+        this.loadedNeighbourChunks[index] = null;
+        this.neighbourChunksLoadedBitset &= ~(1L << index);
+        this.onNeighbourChange(before, this.neighbourChunksLoadedBitset);
+    }
+
+    public final void resetNeighbours() {
+        final long before = this.neighbourChunksLoadedBitset;
+        this.neighbourChunksLoadedBitset = 0L;
+        java.util.Arrays.fill(this.loadedNeighbourChunks, null);
+        this.onNeighbourChange(before, 0L);
+    }
+
+    protected void onNeighbourChange(final long bitsetBefore, final long bitsetAfter) {
+
+    }
+
+    public final boolean isAnyNeighborsLoaded() {
+        return neighbourChunksLoadedBitset != 0;
+    }
+    public final boolean areNeighboursLoaded(final int radius) {
+        return LevelChunk.areNeighboursLoaded(this.neighbourChunksLoadedBitset, radius);
+    }
+
+    public static boolean areNeighboursLoaded(final long bitset, final int radius) {
+        // index = relativeX + (relativeZ * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)) + (NEIGHBOUR_CACHE_RADIUS + NEIGHBOUR_CACHE_RADIUS * ((NEIGHBOUR_CACHE_RADIUS * 2 + 1)))
+        switch (radius) {
+            case 0: {
+                return (bitset & (1L << getNeighbourIndex(0, 0))) != 0;
+            }
+            case 1: {
+                long mask = 0L;
+                for (int dx = -1; dx <= 1; ++dx) {
+                    for (int dz = -1; dz <= 1; ++dz) {
+                        mask |= (1L << getNeighbourIndex(dx, dz));
+                    }
+                }
+                return (bitset & mask) == mask;
+            }
+            case 2: {
+                long mask = 0L;
+                for (int dx = -2; dx <= 2; ++dx) {
+                    for (int dz = -2; dz <= 2; ++dz) {
+                        mask |= (1L << getNeighbourIndex(dx, dz));
+                    }
+                }
+                return (bitset & mask) == mask;
+            }
+            case 3: {
+                long mask = 0L;
+                for (int dx = -3; dx <= 3; ++dx) {
+                    for (int dz = -3; dz <= 3; ++dz) {
+                        mask |= (1L << getNeighbourIndex(dx, dz));
+                    }
+                }
+                return (bitset & mask) == mask;
+            }
+
+            default:
+                throw new IllegalArgumentException("Radius not recognized: " + radius);
+        }
+    }
+    // Paper end
+
     public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
         this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), entityLoader, protoChunk.getBlendingData());
         Iterator iterator = protoChunk.getBlockEntities().values().iterator();
@@ -181,8 +284,25 @@ public class LevelChunk extends ChunkAccess {
         }
     }
 
+    // Paper start - Perf: Reduce instructions and provide final method
+    public BlockState getBlockState(final int x, final int y, final int z) {
+        return this.getBlockStateFinal(x, y, z);
+    }
+    public BlockState getBlockStateFinal(final int x, final int y, final int z) {
+        // Copied and modified from below
+        final int sectionIndex = this.getSectionIndex(y);
+        if (sectionIndex < 0 || sectionIndex >= this.sections.length
+            || this.sections[sectionIndex].nonEmptyBlockCount == 0) {
+            return Blocks.AIR.defaultBlockState();
+        }
+        return this.sections[sectionIndex].states.get((y & 15) << 8 | (z & 15) << 4 | x & 15);
+    }
     @Override
     public BlockState getBlockState(BlockPos pos) {
+        if (true) {
+            return this.getBlockStateFinal(pos.getX(), pos.getY(), pos.getZ());
+        }
+        // Paper end - Perf: Reduce instructions and provide final method
         int i = pos.getX();
         int j = pos.getY();
         int k = pos.getZ();
@@ -223,6 +343,18 @@ public class LevelChunk extends ChunkAccess {
             }
         }
     }
+
+    // Paper start - If loaded util
+    @Override
+    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
+        return this.getFluidState(blockposition);
+    }
+
+    @Override
+    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
+        return this.getBlockState(blockposition);
+    }
+    // Paper end
 
     @Override
     public FluidState getFluidState(BlockPos pos) {
@@ -537,7 +669,25 @@ public class LevelChunk extends ChunkAccess {
 
     // CraftBukkit start
     public void loadCallback() {
+        // Paper start - neighbour cache
+        int chunkX = this.chunkPos.x;
+        int chunkZ = this.chunkPos.z;
+        net.minecraft.server.level.ServerChunkCache chunkProvider = this.level.getChunkSource();
+        for (int dx = -NEIGHBOUR_CACHE_RADIUS; dx <= NEIGHBOUR_CACHE_RADIUS; ++dx) {
+            for (int dz = -NEIGHBOUR_CACHE_RADIUS; dz <= NEIGHBOUR_CACHE_RADIUS; ++dz) {
+                LevelChunk neighbour = chunkProvider.getChunkAtIfLoadedMainThreadNoCache(chunkX + dx, chunkZ + dz);
+                if (neighbour != null) {
+                    neighbour.setNeighbourLoaded(-dx, -dz, this);
+                    // should be in cached already
+                    this.setNeighbourLoaded(dx, dz, neighbour);
+                }
+            }
+        }
+        this.setNeighbourLoaded(0, 0, this);
+        this.loadedTicketLevel = true;
+        // Paper end - neighbour cache
         org.bukkit.Server server = this.level.getCraftServer();
+        this.level.getChunkSource().addLoadedChunk(this); // Paper
         if (server != null) {
             /*
              * If it's a new world, the first few chunks are generated inside
@@ -578,6 +728,22 @@ public class LevelChunk extends ChunkAccess {
         server.getPluginManager().callEvent(unloadEvent);
         // note: saving can be prevented, but not forced if no saving is actually required
         this.mustNotSave = !unloadEvent.isSaveChunk();
+        this.level.getChunkSource().removeLoadedChunk(this); // Paper
+        // Paper start - neighbour cache
+        int chunkX = this.chunkPos.x;
+        int chunkZ = this.chunkPos.z;
+        net.minecraft.server.level.ServerChunkCache chunkProvider = this.level.getChunkSource();
+        for (int dx = -NEIGHBOUR_CACHE_RADIUS; dx <= NEIGHBOUR_CACHE_RADIUS; ++dx) {
+            for (int dz = -NEIGHBOUR_CACHE_RADIUS; dz <= NEIGHBOUR_CACHE_RADIUS; ++dz) {
+                LevelChunk neighbour = chunkProvider.getChunkAtIfLoadedMainThreadNoCache(chunkX + dx, chunkZ + dz);
+                if (neighbour != null) {
+                    neighbour.setNeighbourUnloaded(-dx, -dz);
+                }
+            }
+        }
+        this.loadedTicketLevel = false;
+        this.resetNeighbours();
+        // Paper end
     }
 
     @Override

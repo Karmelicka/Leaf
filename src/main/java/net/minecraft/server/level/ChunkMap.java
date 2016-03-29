@@ -168,6 +168,62 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     };
     // CraftBukkit end
 
+    // Paper start - distance maps
+    private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
+
+    void addPlayerToDistanceMaps(ServerPlayer player) {
+        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
+        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
+        // Note: players need to be explicitly added to distance maps before they can be updated
+        this.nearbyPlayers.addPlayer(player);
+    }
+
+    void removePlayerFromDistanceMaps(ServerPlayer player) {
+        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
+        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
+        // Note: players need to be explicitly added to distance maps before they can be updated
+        this.nearbyPlayers.removePlayer(player);
+    }
+
+    void updateMaps(ServerPlayer player) {
+        int chunkX = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getX());
+        int chunkZ = io.papermc.paper.util.MCUtil.getChunkCoordinate(player.getZ());
+        // Note: players need to be explicitly added to distance maps before they can be updated
+        this.nearbyPlayers.tickPlayer(player);
+    }
+    // Paper end
+    // Paper start
+    public final List<io.papermc.paper.chunk.SingleThreadChunkRegionManager> regionManagers = new java.util.ArrayList<>();
+    public final io.papermc.paper.chunk.SingleThreadChunkRegionManager dataRegionManager;
+
+    public static final class DataRegionData implements io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionData {
+    }
+
+    public static final class DataRegionSectionData implements io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSectionData {
+
+        @Override
+        public void removeFromRegion(final io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section,
+                                     final io.papermc.paper.chunk.SingleThreadChunkRegionManager.Region from) {
+            final DataRegionSectionData sectionData = (DataRegionSectionData)section.sectionData;
+            final DataRegionData fromData = (DataRegionData)from.regionData;
+        }
+
+        @Override
+        public void addToRegion(final io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section,
+                                final io.papermc.paper.chunk.SingleThreadChunkRegionManager.Region oldRegion,
+                                final io.papermc.paper.chunk.SingleThreadChunkRegionManager.Region newRegion) {
+            final DataRegionSectionData sectionData = (DataRegionSectionData)section.sectionData;
+            final DataRegionData oldRegionData = oldRegion == null ? null : (DataRegionData)oldRegion.regionData;
+            final DataRegionData newRegionData = (DataRegionData)newRegion.regionData;
+        }
+    }
+
+    public final ChunkHolder getUnloadingChunkHolder(int chunkX, int chunkZ) {
+        return this.pendingUnloads.get(io.papermc.paper.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
+    }
+    public final io.papermc.paper.util.player.NearbyPlayers nearbyPlayers;
+    // Paper end
+
     public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
         super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
         this.visibleChunkMap = this.updatingChunkMap.clone();
@@ -221,7 +277,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         this.overworldDataStorage = persistentStateManagerFactory;
         this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
         this.setServerViewDistance(viewDistance);
+        // Paper start
+        this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
+        this.regionManagers.add(this.dataRegionManager);
+        this.nearbyPlayers = new io.papermc.paper.util.player.NearbyPlayers(this.level);
+        // Paper end
     }
+
+    // Paper start
+    // always use accessor, so folia can override
+    public final io.papermc.paper.util.player.NearbyPlayers getNearbyPlayers() {
+        return this.nearbyPlayers;
+    }
+    // Paper end
 
     protected ChunkGenerator generator() {
         return this.generator;
@@ -244,6 +312,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         dataresult1.result().ifPresent((chunkgenerator) -> {
             this.generator = chunkgenerator;
         });
+    }
+
+    public int getMobCountNear(final ServerPlayer player, final net.minecraft.world.entity.MobCategory mobCategory) {
+        return -1;
     }
 
     private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
@@ -418,9 +490,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         };
 
         stringbuilder.append("Updating:").append(System.lineSeparator());
-        this.updatingChunkMap.values().forEach(consumer);
+        io.papermc.paper.chunk.system.ChunkSystem.getUpdatingChunkHolders(this.level).forEach(consumer); // Paper
         stringbuilder.append("Visible:").append(System.lineSeparator());
-        this.visibleChunkMap.values().forEach(consumer);
+        io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).forEach(consumer); // Paper
         CrashReport crashreport = CrashReport.forThrowable(exception, "Chunk loading");
         CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Chunk loading");
 
@@ -462,8 +534,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                     holder.setTicketLevel(level);
                 } else {
                     holder = new ChunkHolder(new ChunkPos(pos), level, this.level, this.lightEngine, this.queueSorter, this);
+                    // Paper start
+                    io.papermc.paper.chunk.system.ChunkSystem.onChunkHolderCreate(this.level, holder);
+                    // Paper end
                 }
 
+                // Paper start
+                holder.onChunkAdd();
+                // Paper end
                 this.updatingChunkMap.put(pos, holder);
                 this.modified = true;
             }
@@ -485,7 +563,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     protected void saveAllChunks(boolean flush) {
         if (flush) {
-            List<ChunkHolder> list = this.visibleChunkMap.values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).toList();
+            List<ChunkHolder> list = io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).toList(); // Paper
             MutableBoolean mutableboolean = new MutableBoolean();
 
             do {
@@ -514,7 +592,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             });
             this.flushWorker();
         } else {
-            this.visibleChunkMap.values().forEach(this::saveChunkIfNeeded);
+            io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).forEach(this::saveChunkIfNeeded);
         }
 
     }
@@ -533,7 +611,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     }
 
     public boolean hasWork() {
-        return this.lightEngine.hasLightWork() || !this.pendingUnloads.isEmpty() || !this.updatingChunkMap.isEmpty() || this.poiManager.hasWork() || !this.toDrop.isEmpty() || !this.unloadQueue.isEmpty() || this.queueSorter.hasWork() || this.distanceManager.hasTickets();
+        return this.lightEngine.hasLightWork() || !this.pendingUnloads.isEmpty() || io.papermc.paper.chunk.system.ChunkSystem.hasAnyChunkHolders(this.level) || this.poiManager.hasWork() || !this.toDrop.isEmpty() || !this.unloadQueue.isEmpty() || this.queueSorter.hasWork() || this.distanceManager.hasTickets(); // Paper
     }
 
     private void processUnloads(BooleanSupplier shouldKeepTicking) {
@@ -544,6 +622,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             ChunkHolder playerchunk = (ChunkHolder) this.updatingChunkMap.remove(j);
 
             if (playerchunk != null) {
+                playerchunk.onChunkRemove(); // Paper
                 this.pendingUnloads.put(j, playerchunk);
                 this.modified = true;
                 ++i;
@@ -561,7 +640,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         }
 
         int l = 0;
-        ObjectIterator objectiterator = this.visibleChunkMap.values().iterator();
+        Iterator objectiterator = io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).iterator(); // Paper
 
         while (l < 20 && shouldKeepTicking.getAsBoolean() && objectiterator.hasNext()) {
             if (this.saveChunkIfNeeded((ChunkHolder) objectiterator.next())) {
@@ -579,7 +658,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             if (completablefuture1 != completablefuture) {
                 this.scheduleUnload(pos, holder);
             } else {
-                if (this.pendingUnloads.remove(pos, holder) && ichunkaccess != null) {
+                // Paper start
+                boolean removed;
+                if ((removed = this.pendingUnloads.remove(pos, holder)) && ichunkaccess != null) {
+                    io.papermc.paper.chunk.system.ChunkSystem.onChunkHolderDelete(this.level, holder);
+                    // Paper end
                     if (ichunkaccess instanceof LevelChunk) {
                         ((LevelChunk) ichunkaccess).setLoaded(false);
                     }
@@ -595,7 +678,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                     this.lightEngine.tryScheduleUpdate();
                     this.progressListener.onStatusChange(ichunkaccess.getPos(), (ChunkStatus) null);
                     this.chunkSaveCooldowns.remove(ichunkaccess.getPos().toLong());
-                }
+                } else if (removed) { // Paper start
+                    io.papermc.paper.chunk.system.ChunkSystem.onChunkHolderDelete(this.level, holder);
+                } // Paper end
 
             }
         };
@@ -992,7 +1077,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         }
     }
 
-    protected void setServerViewDistance(int watchDistance) {
+    public void setServerViewDistance(int watchDistance) { // Paper - public
         int j = Mth.clamp(watchDistance, 2, 32);
 
         if (j != this.serverViewDistance) {
@@ -1009,7 +1094,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     }
 
-    int getPlayerViewDistance(ServerPlayer player) {
+    public int getPlayerViewDistance(ServerPlayer player) { // Paper - public
         return Mth.clamp(player.requestedViewDistance(), 2, this.serverViewDistance);
     }
 
@@ -1038,7 +1123,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     }
 
     public int size() {
-        return this.visibleChunkMap.size();
+        return io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolderCount(this.level); // Paper
     }
 
     public DistanceManager getDistanceManager() {
@@ -1046,19 +1131,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     }
 
     protected Iterable<ChunkHolder> getChunks() {
-        return Iterables.unmodifiableIterable(this.visibleChunkMap.values());
+        return Iterables.unmodifiableIterable(io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level)); // Paper
     }
 
     void dumpChunks(Writer writer) throws IOException {
         CsvOutput csvwriter = CsvOutput.builder().addColumn("x").addColumn("z").addColumn("level").addColumn("in_memory").addColumn("status").addColumn("full_status").addColumn("accessible_ready").addColumn("ticking_ready").addColumn("entity_ticking_ready").addColumn("ticket").addColumn("spawning").addColumn("block_entity_count").addColumn("ticking_ticket").addColumn("ticking_level").addColumn("block_ticks").addColumn("fluid_ticks").build(writer);
         TickingTracker tickingtracker = this.distanceManager.tickingTracker();
-        ObjectBidirectionalIterator objectbidirectionaliterator = this.visibleChunkMap.long2ObjectEntrySet().iterator();
+        Iterator<ChunkHolder> objectbidirectionaliterator = io.papermc.paper.chunk.system.ChunkSystem.getVisibleChunkHolders(this.level).iterator(); // Paper
 
         while (objectbidirectionaliterator.hasNext()) {
-            Entry<ChunkHolder> entry = (Entry) objectbidirectionaliterator.next();
-            long i = entry.getLongKey();
+            ChunkHolder playerchunk = objectbidirectionaliterator.next(); // Paper
+            long i = playerchunk.pos.toLong(); // Paper
             ChunkPos chunkcoordintpair = new ChunkPos(i);
-            ChunkHolder playerchunk = (ChunkHolder) entry.getValue();
+            // Paper
             Optional<ChunkAccess> optional = Optional.ofNullable(playerchunk.getLastAvailable());
             Optional<LevelChunk> optional1 = optional.flatMap((ichunkaccess) -> {
                 return ichunkaccess instanceof LevelChunk ? Optional.of((LevelChunk) ichunkaccess) : Optional.empty();
@@ -1183,6 +1268,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
             player.setChunkTrackingView(ChunkTrackingView.EMPTY);
             this.updateChunkTracking(player);
+            this.addPlayerToDistanceMaps(player); // Paper - distance maps
         } else {
             SectionPos sectionposition = player.getLastSectionPos();
 
@@ -1191,6 +1277,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                 this.distanceManager.removePlayer(sectionposition, player);
             }
 
+            this.removePlayerFromDistanceMaps(player); // Paper - distance maps
             this.applyChunkTrackingView(player, ChunkTrackingView.EMPTY);
         }
 
@@ -1242,6 +1329,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             this.updateChunkTracking(player);
         }
 
+        this.updateMaps(player); // Paper - distance maps
     }
 
     private void updateChunkTracking(ServerPlayer player) {
@@ -1491,10 +1579,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         });
     }
 
-    private class ChunkDistanceManager extends DistanceManager {
+    public class ChunkDistanceManager extends DistanceManager { // Paper - public
 
         protected ChunkDistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
-            super(workerExecutor, mainThreadExecutor);
+            super(workerExecutor, mainThreadExecutor, ChunkMap.this);
         }
 
         @Override

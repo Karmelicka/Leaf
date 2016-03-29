@@ -56,8 +56,9 @@ public abstract class DistanceManager {
     final Executor mainThreadExecutor;
     private long ticketTickCounter;
     public int simulationDistance = 10;
+    private final ChunkMap chunkMap; // Paper
 
-    protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
+    protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor, ChunkMap chunkMap) {
         Objects.requireNonNull(mainThreadExecutor);
         ProcessorHandle<Runnable> mailbox = ProcessorHandle.of("player ticket throttler", mainThreadExecutor::execute);
         ChunkTaskPriorityQueueSorter chunktaskqueuesorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(mailbox), workerExecutor, 4);
@@ -66,6 +67,7 @@ public abstract class DistanceManager {
         this.ticketThrottlerInput = chunktaskqueuesorter.getProcessor(mailbox, true);
         this.ticketThrottlerReleaser = chunktaskqueuesorter.getReleaseProcessor(mailbox);
         this.mainThreadExecutor = mainThreadExecutor;
+        this.chunkMap = chunkMap; // Paper
     }
 
     protected void purgeStaleTickets() {
@@ -378,7 +380,7 @@ public abstract class DistanceManager {
     }
 
     public void removeTicketsOnClosing() {
-        ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT);
+        ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT, TicketType.FUTURE_AWAIT); // Paper - add additional tickets to preserve
         ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
 
         while (objectiterator.hasNext()) {

@@ -46,7 +46,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
 
                     JvmProfiler.INSTANCE.onPacketSent(codecData.protocol(), i, channelHandlerContext.channel().remoteAddress(), k);
                 } catch (Throwable var13) {
-                    LOGGER.error("Error receiving packet {}", i, var13);
+                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", i, packet.isSkippable(), var13); // Paper - Give proper error message
                     if (packet.isSkippable()) {
                         throw new SkipPacketException(var13);
                     }

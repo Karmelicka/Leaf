@@ -59,6 +59,7 @@ import net.minecraft.world.ticks.LevelTickAccess;
 import net.minecraft.world.ticks.ScheduledTick;
 import net.minecraft.world.ticks.TickPriority;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
 
@@ -818,4 +819,24 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     public int getMoonPhase() {
         return this.handle.getMoonPhase();
     }
+
+    // Paper start
+    @Nullable
+    @Override
+    public BlockState getBlockStateIfLoaded(final BlockPos blockposition) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public FluidState getFluidIfLoaded(final BlockPos blockposition) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public ChunkAccess getChunkIfLoadedImmediately(final int x, final int z) {
+        return null;
+    }
+    // Paper end
 }
