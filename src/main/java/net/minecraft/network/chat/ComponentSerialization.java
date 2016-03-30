@@ -86,7 +86,7 @@ public class ComponentSerialization {
             for(MapDecoder<? extends T> mapDecoder : this.codecs) {
                 DataResult<? extends T> dataResult = mapDecoder.decode(dynamicOps, mapLike);
                 if (dataResult.result().isPresent()) {
-                    return dataResult;
+                    return (DataResult<T>) dataResult; // Paper - decomp fix
                 }
             }
 
@@ -96,7 +96,7 @@ public class ComponentSerialization {
         }
 
         public <S> RecordBuilder<S> encode(T object, DynamicOps<S> dynamicOps, RecordBuilder<S> recordBuilder) {
-            MapEncoder<T> mapEncoder = this.encoderGetter.apply(object);
+            MapEncoder<T> mapEncoder = (MapEncoder<T>) this.encoderGetter.apply(object); // Paper - decomp fix
             return mapEncoder.encode(object, dynamicOps, recordBuilder);
         }
 
