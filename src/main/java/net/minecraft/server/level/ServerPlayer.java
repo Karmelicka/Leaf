@@ -222,7 +222,7 @@ public class ServerPlayer extends Player {
     private int levitationStartTime;
     private boolean disconnected;
     private int requestedViewDistance;
-    public String language = "en_us"; // CraftBukkit - default
+    public String language = null; // CraftBukkit - default  // Paper - default to null
     public java.util.Locale adventure$locale = java.util.Locale.US; // Paper
     @Nullable
     private Vec3 startingToFallPosition;
@@ -272,7 +272,7 @@ public class ServerPlayer extends Player {
         this.lastActionTime = Util.getMillis();
         this.recipeBook = new ServerRecipeBook();
         this.requestedViewDistance = 2;
-        this.language = "en_us";
+        this.language =  null; // Paper - default to null
         this.lastSectionPos = SectionPos.of(0, 0, 0);
         this.chunkTrackingView = ChunkTrackingView.EMPTY;
         this.respawnDimension = Level.OVERWORLD;
@@ -1920,9 +1920,10 @@ public class ServerPlayer extends Player {
             PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), this.getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
             this.server.server.getPluginManager().callEvent(event);
         }
-        if (!this.language.equals(clientOptions.language())) {
+        if (this.language == null || !this.language.equals(clientOptions.language())) { // Paper
             PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(this.getBukkitEntity(), clientOptions.language());
             this.server.server.getPluginManager().callEvent(event);
+            this.server.server.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerLocaleChangeEvent(this.getBukkitEntity(), this.language, clientOptions.language())); // Paper
         }
         // CraftBukkit end
         this.language = clientOptions.language();
