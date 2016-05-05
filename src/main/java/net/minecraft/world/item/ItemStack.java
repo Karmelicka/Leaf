@@ -230,7 +230,7 @@ public final class ItemStack {
 
     // Called to run this stack through the data converter to handle older storage methods and serialized items
     public void convertStack(int version) {
-        if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion()) {
+        if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion() && MinecraftServer.getServer() != null) { // Paper - skip conversion if the server doesn't exist (for tests)
             CompoundTag savedStack = new CompoundTag();
             this.save(savedStack);
             savedStack = (CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic(NbtOps.INSTANCE, savedStack), version, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();

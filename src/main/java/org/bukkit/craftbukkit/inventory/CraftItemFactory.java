@@ -505,4 +505,11 @@ public final class CraftItemFactory implements ItemFactory {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(itemStack).getDisplayName());
     }
     // Paper end - Adventure
+
+    // Paper start - ensure server conversions API
+    @Override
+    public ItemStack ensureServerConversions(ItemStack item) {
+        return CraftItemStack.asCraftMirror(CraftItemStack.asNMSCopy(item));
+    }
+    // Paper end - ensure server conversions API
 }
