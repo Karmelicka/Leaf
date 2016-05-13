@@ -412,6 +412,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     // Spigot end
     protected int numCollisions = 0; // Paper - Cap entity collisions
     public boolean fromNetherPortal; // Paper - Add option to nerf pigmen from nether portals
+    public long activatedImmunityTick = Integer.MIN_VALUE; // Paper - EAR
+    public boolean isTemporarilyActive; // Paper - EAR
     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
     // Paper start - Entity origin API
     @javax.annotation.Nullable
@@ -1034,6 +1036,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         } else {
             this.wasOnFire = this.isOnFire();
             if (movementType == MoverType.PISTON) {
+                this.activatedTick = Math.max(this.activatedTick, MinecraftServer.currentTick + 20); // Paper
+                this.activatedImmunityTick = Math.max(this.activatedImmunityTick, MinecraftServer.currentTick + 20);   // Paper
                 movement = this.limitPistonMovement(movement);
                 if (movement.equals(Vec3.ZERO)) {
                     return;
@@ -1046,6 +1050,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 this.stuckSpeedMultiplier = Vec3.ZERO;
                 this.setDeltaMovement(Vec3.ZERO);
             }
+            // Paper start - ignore movement changes while inactive.
+            if (isTemporarilyActive && !(this instanceof ItemEntity || this instanceof net.minecraft.world.entity.vehicle.AbstractMinecart) && movement == getDeltaMovement() && movementType == MoverType.SELF) {
+                setDeltaMovement(Vec3.ZERO);
+                this.level.getProfiler().pop();
+                return;
+            }
+            // Paper end
 
             movement = this.maybeBackOffFromEdge(movement, movementType);
             Vec3 vec3d1 = this.collide(movement);
