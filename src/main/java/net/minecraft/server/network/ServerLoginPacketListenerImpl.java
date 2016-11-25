@@ -49,6 +49,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
 
     private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
     static final Logger LOGGER = LogUtils.getLogger();
+    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
     private static final int MAX_TICKS_BEFORE_LOGIN = 600;
     private static final Component DISCONNECT_UNEXPECTED_QUERY = Component.translatable("multiplayer.disconnect.unexpected_query_response");
     private final byte[] challenge;
@@ -140,7 +141,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
                 this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge));
             } else {
                 // CraftBukkit start
-                Thread thread = new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
+                // Paper start - Cache authenticator threads
+                authenticatorPool.execute(new Runnable() {
 
                     @Override
                     public void run() {
@@ -155,10 +157,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
                             ServerLoginPacketListenerImpl.this.server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.requestedUsername, ex);
                         }
                     }
-                };
-
-                thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ServerLoginPacketListenerImpl.LOGGER));
-                thread.start();
+                });
+                // Paper end - Cache authenticator threads
                 // CraftBukkit end
             }
 
@@ -225,7 +225,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
             throw new IllegalStateException("Protocol error", cryptographyexception);
         }
 
-        Thread thread = new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
+        // Paper start - Cache authenticator threads
+        authenticatorPool.execute(new Runnable() {
             public void run() {
                 String s1 = (String) Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
 
@@ -273,10 +274,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
 
                 return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
             }
-        };
-
-        thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ServerLoginPacketListenerImpl.LOGGER));
-        thread.start();
+        });
+        // Paper end - Cache authenticator threads
     }
 
     // CraftBukkit start
