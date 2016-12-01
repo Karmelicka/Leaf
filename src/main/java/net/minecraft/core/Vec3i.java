@@ -38,7 +38,7 @@ public class Vec3i implements Comparable<Vec3i> {
     }
 
     @Override
-    public boolean equals(Object object) {
+    public final boolean equals(Object object) { // Paper - Perf: Final for inline
         if (this == object) {
             return true;
         } else if (!(object instanceof Vec3i)) {
@@ -56,7 +56,7 @@ public class Vec3i implements Comparable<Vec3i> {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() { // Paper - Perf: Final for inline
         return (this.getY() + this.getZ() * 31) * 31 + this.getX();
     }
 
@@ -69,15 +69,15 @@ public class Vec3i implements Comparable<Vec3i> {
         }
     }
 
-    public int getX() {
+    public final int getX() { // Paper - Perf: Final for inline
         return this.x;
     }
 
-    public int getY() {
+    public final int getY() { // Paper - Perf: Final for inline
         return this.y;
     }
 
-    public int getZ() {
+    public final int getZ() { // Paper - Perf: Final for inline
         return this.z;
     }
 
