@@ -2451,7 +2451,7 @@ public class ServerPlayer extends Player {
 
     @Override
     public boolean isImmobile() {
-        return super.isImmobile() || !this.getBukkitEntity().isOnline();
+        return super.isImmobile() || (this.connection != null && this.connection.isDisconnected()); // Paper - Fix duplication bugs
     }
 
     @Override
