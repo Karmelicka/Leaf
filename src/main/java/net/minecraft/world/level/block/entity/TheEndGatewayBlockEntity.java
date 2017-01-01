@@ -208,11 +208,11 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
                 // CraftBukkit start - Fire PlayerTeleportEvent/EntityTeleportEvent
                 if (entity1 instanceof ServerPlayer) {
                     org.bukkit.craftbukkit.entity.CraftPlayer player = (CraftPlayer) entity1.getBukkitEntity();
-                    org.bukkit.Location location = CraftLocation.toBukkit(blockposition1, world.getWorld()).add(0.5D, 0.5D, 0.5D);
+                    org.bukkit.Location location = CraftLocation.toBukkit(blockposition1, world.getWorld()).add(0.5D, 0, 0.5D); // Paper - use the right Y offset
                     location.setPitch(player.getLocation().getPitch());
                     location.setYaw(player.getLocation().getYaw());
 
-                    PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.END_GATEWAY);
+                    PlayerTeleportEvent teleEvent = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(player, player.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(worldserver.getWorld(), blockEntity)); // Paper
                     Bukkit.getPluginManager().callEvent(teleEvent);
                     if (teleEvent.isCancelled()) {
                         return;
