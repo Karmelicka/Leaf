@@ -394,6 +394,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     public long activatedTick = Integer.MIN_VALUE;
     public void inactiveTick() { }
     // Spigot end
+    protected int numCollisions = 0; // Paper - Cap entity collisions
     // Paper start - Entity origin API
     @javax.annotation.Nullable
     private org.bukkit.util.Vector origin;
