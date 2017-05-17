@@ -2177,6 +2177,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         switch (packet.getAction()) {
             case PRESS_SHIFT_KEY:
                 this.player.setShiftKeyDown(true);
+
+                // Paper start - Add option to make parrots stay
+                if (this.player.level().paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) {
+                    this.player.removeEntitiesOnShoulder();
+                }
+                // Paper end - Add option to make parrots stay
+
                 break;
             case RELEASE_SHIFT_KEY:
                 this.player.setShiftKeyDown(false);
