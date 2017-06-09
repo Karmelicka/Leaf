@@ -162,6 +162,7 @@ public class AdvancementDataPlayer {
     }
 
     public void save() {
+        if (org.spigotmc.SpigotConfig.disableAdvancementSaving) return; // Spigot
         JsonElement jsonelement = (JsonElement) SystemUtils.getOrThrow(this.codec.encodeStart(JsonOps.INSTANCE, this.asData()), IllegalStateException::new);
 
         try {
