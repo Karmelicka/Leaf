@@ -6,9 +6,30 @@ plugins {
     id("com.github.johnrengelman.shadow")
 }
 
+val log4jPlugins = sourceSets.create("log4jPlugins")
+configurations.named(log4jPlugins.compileClasspathConfigurationName) {
+    extendsFrom(configurations.compileClasspath.get())
+}
+val alsoShade: Configuration by configurations.creating
+
 dependencies {
     implementation(project(":paper-api"))
-    implementation("jline:jline:2.12.1")
+    // Paper start
+    implementation("org.jline:jline-terminal-jansi:3.21.0")
+    implementation("net.minecrell:terminalconsoleappender:1.3.0")
+    implementation("net.kyori:adventure-text-serializer-ansi:4.14.0") // Keep in sync with adventureVersion from Paper-API build file
+    implementation("net.kyori:ansi:1.0.3") // Manually bump beyond above transitive dep
+    /*
+          Required to add the missing Log4j2Plugins.dat file from log4j-core
+          which has been removed by Mojang. Without it, log4j has to classload
+          all its classes to check if they are plugins.
+          Scanning takes about 1-2 seconds so adding this speeds up the server start.
+     */
+    runtimeOnly("org.apache.logging.log4j:log4j-core:2.19.0")
+    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
+    runtimeOnly(log4jPlugins.output)
+    alsoShade(log4jPlugins.output)
+    // Paper end
     implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
     implementation("org.ow2.asm:asm-commons:9.5")
     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
@@ -80,7 +101,7 @@ relocation {
 }
 
 tasks.shadowJar {
-    configurations = listOf(project.configurations.vanillaServer.get())
+    configurations = listOf(project.configurations.vanillaServer.get(), alsoShade)
     archiveClassifier.set("mojang-mapped")
 
     for (relocation in relocation.relocations.get()) {
