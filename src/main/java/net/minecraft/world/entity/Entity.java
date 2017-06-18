@@ -395,6 +395,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     public void inactiveTick() { }
     // Spigot end
     protected int numCollisions = 0; // Paper - Cap entity collisions
+    public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
     // Paper start - Entity origin API
     @javax.annotation.Nullable
     private org.bukkit.util.Vector origin;
@@ -2162,6 +2163,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 }
                 nbttagcompound.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
             }
+            // Save entity's from mob spawner status
+            if (spawnedViaMobSpawner) {
+                nbttagcompound.putBoolean("Paper.FromMobSpawner", true);
+            }
             // Paper end
             return nbttagcompound;
         } catch (Throwable throwable) {
@@ -2302,6 +2307,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 this.originWorld = originWorld;
                 origin = new org.bukkit.util.Vector(originTag.getDouble(0), originTag.getDouble(1), originTag.getDouble(2));
             }
+
+            spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
             // Paper end
 
         } catch (Throwable throwable) {
