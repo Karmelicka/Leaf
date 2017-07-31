@@ -168,6 +168,7 @@ public abstract class BaseSpawner {
                         }
 
                         entity.spawnedViaMobSpawner = true; // Paper
+                        flag = true; // Paper
                         // CraftBukkit start
                         if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
                             continue;
@@ -184,7 +185,7 @@ public abstract class BaseSpawner {
                             ((Mob) entity).spawnAnim();
                         }
 
-                        flag = true;
+                        //flag = true; // Paper - moved up above cancellable event
                     }
                 }
 
