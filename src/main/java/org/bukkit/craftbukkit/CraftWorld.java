@@ -1932,13 +1932,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
+        // Paper start - Particle API
+        spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, force);
+    }
+    @Override
+    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
+        // Paper end - Particle API
         particle = CraftParticle.convertLegacy(particle);
         data = CraftParticle.convertLegacy(data);
         if (data != null) {
             Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
         }
         this.getHandle().sendParticles(
-                null, // Sender
+                receivers == null ? getHandle().players() : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API
+                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API
                 CraftParticle.createParticleParam(particle, data), // Particle
                 x, y, z, // Position
                 count,  // Count
