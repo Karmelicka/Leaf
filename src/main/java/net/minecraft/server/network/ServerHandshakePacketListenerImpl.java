@@ -165,6 +165,10 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
                 throw new UnsupportedOperationException("Invalid intention " + packet.intention());
         }
 
+        // Paper start - NetworkClient implementation
+        this.connection.protocolVersion = packet.protocolVersion();
+        this.connection.virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(packet.hostName(), packet.port());
+        // Paper end
     }
 
     @Override
