@@ -74,7 +74,7 @@ public class SkullBlockEntity extends BlockEntity {
         return apiServices.profileCache().getAsync(name).thenApplyAsync((optional) -> {
             if (optional.isPresent() && !booleansupplier.getAsBoolean()) {
                 UUID uuid = ((GameProfile) optional.get()).getId();
-                ProfileResult profileresult = apiServices.sessionService().fetchProfile(uuid, true);
+                ProfileResult profileresult = apiServices.sessionService() instanceof com.destroystokyo.paper.profile.PaperMinecraftSessionService paperMinecraftSessionService ? paperMinecraftSessionService.fetchProfile(optional.get(), true) : apiServices.sessionService().fetchProfile(uuid, true); // Paper - FillProfileEvent
 
                 return profileresult != null ? Optional.ofNullable(profileresult.profile()) : optional;
             } else {
