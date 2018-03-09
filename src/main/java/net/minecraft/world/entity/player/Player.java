@@ -1234,6 +1234,7 @@ public abstract class Player extends LivingEntity {
 
                     boolean flag2 = flag && this.fallDistance > 0.0F && !this.onGround() && !this.onClimbable() && !this.isInWater() && !this.hasEffect(MobEffects.BLINDNESS) && !this.isPassenger() && target instanceof LivingEntity;
 
+                    flag2 = flag2 && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
                     flag2 = flag2 && !this.isSprinting();
                     if (flag2) {
                         f *= 1.5F;
