@@ -114,6 +114,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
     // Paper start - NetworkClient implementation
     public int protocolVersion;
     public java.net.InetSocketAddress virtualHost;
+    private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush"); // Paper - Disable explicit network manager flushing
     // Paper end
 
     // Paper start - add utility methods
@@ -413,7 +414,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
         }
 
         if (this.channel != null) {
-            this.channel.flush();
+            if (enableExplicitFlush) this.channel.eventLoop().execute(() -> this.channel.flush()); // Paper - Disable explicit network manager flushing; we don't need to explicit flush here, but allow opt in incase issues are found to a better version
         }
 
         if (this.tickCount++ % 20 == 0) {
