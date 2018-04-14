@@ -1283,7 +1283,11 @@ public abstract class Player extends LivingEntity {
                             }
 
                             this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
-                            this.setSprinting(false);
+                            // Paper start - Configurable sprint interruption on attack
+                            if (!this.level().paperConfig().misc.disableSprintInterruptionOnAttack) {
+                                this.setSprinting(false);
+                            }
+                            // Paper end - Configurable sprint interruption on attack
                         }
 
                         if (flag3) {
