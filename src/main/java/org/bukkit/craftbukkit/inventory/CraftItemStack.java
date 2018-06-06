@@ -184,6 +184,13 @@ public final class CraftItemStack extends ItemStack {
         return (this.handle == null) ? Material.AIR.getMaxStackSize() : this.handle.getItem().getMaxStackSize();
     }
 
+    // Paper start
+    @Override
+    public int getMaxItemUseDuration() {
+        return handle == null ? 0 : handle.getUseDuration();
+    }
+    // Paper end
+
     @Override
     public void addUnsafeEnchantment(Enchantment ench, int level) {
         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
