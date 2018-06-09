@@ -225,8 +225,14 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
 
                 }
 
-                org.bukkit.event.entity.EntityTeleportEvent teleEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(entity1, blockposition1.getX() + 0.5, blockposition1.getY() + 0.5, blockposition1.getZ() + 0.5);
-                if (teleEvent.isCancelled()) {
+                // Paper start - EntityTeleportEndGatewayEvent
+                org.bukkit.Location location = new org.bukkit.Location(world.getWorld(), blockposition1.getX() + 0.5D, blockposition1.getY(), blockposition1.getZ() + 0.5D);
+                location.setPitch(entity1.getXRot());
+                location.setYaw(entity1.getBukkitYaw());
+                org.bukkit.entity.Entity bukkitEntity = entity1.getBukkitEntity();
+                org.bukkit.event.entity.EntityTeleportEvent teleEvent = new com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent(bukkitEntity, bukkitEntity.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(world.getWorld(), blockEntity));
+                if (!teleEvent.callEvent() || teleEvent.getTo() == null) {
+                    // Paper end - EntityTeleportEndGatewayEvent
                     return;
                 }
 
