@@ -1868,9 +1868,23 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         }
     }
 
-    public void push(double deltaX, double deltaY, double deltaZ) {
-        this.setDeltaMovement(this.getDeltaMovement().add(deltaX, deltaY, deltaZ));
+    public final void push(double deltaX, double deltaY, double deltaZ) { // Paper - override the added overload below
+        // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+        this.push(deltaX, deltaY, deltaZ, null);
+    }
+
+    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) {
+        org.bukkit.util.Vector delta = new org.bukkit.util.Vector(deltaX, deltaY, deltaZ);
+        if (pushingEntity != null) {
+            io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent event = new io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent(getBukkitEntity(), pushingEntity.getBukkitEntity(), delta);
+            if (!event.callEvent()) {
+                return;
+            }
+            delta = event.getAcceleration();
+        }
+        this.setDeltaMovement(this.getDeltaMovement().add(delta.getX(), delta.getY(), delta.getZ()));
         this.hasImpulse = true;
+        // Paper end - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
     }
 
     protected void markHurt() {

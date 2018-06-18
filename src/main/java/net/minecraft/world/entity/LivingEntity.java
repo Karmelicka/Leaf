@@ -1569,7 +1569,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
     }
 
     protected void blockedByShield(LivingEntity target) {
-        target.knockback(0.5D, target.getX() - this.getX(), target.getZ() - this.getZ(), null, EntityKnockbackEvent.KnockbackCause.SHIELD_BLOCK); // CraftBukkit
+        target.knockback(0.5D, target.getX() - this.getX(), target.getZ() - this.getZ(), this, EntityKnockbackEvent.KnockbackCause.SHIELD_BLOCK); // CraftBukkit // Paper - fix attacker
     }
 
     private boolean checkTotemDeathProtection(DamageSource source) {
@@ -1832,7 +1832,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
         this.knockback(strength, x, z, null, EntityKnockbackEvent.KnockbackCause.UNKNOWN);
     }
 
-    public void knockback(double d0, double d1, double d2, Entity attacker, EntityKnockbackEvent.KnockbackCause cause) {
+    public void knockback(double d0, double d1, double d2, @Nullable Entity attacker, EntityKnockbackEvent.KnockbackCause cause) { // Paper - add nullable to attacker param
         d0 *= 1.0D - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
         if (true || d0 > 0.0D) { // CraftBukkit - Call event even when force is 0
             //this.hasImpulse = true; // CraftBukkit - Move down
@@ -1844,8 +1844,22 @@ public abstract class LivingEntity extends Entity implements Attackable {
                 return;
             }
 
+            // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+            final org.bukkit.util.Vector currentMovement = this.getBukkitEntity().getVelocity();
+            org.bukkit.util.Vector resultingMovement = event.getFinalKnockback();
+            final org.bukkit.util.Vector deltaMovement = resultingMovement.clone().subtract(currentMovement);
+            if (attacker != null) {
+                final com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent knockbackEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(this.getBukkitLivingEntity(), attacker.getBukkitEntity(), (float) event.getForce(), deltaMovement);
+                if (!knockbackEvent.callEvent()) {
+                    return;
+                }
+
+                // Back from delta to the absolute vector
+                resultingMovement = currentMovement.add(knockbackEvent.getAcceleration());
+            }
             this.hasImpulse = true;
-            this.setDeltaMovement(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ());
+            this.setDeltaMovement(resultingMovement.getX(), resultingMovement.getY(), resultingMovement.getZ());
+            // Paper end - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
             // CraftBukkit end
         }
     }

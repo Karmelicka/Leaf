@@ -250,7 +250,7 @@ public abstract class HangingEntity extends Entity {
     }
 
     @Override
-    public void push(double deltaX, double deltaY, double deltaZ) {
+    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) { // Paper - add push source entity param
         if (false && !this.level().isClientSide && !this.isRemoved() && deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 0.0D) { // CraftBukkit - not needed
             this.kill();
             this.dropItem((Entity) null);
