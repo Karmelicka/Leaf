@@ -106,6 +106,10 @@ public class EndDragonFight {
         this.ticksSinceLastPlayerScan = 21;
         this.skipArenaLoadedCheck = false;
         this.needsStateScanning = true;
+        // Paper start - Add config to disable ender dragon legacy check
+        this.needsStateScanning = world.paperConfig().entities.spawning.scanForLegacyEnderDragon;
+        if (!this.needsStateScanning) this.dragonKilled = true;
+        // Paper end - Add config to disable ender dragon legacy check
         this.level = world;
         this.origin = origin;
         this.validPlayer = EntitySelector.ENTITY_STILL_ALIVE.and(EntitySelector.withinDistance((double) origin.getX(), (double) (128 + origin.getY()), (double) origin.getZ(), 192.0D));
