@@ -2421,6 +2421,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                             }
 
                             if (event.isCancelled()) {
+                                ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote(); // Paper - Refresh player inventory
                                 return;
                             }
                             // CraftBukkit end
