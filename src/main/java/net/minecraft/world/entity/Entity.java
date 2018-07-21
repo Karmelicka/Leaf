@@ -242,6 +242,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
     private CraftEntity bukkitEntity;
 
+    public @org.jetbrains.annotations.Nullable net.minecraft.server.level.ChunkMap.TrackedEntity tracker; // Paper
     public CraftEntity getBukkitEntity() {
         if (this.bukkitEntity == null) {
             this.bukkitEntity = CraftEntity.getEntity(this.level.getCraftServer(), this);
