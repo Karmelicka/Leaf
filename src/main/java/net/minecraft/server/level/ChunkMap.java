@@ -880,6 +880,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                     entity.discard(null); // CraftBukkit - add Bukkit remove cause
                     needsRemoval = true;
                 }
+                checkDupeUUID(world, entity); // Paper - duplicate uuid resolving
                 return !needsRemoval;
             }));
             // CraftBukkit end
@@ -930,6 +931,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         });
     }
 
+    // Paper start - duplicate uuid resolving
+    // rets true if to prevent the entity from being added
+    public static boolean checkDupeUUID(ServerLevel level, Entity entity) {
+        io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode mode = level.paperConfig().entities.spawning.duplicateUuid.mode;
+        if (mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.WARN
+            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.DELETE
+            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN) {
+            return false;
+        }
+        Entity other = level.getEntity(entity.getUUID());
+
+        if (other == null || other == entity) {
+            return false;
+        }
+
+        if (mode == io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN && other != null && !other.isRemoved()
+            && Objects.equals(other.getEncodeId(), entity.getEncodeId())
+            && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < level.paperConfig().entities.spawning.duplicateUuid.safeRegenDeleteRange
+        ) {
+            entity.discard(null);
+            return true;
+        }
+        if (!other.isRemoved()) {
+            switch (mode) {
+                case SAFE_REGEN: {
+                    entity.setUUID(java.util.UUID.randomUUID());
+                    break;
+                }
+                case DELETE: {
+                    entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
+                    return true;
+                }
+                default:
+                    break;
+            }
+        }
+        return false;
+    }
+    // Paper end - duplicate uuid resolving
     public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> prepareTickingChunk(ChunkHolder holder) {
         CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkRangeFuture(holder, 1, (i) -> {
             return ChunkStatus.FULL;
