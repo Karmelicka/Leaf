@@ -26,18 +26,26 @@ public class SnowballItem extends Item {
 
             entitysnowball.setItem(itemstack);
             entitysnowball.shootFromRotation(user, user.getXRot(), user.getYRot(), 0.0F, 1.5F, 1.0F);
-            if (world.addFreshEntity(entitysnowball)) {
-                if (!user.getAbilities().instabuild) {
+            // Paper start - PlayerLaunchProjectileEvent
+            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) entitysnowball.getBukkitEntity());
+            if (event.callEvent() && world.addFreshEntity(entitysnowball)) {
+                user.awardStat(Stats.ITEM_USED.get(this));
+                if (event.shouldConsume() && !user.getAbilities().instabuild) {
+                    // Paper end - PlayerLaunchProjectileEvent
                     itemstack.shrink(1);
+                } else if (user instanceof net.minecraft.server.level.ServerPlayer) {  // Paper - PlayerLaunchProjectileEvent
+                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();  // Paper - PlayerLaunchProjectileEvent
                 }
 
                 world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
-            } else if (user instanceof net.minecraft.server.level.ServerPlayer) {
-                ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
+            } else { // Paper - PlayerLaunchProjectileEvent
+                if (user instanceof net.minecraft.server.level.ServerPlayer) ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory(); // Paper - PlayerLaunchProjectileEvent
+                return InteractionResultHolder.fail(itemstack); // Paper - PlayerLaunchProjectileEvent
             }
         }
         // CraftBukkit end
 
+        /* // Paper start - PlayerLaunchProjectileEvent; moved up
         user.awardStat(Stats.ITEM_USED.get(this));
         // CraftBukkit start - moved up
         /*
@@ -45,6 +53,7 @@ public class SnowballItem extends Item {
             itemstack.shrink(1);
         }
         */
+        // Paper end - PlayerLaunchProjectileEvent
 
         return InteractionResultHolder.sidedSuccess(itemstack, world.isClientSide());
     }

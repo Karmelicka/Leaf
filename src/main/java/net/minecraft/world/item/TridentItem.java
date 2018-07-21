@@ -83,21 +83,26 @@ public class TridentItem extends Item implements Vanishable {
                             }
 
                             // CraftBukkit start
-                            if (!world.addFreshEntity(entitythrowntrident)) {
+                            // Paper start - PlayerLaunchProjectileEvent
+                            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack), (org.bukkit.entity.Projectile) entitythrowntrident.getBukkitEntity());
+                            if (!event.callEvent() || !world.addFreshEntity(entitythrowntrident)) {
+                                // Paper end - PlayerLaunchProjectileEvent
                                 if (entityhuman instanceof net.minecraft.server.level.ServerPlayer) {
                                     ((net.minecraft.server.level.ServerPlayer) entityhuman).getBukkitEntity().updateInventory();
                                 }
                                 return;
                             }
 
+                            if (event.shouldConsume()) { // Paper - PlayerLaunchProjectileEvent
                             stack.hurtAndBreak(1, entityhuman, (entityhuman1) -> {
                                 entityhuman1.broadcastBreakEvent(user.getUsedItemHand());
                             });
+                            } // Paper - PlayerLaunchProjectileEvent
                             entitythrowntrident.pickupItemStack = stack.copy(); // SPIGOT-4511 update since damage call moved
                             // CraftBukkit end
 
                             world.playSound((Player) null, (Entity) entitythrowntrident, SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0F, 1.0F);
-                            if (!entityhuman.getAbilities().instabuild) {
+                            if (event.shouldConsume() && !entityhuman.getAbilities().instabuild) { // Paper - PlayerLaunchProjectileEvent
                                 entityhuman.getInventory().removeItem(stack);
                             }
                             // CraftBukkit start - SPIGOT-5458 also need in this branch :(
