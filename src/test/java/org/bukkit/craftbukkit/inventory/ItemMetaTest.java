@@ -107,6 +107,34 @@ public class ItemMetaTest extends AbstractTestingBase {
         assertThat(itemMeta.hasConflictingEnchant(null), is(false));
     }
 
+    // Paper start
+    private void testItemMeta(ItemStack stack) {
+        assertThat(stack.hasItemMeta(), is(false), "Should not have ItemMeta");
+
+        stack.setDurability((short) 0);
+        assertThat(stack.hasItemMeta(), is(false), "ItemStack with zero durability should not have ItemMeta");
+
+        stack.setDurability((short) 2);
+        assertThat(stack.hasItemMeta(), is(true), "ItemStack with non-zero durability should have ItemMeta");
+
+        stack.setLore(java.util.Collections.singletonList("Lore"));
+        assertThat(stack.hasItemMeta(), is(true), "ItemStack with lore and durability should have ItemMeta");
+
+        stack.setDurability((short) 0);
+        assertThat(stack.hasItemMeta(), is(true), "ItemStack with lore should have ItemMeta");
+
+        stack.setLore(null);
+    }
+
+    @Test
+    public void testHasItemMeta() {
+        ItemStack itemStack = new ItemStack(Material.SHEARS);
+
+        testItemMeta(itemStack);
+        testItemMeta(CraftItemStack.asCraftCopy(itemStack));
+    }
+    // Paper end
+
     @Test
     public void testConflictingStoredEnchantment() {
         EnchantmentStorageMeta itemMeta = (EnchantmentStorageMeta) Bukkit.getItemFactory().getItemMeta(Material.ENCHANTED_BOOK);
