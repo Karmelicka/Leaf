@@ -1058,6 +1058,12 @@ public abstract class Mob extends LivingEntity implements Targeting {
 
     }
 
+    // Paper start
+    protected boolean shouldSkipLoot(EquipmentSlot slot) { // method to avoid to fallback into the global mob loot logic (i.e fox)
+        return false;
+    }
+    // Paper end
+
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
         super.dropCustomDeathLoot(source, lootingMultiplier, allowDrops);
@@ -1066,6 +1072,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
 
         for (int k = 0; k < j; ++k) {
             EquipmentSlot enumitemslot = aenumitemslot[k];
+            if (this.shouldSkipLoot(enumitemslot)) continue; // Paper
             ItemStack itemstack = this.getItemBySlot(enumitemslot);
             float f = this.getEquipmentDropChance(enumitemslot);
             boolean flag1 = f > 1.0F;
@@ -1076,7 +1083,13 @@ public abstract class Mob extends LivingEntity implements Targeting {
                 }
 
                 this.spawnAtLocation(itemstack);
+                if (this.clearEquipmentSlots) { // Paper
                 this.setItemSlot(enumitemslot, ItemStack.EMPTY);
+                // Paper start
+                } else {
+                    this.clearedEquipmentSlots.add(enumitemslot);
+                }
+                // Paper end
             }
         }
 

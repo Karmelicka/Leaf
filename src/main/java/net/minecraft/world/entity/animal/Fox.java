@@ -715,16 +715,38 @@ public class Fox extends Animal implements VariantHolder<Fox.Type> {
         return this.getTrustedUUIDs().contains(uuid);
     }
 
+    // Paper start - handle the bitten item separately like vanilla
     @Override
-    protected void dropAllDeathLoot(DamageSource source) {
+    protected boolean shouldSkipLoot(EquipmentSlot slot) {
+        return slot == EquipmentSlot.MAINHAND;
+    }
+    // Paper end
+
+    @Override
+    // Paper start - Cancellable death event
+    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(DamageSource source) {
         ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
 
-        if (!itemstack.isEmpty()) {
+        boolean releaseMouth = false;
+        if (!itemstack.isEmpty() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Fix MC-153010
             this.spawnAtLocation(itemstack);
+            releaseMouth = true;
+        }
+
+        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.dropAllDeathLoot(source);
+
+        // Below is code to drop
+
+        if (deathEvent == null || deathEvent.isCancelled()) {
+            return deathEvent;
+        }
+
+        if (releaseMouth) {
+            // Paper end - Cancellable death event
             this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
         }
 
-        super.dropAllDeathLoot(source);
+        return deathEvent; // Paper - Cancellable death event
     }
 
     @Override
