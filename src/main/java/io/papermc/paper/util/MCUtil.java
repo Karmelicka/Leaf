@@ -558,4 +558,19 @@ public final class MCUtil {
 
         return builder.build();
     }
+
+    @Nullable
+    public static net.minecraft.network.chat.Component getBaseComponentFromNbt(String key, net.minecraft.nbt.CompoundTag compound) {
+        if (!compound.contains(key)) {
+            return null;
+        }
+        String string = compound.getString(key);
+        try {
+            return net.minecraft.network.chat.Component.Serializer.fromJson(string);
+        } catch (com.google.gson.JsonParseException e) {
+            org.bukkit.Bukkit.getLogger().warning("Unable to parse " + key + " from " + compound +": " + e.getMessage());
+        }
+
+        return null;
+    }
 }
