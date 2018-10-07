@@ -60,7 +60,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
     @Nullable
     String requestedUsername;
     @Nullable
-    private GameProfile authenticatedProfile;
+    public GameProfile authenticatedProfile; // Paper - public
     private final String serverId;
     private ServerPlayer player; // CraftBukkit
 
