@@ -160,21 +160,7 @@ public class Witch extends Raider implements RangedAttackMob {
                 }
 
                 if (potionregistry != null) {
-                    // Paper start
-                    ItemStack potion = PotionUtils.setPotion(new ItemStack(Items.POTION), potionregistry);
-                    potion = org.bukkit.craftbukkit.event.CraftEventFactory.handleWitchReadyPotionEvent(this, potion);
-                    this.setItemSlot(EquipmentSlot.MAINHAND, potion);
-                    // Paper end
-                    this.usingTime = this.getMainHandItem().getUseDuration();
-                    this.setUsingItem(true);
-                    if (!this.isSilent()) {
-                        this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.WITCH_DRINK, this.getSoundSource(), 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
-                    }
-
-                    AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
-
-                    attributemodifiable.removeModifier(Witch.SPEED_MODIFIER_DRINKING.getId());
-                    attributemodifiable.addTransientModifier(Witch.SPEED_MODIFIER_DRINKING);
+                    this.setDrinkingPotion(PotionUtils.setPotion(new ItemStack(Items.POTION), potionregistry)); // Paper - logic moved into setDrinkingPotion, copy exact impl into the method and then comment out
                 }
             }
 
@@ -185,6 +171,23 @@ public class Witch extends Raider implements RangedAttackMob {
 
         super.aiStep();
     }
+
+    // Paper start - moved to its own method
+    public void setDrinkingPotion(ItemStack potion) {
+        potion = org.bukkit.craftbukkit.event.CraftEventFactory.handleWitchReadyPotionEvent(this, potion);
+        this.setItemSlot(EquipmentSlot.MAINHAND, potion);
+        this.usingTime = this.getMainHandItem().getUseDuration();
+        this.setUsingItem(true);
+        if (!this.isSilent()) {
+            this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.WITCH_DRINK, this.getSoundSource(), 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
+        }
+
+        AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
+
+        attributemodifiable.removeModifier(Witch.SPEED_MODIFIER_DRINKING.getId());
+        attributemodifiable.addTransientModifier(Witch.SPEED_MODIFIER_DRINKING);
+    }
+    // Paper end
 
     @Override
     public SoundEvent getCelebrateSound() {
