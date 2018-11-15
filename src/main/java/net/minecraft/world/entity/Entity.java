@@ -2570,11 +2570,16 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     public void removeVehicle() {
+        // Paper start - Force entity dismount during teleportation
+        stopRiding(false);
+    }
+    public void stopRiding(boolean suppressCancellation) {
+        // Paper end - Force entity dismount during teleportation
         if (this.vehicle != null) {
             Entity entity = this.vehicle;
 
             this.vehicle = null;
-            if (!entity.removePassenger(this)) this.vehicle = entity; // CraftBukkit
+            if (!entity.removePassenger(this, suppressCancellation)) this.vehicle = entity; // CraftBukkit // Paper - Force entity dismount during teleportation
         }
 
     }
@@ -2605,7 +2610,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         }
     }
 
-    protected boolean removePassenger(Entity entity) { // CraftBukkit
+    // Paper start - Force entity dismount during teleportation
+    protected boolean removePassenger(Entity entity) { return removePassenger(entity, false);}
+    protected boolean removePassenger(Entity entity, boolean suppressCancellation) { // CraftBukkit
+        // Paper end - Force entity dismount during teleportation
         if (entity.getVehicle() == this) {
             throw new IllegalStateException("Use x.stopRiding(y), not y.removePassenger(x)");
         } else {
@@ -2615,7 +2623,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             if (this.getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity) {
                 VehicleExitEvent event = new VehicleExitEvent(
                         (Vehicle) this.getBukkitEntity(),
-                        (LivingEntity) entity.getBukkitEntity()
+                        (LivingEntity) entity.getBukkitEntity(), !suppressCancellation // Paper - Force entity dismount during teleportation
                 );
                 // Suppress during worldgen
                 if (this.valid) {
@@ -2628,7 +2636,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 }
             }
 
-            EntityDismountEvent event = new EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity());
+            EntityDismountEvent event = new EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity(), !suppressCancellation); // Paper - Force entity dismount during teleportation
             // Suppress during worldgen
             if (this.valid) {
                 Bukkit.getPluginManager().callEvent(event);
