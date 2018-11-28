@@ -156,6 +156,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
     }
 
     public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
+        // Paper start - Handle large packets disconnecting client
+        if (throwable instanceof io.netty.handler.codec.EncoderException && throwable.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
+            final Packet<?> packet = packetTooLargeException.getPacket();
+            final io.netty.util.Attribute<ConnectionProtocol.CodecData<?>> codecDataAttribute = channelhandlercontext.channel().attr(packetTooLargeException.codecKey);
+            if (packet.packetTooLarge(this)) {
+                ProtocolSwapHandler.swapProtocolIfNeeded(codecDataAttribute, packet);
+                return;
+            } else if (packet.isSkippable()) {
+                Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
+                ProtocolSwapHandler.swapProtocolIfNeeded(codecDataAttribute, packet);
+                return;
+            } else {
+                throwable = throwable.getCause();
+            }
+        }
+        // Paper end - Handle large packets disconnecting client
         if (throwable instanceof SkipPacketException) {
             Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
         } else {
