@@ -154,7 +154,7 @@ public class CraftBlockData implements BlockData {
         return exactMatch;
     }
 
-    private static final Map<Class<? extends Enum<?>>, Enum<?>[]> ENUM_VALUES = new HashMap<>();
+    private static final Map<Class<? extends Enum<?>>, Enum<?>[]> ENUM_VALUES = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - cache block data strings; make thread safe
 
     /**
      * Convert an NMS Enum (usually a BlockStateEnum) to its appropriate Bukkit
@@ -537,9 +537,39 @@ public class CraftBlockData implements BlockData {
         Preconditions.checkState(CraftBlockData.MAP.put(nms, bukkit) == null, "Duplicate mapping %s->%s", nms, bukkit);
     }
 
+    // Paper start - cache block data strings
+    private static Map<String, CraftBlockData> stringDataCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    static {
+        // cache all of the default states at startup, will not cache ones with the custom states inside of the
+        // brackets in a different order, though
+        reloadCache();
+    }
+
+    public static void reloadCache() {
+        stringDataCache.clear();
+        Block.BLOCK_STATE_REGISTRY.forEach(blockData -> stringDataCache.put(blockData.toString(), blockData.createCraftBlockData()));
+    }
+    // Paper end - cache block data strings
+
     public static CraftBlockData newData(Material material, String data) {
         Preconditions.checkArgument(material == null || material.isBlock(), "Cannot get data for not block %s", material);
 
+        // Paper start - cache block data strings
+        if (material != null) {
+            Block block = CraftBlockType.bukkitToMinecraft(material);
+            if (block != null) {
+                net.minecraft.resources.ResourceLocation key = BuiltInRegistries.BLOCK.getKey(block);
+                data = data == null ? key.toString() : key + data;
+            }
+        }
+
+        CraftBlockData cached = stringDataCache.computeIfAbsent(data, s -> createNewData(null, s));
+        return (CraftBlockData) cached.clone();
+    }
+
+    private static CraftBlockData createNewData(Material material, String data) {
+        // Paper end - cache block data strings
         net.minecraft.world.level.block.state.BlockState blockData;
         Block block = CraftBlockType.bukkitToMinecraft(material);
         Map<Property<?>, Comparable<?>> parsed = null;
