@@ -248,6 +248,7 @@ public class ServerPlayer extends Player {
     private int containerCounter;
     public boolean wonGame;
     private int containerUpdateDelay; // Paper - Configurable container update tick rate
+    public long loginTime; // Paper - Replace OfflinePlayer#getLastPlayed
     // Paper start - cancellable death event
     public boolean queueHealthUpdatePacket;
     public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
