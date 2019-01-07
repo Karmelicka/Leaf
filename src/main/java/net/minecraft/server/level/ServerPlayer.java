@@ -1705,6 +1705,13 @@ public class ServerPlayer extends Player {
     public void disconnect() {
         this.disconnected = true;
         this.ejectPassengers();
+
+        // Paper start - Workaround vehicle not tracking the passenger disconnection dismount
+        if (this.isPassenger() && this.getVehicle() instanceof ServerPlayer) {
+            this.stopRiding();
+        }
+        // Paper end - Workaround vehicle not tracking the passenger disconnection dismount
+
         if (this.isSleeping()) {
             this.stopSleepInBed(true, false);
         }
