@@ -435,6 +435,15 @@ public class ServerChunkCache extends ChunkSource {
         } // Paper - Timings
     }
 
+    // Paper start - Incremental chunk and player saving; duplicate save, but call incremental
+    public void saveIncrementally() {
+        this.runDistanceManagerUpdates();
+        try (co.aikar.timings.Timing timed = level.timings.chunkSaveData.startTiming()) { // Paper - Timings
+            this.chunkMap.saveIncrementally();
+        } // Paper - Timings
+    }
+    // Paper end - Incremental chunk and player saving
+
     @Override
     public void close() throws IOException {
         // CraftBukkit start
