@@ -266,6 +266,7 @@ public class RegionFileStorage implements AutoCloseable {
 
             try {
                 NbtIo.write(nbt, (DataOutput) dataoutputstream);
+                regionfile.setStatus(pos.x, pos.z, ChunkSerializer.getStatus(nbt)); // Paper - Cache chunk status
                 regionfile.setOversized(pos.x, pos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
                 // Paper start - don't write garbage data to disk if writing serialization fails
                 dataoutputstream.close(); // Only write if successful

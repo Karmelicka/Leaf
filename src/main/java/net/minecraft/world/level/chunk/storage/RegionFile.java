@@ -50,6 +50,30 @@ public class RegionFile implements AutoCloseable {
     public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
     public final Path regionFile; // Paper
 
+    // Paper start - Cache chunk status
+    private final net.minecraft.world.level.chunk.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.ChunkStatus[32 * 32];
+
+    private boolean closed;
+
+    // invoked on write/read
+    public void setStatus(int x, int z, net.minecraft.world.level.chunk.ChunkStatus status) {
+        if (this.closed) {
+            // We've used an invalid region file.
+            throw new IllegalStateException("RegionFile is closed");
+        }
+        this.statuses[getChunkLocation(x, z)] = status;
+    }
+
+    public net.minecraft.world.level.chunk.ChunkStatus getStatusIfCached(int x, int z) {
+        if (this.closed) {
+            // We've used an invalid region file.
+            throw new IllegalStateException("RegionFile is closed");
+        }
+        final int location = getChunkLocation(x, z);
+        return this.statuses[location];
+    }
+    // Paper end - Cache chunk status
+
     public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
         this(file, directory, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
     }
@@ -397,6 +421,7 @@ public class RegionFile implements AutoCloseable {
         return this.getOffset(pos) != 0;
     }
 
+    private static int getChunkLocation(int x, int z) { return (x & 31) + (z & 31) * 32; } // Paper - Cache chunk status; OBFHELPER - sort of, mirror of logic below
     private static int getOffsetIndex(ChunkPos pos) {
         return pos.getRegionLocalX() + pos.getRegionLocalZ() * 32;
     }
@@ -407,6 +432,7 @@ public class RegionFile implements AutoCloseable {
         synchronized (this) {
         try {
         // Paper end
+        this.closed = true; // Paper - Cache chunk status
         try {
             this.padToFullSector();
         } finally {

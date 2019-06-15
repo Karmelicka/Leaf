@@ -717,9 +717,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     // Paper end
 
     private CompletableFuture<Optional<CompoundTag>> readChunk(ChunkPos chunkPos) {
-        return this.read(chunkPos).thenApplyAsync((optional) -> {
-            return optional.map((nbttagcompound) -> this.upgradeChunkTag(nbttagcompound, chunkPos)); // CraftBukkit
-        }, Util.backgroundExecutor());
+        // Paper start - Cache chunk status on disk
+        try {
+            return CompletableFuture.completedFuture(Optional.ofNullable(this.readConvertChunkSync(chunkPos)));
+        } catch (Throwable thr) {
+            return CompletableFuture.failedFuture(thr);
+        }
+        // Paper end - Cache chunk status on disk
     }
 
     // CraftBukkit start
@@ -727,6 +731,60 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         return this.upgradeChunkTag(this.level.getTypeKey(), this.overworldDataStorage, nbttagcompound, this.generator.getTypeNameForDataFixer(), chunkcoordintpair, this.level);
         // CraftBukkit end
     }
+
+    // Paper start - Cache chunk status on disk
+    @Nullable
+    public CompoundTag readConvertChunkSync(ChunkPos pos) throws IOException {
+        CompoundTag nbttagcompound = this.readSync(pos);
+        if (nbttagcompound == null) {
+            return null;
+        }
+
+        nbttagcompound = this.upgradeChunkTag(nbttagcompound, pos); // CraftBukkit
+        if (nbttagcompound == null) {
+            return null;
+        }
+
+        this.updateChunkStatusOnDisk(pos, nbttagcompound);
+
+        return nbttagcompound;
+    }
+
+    public ChunkStatus getChunkStatusOnDiskIfCached(ChunkPos chunkPos) {
+        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFileIfLoaded(chunkPos);
+
+        return regionFile == null ? null : regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+    }
+
+    public ChunkStatus getChunkStatusOnDisk(ChunkPos chunkPos) throws IOException {
+        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFile(chunkPos, true);
+
+        if (regionFile == null || !regionFileCache.chunkExists(chunkPos)) {
+            return null;
+        }
+
+        ChunkStatus status = regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+
+        if (status != null) {
+            return status;
+        }
+
+        this.readChunk(chunkPos);
+
+        return regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+    }
+
+    public void updateChunkStatusOnDisk(ChunkPos chunkPos, @Nullable CompoundTag compound) throws IOException {
+        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFile(chunkPos, false);
+
+        regionFile.setStatus(chunkPos.x, chunkPos.z, ChunkSerializer.getStatus(compound));
+    }
+
+    public ChunkAccess getUnloadingChunk(int chunkX, int chunkZ) {
+        ChunkHolder chunkHolder = io.papermc.paper.chunk.system.ChunkSystem.getUnloadingChunkHolder(this.level, chunkX, chunkZ);
+        return chunkHolder == null ? null : chunkHolder.getAvailableChunkNow();
+    }
+    // Paper end - Cache chunk status on disk
 
     public boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) { // Paper - public
         // Spigot start
