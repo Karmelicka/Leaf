@@ -66,6 +66,21 @@ public class FlowerPotBlock extends Block {
         boolean bl = blockState.is(Blocks.AIR);
         boolean bl2 = this.isEmpty();
         if (bl != bl2) {
+            // Paper start - Add PlayerFlowerPotManipulateEvent
+            boolean placing = bl2; // OBFHELPER
+            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
+            org.bukkit.inventory.ItemStack placedStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemStack);
+            org.bukkit.inventory.ItemStack pottedStack = new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.block.CraftBlockType.minecraftToBukkit(this.potted));
+            org.bukkit.inventory.ItemStack stack = placing ? placedStack : pottedStack;
+
+            io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent event = new io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent((org.bukkit.entity.Player) player.getBukkitEntity(), block, stack, placing);
+            if (!event.callEvent()) {
+                // Update client
+                player.containerMenu.sendAllDataToRemote();
+
+                return InteractionResult.PASS;
+            }
+            // Paper end - Add PlayerFlowerPotManipulateEvent
             if (bl2) {
                 world.setBlock(pos, blockState, 3);
                 player.awardStat(Stats.POT_FLOWER);
