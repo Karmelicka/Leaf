@@ -518,7 +518,19 @@ public class ServerChunkCache extends ChunkSource {
                 gameprofilerfiller.popPush("naturalSpawnCount");
                 this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
                 int k = this.distanceManager.getNaturalSpawnChunkCount();
-                NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(k, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
+                // Paper start - Optional per player mob spawns
+                int naturalSpawnChunkCount = k;
+                NaturalSpawner.SpawnState spawnercreature_d; // moved down
+                if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
+                    // re-set mob counts
+                    for (ServerPlayer player : this.level.players) {
+                        Arrays.fill(player.mobCounts, 0);
+                    }
+                    spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
+                } else {
+                    spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
+                }
+                // Paper end - Optional per player mob spawns
                 this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
 
                 this.lastSpawnState = spawnercreature_d;

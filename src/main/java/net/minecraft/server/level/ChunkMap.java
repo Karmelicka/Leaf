@@ -288,9 +288,28 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         });
     }
 
-    public int getMobCountNear(final ServerPlayer player, final net.minecraft.world.entity.MobCategory mobCategory) {
-        return -1;
+    // Paper start - Optional per player mob spawns
+    public void updatePlayerMobTypeMap(final Entity entity) {
+        if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
+            return;
+        }
+        int index = entity.getType().getCategory().ordinal();
+
+        final com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> inRange =
+            this.getNearbyPlayers().getPlayers(entity.chunkPosition(), io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
+        if (inRange == null) {
+            return;
+        }
+        final Object[] backingSet = inRange.getRawData();
+        for (int i = 0, len = inRange.size(); i < len; i++) {
+            ++((ServerPlayer)backingSet[i]).mobCounts[index];
+        }
     }
+
+    public int getMobCountNear(final ServerPlayer player, final net.minecraft.world.entity.MobCategory mobCategory) {
+        return player.mobCounts[mobCategory.ordinal()];
+    }
+    // Paper end - Optional per player mob spawns
 
     private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
         double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
