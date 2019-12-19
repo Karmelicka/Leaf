@@ -76,7 +76,7 @@ public class TargetingConditions {
 
                 if (this.range > 0.0D) {
                     double d = this.testInvisible ? targetEntity.getVisibilityPercent(baseEntity) : 1.0D;
-                    double e = Math.max(this.range * d, 2.0D);
+                    double e = Math.max((this.useFollowRange ? this.getFollowRange(baseEntity) : this.range) * d, 2.0D); // Paper - Fix MC-145656
                     double f = baseEntity.distanceToSqr(targetEntity.getX(), targetEntity.getY(), targetEntity.getZ());
                     if (f > e * e) {
                         return false;
@@ -94,4 +94,18 @@ public class TargetingConditions {
             return true;
         }
     }
+
+    // Paper start - Fix MC-145656
+    private boolean useFollowRange = false;
+
+    public TargetingConditions useFollowRange() {
+        this.useFollowRange = true;
+        return this;
+    }
+
+    private double getFollowRange(LivingEntity entityliving) {
+        net.minecraft.world.entity.ai.attributes.AttributeInstance attributeinstance = entityliving.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.FOLLOW_RANGE);
+        return attributeinstance == null ? 16.0D : attributeinstance.getValue();
+    }
+    // Paper end - Fix MC-145656
 }
