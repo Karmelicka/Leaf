@@ -43,7 +43,8 @@ public class SleepInBed extends Behavior<LivingEntity> {
                     }
                 }
 
-                BlockState blockState = world.getBlockState(globalPos.pos());
+                BlockState blockState = world.getBlockStateIfLoaded(globalPos.pos()); // Paper - Prevent sync chunk loads when villagers try to find beds
+                if (blockState == null) { return false; } // Paper - Prevent sync chunk loads when villagers try to find beds
                 return globalPos.pos().closerToCenterThan(entity.position(), 2.0D) && blockState.is(BlockTags.BEDS) && !blockState.getValue(BedBlock.OCCUPIED);
             }
         }
