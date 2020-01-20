@@ -338,7 +338,7 @@ public class ServerPlayer extends Player {
         this.advancements = server.getPlayerList().getPlayerAdvancements(this);
         this.setMaxUpStep(1.0F);
         // this.fudgeSpawnLocation(world); // Paper - Don't move existing players to world spawn
-        this.updateOptions(clientOptions);
+        this.updateOptionsNoEvents(clientOptions); // Paper - don't call options events on login
 
         this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
 
@@ -2004,7 +2004,23 @@ public class ServerPlayer extends Player {
         }
     }
 
+    // Paper start - Client option API
+    private java.util.Map<com.destroystokyo.paper.ClientOption<?>, ?> getClientOptionMap(String locale, int viewDistance, com.destroystokyo.paper.ClientOption.ChatVisibility chatVisibility, boolean chatColors, com.destroystokyo.paper.PaperSkinParts skinParts, org.bukkit.inventory.MainHand mainHand, boolean allowsServerListing, boolean textFilteringEnabled) {
+        java.util.Map<com.destroystokyo.paper.ClientOption<?>, Object> map = new java.util.HashMap<>();
+        map.put(com.destroystokyo.paper.ClientOption.LOCALE, locale);
+        map.put(com.destroystokyo.paper.ClientOption.VIEW_DISTANCE, viewDistance);
+        map.put(com.destroystokyo.paper.ClientOption.CHAT_VISIBILITY, chatVisibility);
+        map.put(com.destroystokyo.paper.ClientOption.CHAT_COLORS_ENABLED, chatColors);
+        map.put(com.destroystokyo.paper.ClientOption.SKIN_PARTS, skinParts);
+        map.put(com.destroystokyo.paper.ClientOption.MAIN_HAND, mainHand);
+        map.put(com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS, allowsServerListing);
+        map.put(com.destroystokyo.paper.ClientOption.TEXT_FILTERING_ENABLED, textFilteringEnabled);
+        return map;
+    }
+    // Paper end
+
     public void updateOptions(ClientInformation clientOptions) {
+        new com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), getClientOptionMap(clientOptions.language(), clientOptions.viewDistance(), com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(clientOptions.chatVisibility().name()), clientOptions.chatColors(), new com.destroystokyo.paper.PaperSkinParts(clientOptions.modelCustomisation()), clientOptions.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT, clientOptions.allowsListing(), clientOptions.textFilteringEnabled())).callEvent(); // Paper - settings event
         // CraftBukkit start
         if (this.getMainArm() != clientOptions.mainHand()) {
             PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), this.getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
@@ -2016,6 +2032,11 @@ public class ServerPlayer extends Player {
             this.server.server.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerLocaleChangeEvent(this.getBukkitEntity(), this.language, clientOptions.language())); // Paper
         }
         // CraftBukkit end
+        // Paper start - don't call options events on login
+        updateOptionsNoEvents(clientOptions);
+    }
+    public void updateOptionsNoEvents(ClientInformation clientOptions) {
+        // Paper end
         this.language = clientOptions.language();
         this.adventure$locale = java.util.Objects.requireNonNullElse(net.kyori.adventure.translation.Translator.parseLocale(this.language), java.util.Locale.US); // Paper
         this.requestedViewDistance = clientOptions.viewDistance();
