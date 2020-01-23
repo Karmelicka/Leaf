@@ -3363,6 +3363,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             if (flag1) {
                 blockposition1 = ServerLevel.END_SPAWN_POINT;
             } else {
+                destination.getChunkAt(destination.getSharedSpawnPos()); // Paper - Ensure spawn chunk is always loaded before calculating Y coordinate
                 blockposition1 = destination.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, destination.getSharedSpawnPos());
             }
             // CraftBukkit start
