@@ -24,6 +24,7 @@ public class RegionFileStorage implements AutoCloseable {
     public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap();
     private final Path folder;
     private final boolean sync;
+    private final boolean isChunkData; // Paper
 
     // Paper start - cache regionfile does not exist state
     static final int MAX_NON_EXISTING_CACHE = 1024 * 64;
@@ -55,6 +56,12 @@ public class RegionFileStorage implements AutoCloseable {
     // Paper end - cache regionfile does not exist state
 
     protected RegionFileStorage(Path directory, boolean dsync) { // Paper - protected constructor
+        // Paper start - add isChunkData param
+        this(directory, dsync, false);
+    }
+    RegionFileStorage(Path directory, boolean dsync, boolean isChunkData) {
+        this.isChunkData = isChunkData;
+        // Paper end - add isChunkData param
         this.folder = directory;
         this.sync = dsync;
     }
@@ -122,7 +129,7 @@ public class RegionFileStorage implements AutoCloseable {
             // Paper - only create directory if not existing only - moved down
             Path path = this.folder;
             int j = chunkcoordintpair.getRegionX();
-            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
+            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca"); // Paper - diff on change
             if (existingOnly && !java.nio.file.Files.exists(path1)) { // Paper start - cache regionfile does not exist state
                 this.markNonExisting(regionPos);
                 return null; // CraftBukkit
@@ -131,7 +138,7 @@ public class RegionFileStorage implements AutoCloseable {
             }
             // Paper end - cache regionfile does not exist state
             FileUtil.createDirectoriesSafe(this.folder); // Paper - only create directory if not existing only - moved from above
-            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
+            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
 
             this.regionCache.putAndMoveToFirst(i, regionfile1);
             // Paper start
@@ -188,6 +195,13 @@ public class RegionFileStorage implements AutoCloseable {
         if (regionfile == null) {
             return null;
         }
+        // Paper start - Add regionfile parameter
+        return this.read(pos, regionfile);
+    }
+    public CompoundTag read(ChunkPos pos, RegionFile regionfile) throws IOException {
+        // We add the regionfile parameter to avoid the potential deadlock (on fileLock) if we went back to obtain a regionfile
+        // if we decide to re-read
+        // Paper end
         // CraftBukkit end
         try { // Paper
         DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
@@ -204,6 +218,20 @@ public class RegionFileStorage implements AutoCloseable {
             try {
                 if (datainputstream != null) {
                     nbttagcompound = NbtIo.read((DataInput) datainputstream);
+                    // Paper start - recover from corrupt regionfile header
+                    if (this.isChunkData) {
+                        ChunkPos chunkPos = ChunkSerializer.getChunkCoordinate(nbttagcompound);
+                        if (!chunkPos.equals(pos)) {
+                            net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos + " but got chunk data for " + chunkPos + " instead! Attempting regionfile recalculation for regionfile " + regionfile.regionFile.toAbsolutePath());
+                            if (regionfile.recalculateHeader()) {
+                                regionfile.fileLock.lock(); // otherwise we will unlock twice and only lock once.
+                                return this.read(pos, regionfile);
+                            }
+                            net.minecraft.server.MinecraftServer.LOGGER.error("Can't recalculate regionfile header, regenerating chunk " + pos + " for " + regionfile.regionFile.toAbsolutePath());
+                            return null;
+                        }
+                    }
+                    // Paper end - recover from corrupt regionfile header
                     break label43;
                 }
 

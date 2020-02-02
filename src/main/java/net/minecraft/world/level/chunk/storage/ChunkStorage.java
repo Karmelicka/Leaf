@@ -38,7 +38,7 @@ public class ChunkStorage implements AutoCloseable {
 
     public ChunkStorage(Path directory, DataFixer dataFixer, boolean dsync) {
         this.fixerUpper = dataFixer;
-        this.regionFileCache = new RegionFileStorage(directory, dsync); // Paper - rewrite chunk system; async chunk IO
+        this.regionFileCache = new RegionFileStorage(directory, dsync, true); // Paper - rewrite chunk system; async chunk IO & Attempt to recalculate regionfile header if it is corrupt
     }
 
     public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
