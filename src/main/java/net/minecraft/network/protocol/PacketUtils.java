@@ -18,6 +18,24 @@ public class PacketUtils {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    // Paper start - detailed watchdog information
+    public static final java.util.concurrent.ConcurrentLinkedDeque<PacketListener> packetProcessing = new java.util.concurrent.ConcurrentLinkedDeque<>();
+    static final java.util.concurrent.atomic.AtomicLong totalMainThreadPacketsProcessed = new java.util.concurrent.atomic.AtomicLong();
+
+    public static long getTotalProcessedPackets() {
+        return totalMainThreadPacketsProcessed.get();
+    }
+
+    public static java.util.List<PacketListener> getCurrentPacketProcessors() {
+        java.util.List<PacketListener> ret = new java.util.ArrayList<>(4);
+        for (PacketListener listener : packetProcessing) {
+            ret.add(listener);
+        }
+
+        return ret;
+    }
+    // Paper end - detailed watchdog information
+
     public PacketUtils() {}
 
     public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, ServerLevel world) throws RunningOnDifferentThreadException {
@@ -27,6 +45,8 @@ public class PacketUtils {
     public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
         if (!engine.isSameThread()) {
             engine.execute(() -> { // Paper - Fix preemptive player kick on a server shutdown
+                packetProcessing.push(listener); // Paper - detailed watchdog information
+                try { // Paper - detailed watchdog information
                 if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerCommonPacketListenerImpl && ((ServerCommonPacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
                 if (listener.shouldHandleMessage(packet)) {
                     co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
@@ -64,6 +84,12 @@ public class PacketUtils {
                 } else {
                     PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
                 }
+                // Paper start - detailed watchdog information
+                } finally {
+                    totalMainThreadPacketsProcessed.getAndIncrement();
+                    packetProcessing.pop();
+                }
+                // Paper end - detailed watchdog information
 
             });
             throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
