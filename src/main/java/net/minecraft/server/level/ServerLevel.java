@@ -2224,7 +2224,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
         public void onTrackingStart(Entity entity) {
             org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
-            ServerLevel.this.getChunkSource().addEntity(entity);
+            // ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server; moved down below valid=true
             if (entity instanceof ServerPlayer) {
                 ServerPlayer entityplayer = (ServerPlayer) entity;
 
@@ -2259,6 +2259,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
             entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
             entity.inWorld = true; // CraftBukkit - Mark entity as in world
             entity.valid = true; // CraftBukkit
+            ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server
             // Paper start - Entity origin API
             if (entity.getOriginVector() == null) {
                 entity.setOrigin(entity.getBukkitEntity().getLocation());
