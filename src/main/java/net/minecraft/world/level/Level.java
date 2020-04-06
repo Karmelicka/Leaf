@@ -924,6 +924,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                 // Spigot end
             } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
                 tickingblockentity.tick();
+                // Paper start - execute chunk tasks during tick
+                if ((this.tileTickPosition & 7) == 0) {
+                    MinecraftServer.getServer().executeMidTickTasks();
+                }
+                // Paper end - execute chunk tasks during tick
             }
         }
         this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
@@ -938,6 +943,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     public <T extends Entity> void guardEntityTick(Consumer<T> tickConsumer, T entity) {
         try {
             tickConsumer.accept(entity);
+            MinecraftServer.getServer().executeMidTickTasks(); // Paper - execute chunk tasks mid tick
         } catch (Throwable throwable) {
             if (throwable instanceof ThreadDeath) throw throwable; // Paper
             // Paper start - Prevent block entity and entity crashes

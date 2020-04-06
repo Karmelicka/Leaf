@@ -568,6 +568,7 @@ public class ServerChunkCache extends ChunkSource {
                 boolean flag1 = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && this.level.getLevelData().getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
                 Iterator iterator1 = list.iterator();
 
+                int chunksTicked = 0; // Paper
                 while (iterator1.hasNext()) {
                     ServerChunkCache.ChunkAndHolder chunkproviderserver_a = (ServerChunkCache.ChunkAndHolder) iterator1.next();
                     LevelChunk chunk1 = chunkproviderserver_a.chunk;
@@ -581,6 +582,7 @@ public class ServerChunkCache extends ChunkSource {
 
                         if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
                             this.level.tickChunk(chunk1, l);
+                            if ((chunksTicked++ & 1) == 0) net.minecraft.server.MinecraftServer.getServer().executeMidTickTasks(); // Paper
                         }
                     }
                 }

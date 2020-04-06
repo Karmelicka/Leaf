@@ -48,6 +48,8 @@ public final class MinecraftTimings {
     public static final Timing antiXrayObfuscateTimer = Timings.ofSafe("anti-xray - obfuscate");
     public static final Timing scoreboardScoreSearch = Timings.ofSafe("Scoreboard score search"); // Paper - add timings for scoreboard search
 
+    public static final Timing midTickChunkTasks = Timings.ofSafe("Mid Tick Chunk Tasks");
+
     private static final Map<Class<?>, String> taskNameCache = new MapMaker().weakKeys().makeMap();
 
     private MinecraftTimings() {}
