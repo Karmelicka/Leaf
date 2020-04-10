@@ -227,6 +227,7 @@ public abstract class PlayerList {
         // Paper start - Entity#getEntitySpawnReason
         if (nbttagcompound == null) {
             player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
+            player.fudgeSpawnLocation(worldserver1); // Paper - Don't move existing players to world spawn
         }
         // Paper end - Entity#getEntitySpawnReason
         player.setServerLevel(worldserver1);
