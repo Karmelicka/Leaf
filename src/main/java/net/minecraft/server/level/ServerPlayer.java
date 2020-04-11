@@ -273,6 +273,7 @@ public class ServerPlayer extends Player {
     public boolean isRealPlayer; // Paper
     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
     public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
+    public @Nullable String clientBrandName = null; // Paper - Brand support
 
     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
