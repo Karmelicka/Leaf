@@ -310,7 +310,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
             long j = Util.getNanos() - i;
             String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
 
-            DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s);
+            //DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s); // Paper moved to after init
             if (dedicatedserverproperties.announcePlayerAchievements != null) {
                 ((GameRules.BooleanValue) this.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)).set(dedicatedserverproperties.announcePlayerAchievements, this.overworld()); // CraftBukkit - per-world
             }
@@ -438,7 +438,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
             // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
         }
 
-        System.exit(0); // CraftBukkit
+        hasFullyShutdown = true; // Paper
+        System.exit(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper
     }
 
     @Override
@@ -819,7 +820,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
     @Override
     public void stopServer() {
         super.stopServer();
-        Util.shutdownExecutors();
+        //Util.shutdownExecutors(); // Paper - moved into super
         SkullBlockEntity.clear();
     }
 
