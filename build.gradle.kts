@@ -14,6 +14,7 @@ val alsoShade: Configuration by configurations.creating
 
 dependencies {
     implementation(project(":paper-api"))
+    implementation(project(":paper-mojangapi"))
     // Paper start
     implementation("org.jline:jline-terminal-jansi:3.21.0")
     implementation("net.minecrell:terminalconsoleappender:1.3.0")

@@ -746,7 +746,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                     builder.suggest(completion.suggestion(), PaperAdventure.asVanilla(completion.tooltip()));
                 }
             }
-            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), builder.buildFuture().join()));
+            // Paper start - Brigadier API
+            com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
+            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.getCommand());
+            suggestEvent.setCancelled(suggestions.isEmpty());
+            if (suggestEvent.callEvent()) {
+                this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
+            }
+            // Paper end - Brigadier API
         }
     }
 
@@ -755,8 +762,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
 
         this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
-            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
-            this.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
+            // Paper start - Brigadier API
+            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.getCommand());
+            suggestEvent.setCancelled(suggestions.isEmpty());
+            if (suggestEvent.callEvent()) {
+                this.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));
+            }
+            // Paper end - Brigadier API
         });
     }
 
