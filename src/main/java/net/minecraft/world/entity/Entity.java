@@ -2419,11 +2419,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         } else {
             // CraftBukkit start - Capture drops for death event
             if (this instanceof net.minecraft.world.entity.LivingEntity && !((net.minecraft.world.entity.LivingEntity) this).forceDrops) {
-                ((net.minecraft.world.entity.LivingEntity) this).drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack));
+                ((net.minecraft.world.entity.LivingEntity) this).drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack)); // Paper - mirror so we can destroy it later
                 return null;
             }
             // CraftBukkit end
-            ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack);
+            ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack.copy()); // Paper - copy so we can destroy original
+            stack.setCount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe
 
             entityitem.setDefaultPickUpDelay();
             // CraftBukkit start
@@ -3222,6 +3223,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     @Nullable
     public Entity teleportTo(ServerLevel worldserver, Vec3 location) {
         // CraftBukkit end
+        // Paper start - Fix item duplication and teleport issues
+        if (!this.isAlive() || !this.valid) {
+            LOGGER.warn("Illegal Entity Teleport " + this + " to " + worldserver + ":" + location, new Throwable());
+            return null;
+        }
+        // Paper end - Fix item duplication and teleport issues
         if (this.level() instanceof ServerLevel && !this.isRemoved()) {
             this.level().getProfiler().push("changeDimension");
             // CraftBukkit start
@@ -3248,6 +3255,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 // CraftBukkit end
 
                 this.level().getProfiler().popPush("reloading");
+                // Paper start - Fix item duplication and teleport issues
+                if (this instanceof Mob) {
+                    ((Mob) this).dropLeash(true, true); // Paper drop lead
+                }
+                // Paper end - Fix item duplication and teleport issues
                 Entity entity = this.getType().create(worldserver);
 
                 if (entity != null) {
@@ -3265,10 +3277,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                     // CraftBukkit start - Forward the CraftEntity to the new entity
                     this.getBukkitEntity().setHandle(entity);
                     entity.bukkitEntity = this.getBukkitEntity();
-
-                    if (this instanceof Mob) {
-                        ((Mob) this).dropLeash(true, false); // Unleash to prevent duping of leads.
-                    }
                     // CraftBukkit end
                 }
 
@@ -3387,7 +3395,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     public boolean canChangeDimensions() {
-        return !this.isPassenger() && !this.isVehicle();
+        return !this.isPassenger() && !this.isVehicle() && isAlive() && valid; // Paper - Fix item duplication and teleport issues
     }
 
     public float getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState, float max) {
