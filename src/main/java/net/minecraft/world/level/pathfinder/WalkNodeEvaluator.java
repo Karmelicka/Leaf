@@ -479,7 +479,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
                             return BlockPathTypes.DANGER_FIRE;
                         }
 
-                        if (world.getFluidState(pos).is(FluidTags.WATER)) {
+                        if (blockState.getFluidState().is(FluidTags.WATER)) { // Paper - Perf: Reduce blockpos allocation from pathfinding
                             return BlockPathTypes.WATER_BORDER;
                         }
 
@@ -510,7 +510,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
                 } else if (blockState.is(Blocks.COCOA)) {
                     return BlockPathTypes.COCOA;
                 } else if (!blockState.is(Blocks.WITHER_ROSE) && !blockState.is(Blocks.POINTED_DRIPSTONE)) {
-                    FluidState fluidState = world.getFluidState(pos);
+                    FluidState fluidState = blockState.getFluidState(); // Paper - Perf: Reduce blockpos allocation from pathfinding
                     if (fluidState.is(FluidTags.LAVA)) {
                         return BlockPathTypes.LAVA;
                     } else if (isBurningBlock(blockState)) {
