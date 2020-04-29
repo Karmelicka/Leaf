@@ -23,7 +23,7 @@ import org.bukkit.material.MaterialData;
 public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
     private final int minHeight;
     private final int maxHeight;
-    private final LevelChunkSection[] sections;
+    private LevelChunkSection[] sections; // Paper - Allow delegation to vanilla chunk gen
     private final Registry<net.minecraft.world.level.biome.Biome> biomes;
     private Set<BlockPos> tiles;
     private final Set<BlockPos> lights = new HashSet<>();
@@ -189,7 +189,13 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
         return this.tiles;
     }
 
-    Set<BlockPos> getLights() {
+    public Set<BlockPos> getLights() { // Paper - Allow delegation to vanilla chunk gen
         return this.lights;
     }
+
+    // Paper start - Allow delegation to vanilla chunk gen
+    public void setRawChunkData(LevelChunkSection[] sections) {
+        this.sections = sections;
+    }
+    // Paper end - Allow delegation to vanilla chunk gen
 }
