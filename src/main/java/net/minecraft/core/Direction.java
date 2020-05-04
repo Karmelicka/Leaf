@@ -57,6 +57,21 @@ public enum Direction implements StringRepresentable {
     private final int adjY;
     private final int adjZ;
     // Paper end - Perf: Inline shift direction fields
+    // Paper start - optimise collisions
+    private static final int RANDOM_OFFSET = 2017601568;
+    private Direction opposite;
+    static {
+        for (final Direction direction : VALUES) {
+            direction.opposite = from3DDataValue(direction.oppositeIndex);
+        }
+    }
+
+    private final int id = it.unimi.dsi.fastutil.HashCommon.murmurHash3(it.unimi.dsi.fastutil.HashCommon.murmurHash3(this.ordinal() + RANDOM_OFFSET) + RANDOM_OFFSET);
+
+    public final int uniqueId() {
+        return this.id;
+    }
+    // Paper end - optimise collisions
 
     private Direction(int id, int idOpposite, int idHorizontal, String name, Direction.AxisDirection direction, Direction.Axis axis, Vec3i vector) {
         this.data3d = id;

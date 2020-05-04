@@ -26,6 +26,22 @@ public class LevelChunkSection {
     // CraftBukkit start - read/write
     private PalettedContainer<Holder<Biome>> biomes;
     public final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
+    // Paper start - optimise collisions
+    private int specialCollidingBlocks;
+
+    private void updateBlockCallback(final int x, final int y, final int z, final BlockState oldState, final BlockState newState) {
+        if (io.papermc.paper.util.CollisionUtil.isSpecialCollidingBlock(newState)) {
+            ++this.specialCollidingBlocks;
+        }
+        if (io.papermc.paper.util.CollisionUtil.isSpecialCollidingBlock(oldState)) {
+            --this.specialCollidingBlocks;
+        }
+    }
+
+    public final int getSpecialCollidingBlocks() {
+        return this.specialCollidingBlocks;
+    }
+    // Paper end - optimise collisions
 
     public LevelChunkSection(PalettedContainer<BlockState> datapaletteblock, PalettedContainer<Holder<Biome>> palettedcontainerro) {
         // CraftBukkit end
@@ -62,8 +78,8 @@ public class LevelChunkSection {
         return this.setBlockState(x, y, z, state, true);
     }
 
-    public BlockState setBlockState(int x, int y, int z, BlockState state, boolean lock) {
-        BlockState iblockdata1;
+    public BlockState setBlockState(int x, int y, int z, BlockState state, boolean lock) {  // Paper - state -> new state
+        BlockState iblockdata1; // Paper - iblockdata1 -> oldState
 
         if (lock) {
             iblockdata1 = (BlockState) this.states.getAndSet(x, y, z, state);
@@ -102,6 +118,7 @@ public class LevelChunkSection {
             ++this.tickingFluidCount;
         }
 
+        this.updateBlockCallback(x, y, z, iblockdata1, state); // Paper - optimise collisions
         return iblockdata1;
     }
 
@@ -147,6 +164,11 @@ public class LevelChunkSection {
                     }
                 }
 
+                // Paper start - optimise collisions
+                if (io.papermc.paper.util.CollisionUtil.isSpecialCollidingBlock(iblockdata)) {
+                    ++this.specialCollidingBlocks;
+                }
+                // Paper end - optimise collisions
             });
         }
         // Paper end

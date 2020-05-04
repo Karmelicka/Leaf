@@ -45,17 +45,36 @@ public interface EntityGetter {
     }
 
     default boolean isUnobstructed(@Nullable Entity except, VoxelShape shape) {
+        // Paper start - optimise collisions
         if (shape.isEmpty()) {
-            return true;
-        } else {
-            for(Entity entity : this.getEntities(except, shape.bounds())) {
-                if (!entity.isRemoved() && entity.blocksBuilding && (except == null || !entity.isPassengerOfSameVehicle(except)) && Shapes.joinIsNotEmpty(shape, Shapes.create(entity.getBoundingBox()), BooleanOp.AND)) {
-                    return false;
+            return false;
+        }
+
+        final AABB singleAABB = shape.getSingleAABBRepresentation();
+        final List<Entity> entities = this.getEntities(
+                except,
+                singleAABB == null ? shape.bounds() : singleAABB.inflate(-io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON, -io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON, -io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON)
+        );
+
+        for (int i = 0, len = entities.size(); i < len; ++i) {
+            final Entity otherEntity = entities.get(i);
+
+            if (otherEntity.isRemoved() || !otherEntity.blocksBuilding || (except != null && otherEntity.isPassengerOfSameVehicle(except))) {
+                continue;
+            }
+
+            if (singleAABB == null) {
+                final AABB entityBB = otherEntity.getBoundingBox();
+                if (io.papermc.paper.util.CollisionUtil.isEmpty(entityBB) || !io.papermc.paper.util.CollisionUtil.voxelShapeIntersectNoEmpty(shape, entityBB)) {
+                    continue;
                 }
             }
 
-            return true;
+            return false;
         }
+
+        return true;
+        // Paper end - optimise collisions
     }
 
     default <T extends Entity> List<T> getEntitiesOfClass(Class<T> entityClass, AABB box) {
@@ -63,23 +82,41 @@ public interface EntityGetter {
     }
 
     default List<VoxelShape> getEntityCollisions(@Nullable Entity entity, AABB box) {
-        if (box.getSize() < 1.0E-7D) {
-            return List.of();
+        // Paper start - optimise collisions
+        // first behavior change is to correctly check for empty AABB
+        if (io.papermc.paper.util.CollisionUtil.isEmpty(box)) {
+            // reduce indirection by always returning type with same class
+            return new java.util.ArrayList<>();
+        }
+
+        // to comply with vanilla intersection rules, expand by -epsilon so that we only get stuff we definitely collide with.
+        // Vanilla for hard collisions has this backwards, and they expand by +epsilon but this causes terrible problems
+        // specifically with boat collisions.
+        box = box.inflate(-io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON, -io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON, -io.papermc.paper.util.CollisionUtil.COLLISION_EPSILON);
+
+        final List<Entity> entities;
+        if (entity != null && entity.hardCollides()) {
+            entities = this.getEntities(entity, box, null);
         } else {
-            Predicate<Entity> predicate = entity == null ? EntitySelector.CAN_BE_COLLIDED_WITH : EntitySelector.NO_SPECTATORS.and(entity::canCollideWith);
-            List<Entity> list = this.getEntities(entity, box.inflate(1.0E-7D), predicate);
-            if (list.isEmpty()) {
-                return List.of();
-            } else {
-                ImmutableList.Builder<VoxelShape> builder = ImmutableList.builderWithExpectedSize(list.size());
+            entities = this.getHardCollidingEntities(entity, box, null);
+        }
 
-                for(Entity entity2 : list) {
-                    builder.add(Shapes.create(entity2.getBoundingBox()));
-                }
+        final List<VoxelShape> ret = new java.util.ArrayList<>(Math.min(25, entities.size()));
 
-                return builder.build();
+        for (int i = 0, len = entities.size(); i < len; ++i) {
+            final Entity otherEntity = entities.get(i);
+
+            if (otherEntity.isSpectator()) {
+                continue;
+            }
+
+            if ((entity == null && otherEntity.canBeCollidedWith()) || (entity != null && entity.canCollideWith(otherEntity))) {
+                ret.add(Shapes.create(otherEntity.getBoundingBox()));
             }
         }
+
+        return ret;
+        // Paper end - optimise collisions
     }
 
     // Paper start - Affects Spawning API

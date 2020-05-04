@@ -1250,9 +1250,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 float f = this.getBlockSpeedFactor();
 
                 this.setDeltaMovement(this.getDeltaMovement().multiply((double) f, 1.0D, (double) f));
-                if (this.level().getBlockStatesIfLoaded(this.getBoundingBox().deflate(1.0E-6D)).noneMatch((iblockdata2) -> {
-                    return iblockdata2.is(BlockTags.FIRE) || iblockdata2.is(Blocks.LAVA);
-                })) {
+                // Paper start - remove expensive streams from here
+                boolean noneMatch = true;
+                AABB fireSearchBox = this.getBoundingBox().deflate(1.0E-6D);
+                {
+                    int minX = Mth.floor(fireSearchBox.minX);
+                    int minY = Mth.floor(fireSearchBox.minY);
+                    int minZ = Mth.floor(fireSearchBox.minZ);
+                    int maxX = Mth.floor(fireSearchBox.maxX);
+                    int maxY = Mth.floor(fireSearchBox.maxY);
+                    int maxZ = Mth.floor(fireSearchBox.maxZ);
+                    fire_search_loop:
+                    for (int fz = minZ; fz <= maxZ; ++fz) {
+                        for (int fx = minX; fx <= maxX; ++fx) {
+                            for (int fy = minY; fy <= maxY; ++fy) {
+                                net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk)this.level.getChunkIfLoadedImmediately(fx >> 4, fz >> 4);
+                                if (chunk == null) {
+                                    // Vanilla rets an empty stream if all the chunks are not loaded, so noneMatch will be true
+                                    // even if we're in lava/fire
+                                    noneMatch = true;
+                                    break fire_search_loop;
+                                }
+                                if (!noneMatch) {
+                                    // don't do get type, we already know we're in fire - we just need to check the chunks
+                                    // loaded state
+                                    continue;
+                                }
+
+                                BlockState type = chunk.getBlockStateFinal(fx, fy, fz);
+                                if (type.is(BlockTags.FIRE) || type.is(Blocks.LAVA)) {
+                                    noneMatch = false;
+                                    // can't break, we need to retain vanilla behavior by ensuring ALL chunks are loaded
+                                }
+                            }
+                        }
+                    }
+                }
+                if (noneMatch) {
+                    // Paper end - remove expensive streams from here
                     if (this.remainingFireTicks <= 0) {
                         this.setRemainingFireTicks(-this.getFireImmuneTicks());
                     }
@@ -1432,32 +1467,82 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     private Vec3 collide(Vec3 movement) {
-        AABB axisalignedbb = this.getBoundingBox();
-        List<VoxelShape> list = this.level().getEntityCollisions(this, axisalignedbb.expandTowards(movement));
-        Vec3 vec3d1 = movement.lengthSqr() == 0.0D ? movement : Entity.collideBoundingBox(this, movement, axisalignedbb, this.level(), list);
-        boolean flag = movement.x != vec3d1.x;
-        boolean flag1 = movement.y != vec3d1.y;
-        boolean flag2 = movement.z != vec3d1.z;
-        boolean flag3 = this.onGround() || flag1 && movement.y < 0.0D;
+        // Paper start - optimise collisions
+        final boolean xZero = movement.x == 0.0;
+        final boolean yZero = movement.y == 0.0;
+        final boolean zZero = movement.z == 0.0;
+        if (xZero & yZero & zZero) {
+            return movement;
+        }
 
-        if (this.maxUpStep() > 0.0F && flag3 && (flag || flag2)) {
-            Vec3 vec3d2 = Entity.collideBoundingBox(this, new Vec3(movement.x, (double) this.maxUpStep(), movement.z), axisalignedbb, this.level(), list);
-            Vec3 vec3d3 = Entity.collideBoundingBox(this, new Vec3(0.0D, (double) this.maxUpStep(), 0.0D), axisalignedbb.expandTowards(movement.x, 0.0D, movement.z), this.level(), list);
+        final Level world = this.level;
+        final AABB currBoundingBox = this.getBoundingBox();
 
-            if (vec3d3.y < (double) this.maxUpStep()) {
-                Vec3 vec3d4 = Entity.collideBoundingBox(this, new Vec3(movement.x, 0.0D, movement.z), axisalignedbb.move(vec3d3), this.level(), list).add(vec3d3);
+        if (io.papermc.paper.util.CollisionUtil.isEmpty(currBoundingBox)) {
+            return movement;
+        }
+
+        final List<AABB> potentialCollisionsBB = new java.util.ArrayList<>();
+        final List<VoxelShape> potentialCollisionsVoxel = new java.util.ArrayList<>();
+        final double stepHeight = (double)this.maxUpStep();
+        final AABB collisionBox;
+        final boolean onGround = this.onGround;
+
+        if (xZero & zZero) {
+            if (movement.y > 0.0) {
+                collisionBox = io.papermc.paper.util.CollisionUtil.cutUpwards(currBoundingBox, movement.y);
+            } else {
+                collisionBox = io.papermc.paper.util.CollisionUtil.cutDownwards(currBoundingBox, movement.y);
+            }
+        } else {
+            // note: xZero == false or zZero == false
+            if (stepHeight > 0.0 && (onGround || (movement.y < 0.0))) {
+                // don't bother getting the collisions if we don't need them.
+                if (movement.y <= 0.0) {
+                    collisionBox = io.papermc.paper.util.CollisionUtil.expandUpwards(currBoundingBox.expandTowards(movement.x, movement.y, movement.z), stepHeight);
+                } else {
+                    collisionBox = currBoundingBox.expandTowards(movement.x, Math.max(stepHeight, movement.y), movement.z);
+                }
+            } else {
+                collisionBox = currBoundingBox.expandTowards(movement.x, movement.y, movement.z);
+            }
+        }
+
+        io.papermc.paper.util.CollisionUtil.getCollisions(
+                world, this, collisionBox, potentialCollisionsVoxel, potentialCollisionsBB,
+                io.papermc.paper.util.CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
+                null, null
+        );
+
+        if (potentialCollisionsVoxel.isEmpty() && potentialCollisionsBB.isEmpty()) {
+            return movement;
+        }
+
+        final Vec3 limitedMoveVector = io.papermc.paper.util.CollisionUtil.performCollisions(movement, currBoundingBox, potentialCollisionsVoxel, potentialCollisionsBB);
+
+        if (stepHeight > 0.0
+                && (onGround || (limitedMoveVector.y != movement.y && movement.y < 0.0))
+                && (limitedMoveVector.x != movement.x || limitedMoveVector.z != movement.z)) {
+            Vec3 vec3d2 = io.papermc.paper.util.CollisionUtil.performCollisions(new Vec3(movement.x, stepHeight, movement.z), currBoundingBox, potentialCollisionsVoxel, potentialCollisionsBB);
+            final Vec3 vec3d3 = io.papermc.paper.util.CollisionUtil.performCollisions(new Vec3(0.0, stepHeight, 0.0), currBoundingBox.expandTowards(movement.x, 0.0, movement.z), potentialCollisionsVoxel, potentialCollisionsBB);
+
+            if (vec3d3.y < stepHeight) {
+                final Vec3 vec3d4 = io.papermc.paper.util.CollisionUtil.performCollisions(new Vec3(movement.x, 0.0D, movement.z), currBoundingBox.move(vec3d3), potentialCollisionsVoxel, potentialCollisionsBB).add(vec3d3);
 
                 if (vec3d4.horizontalDistanceSqr() > vec3d2.horizontalDistanceSqr()) {
                     vec3d2 = vec3d4;
                 }
             }
 
-            if (vec3d2.horizontalDistanceSqr() > vec3d1.horizontalDistanceSqr()) {
-                return vec3d2.add(Entity.collideBoundingBox(this, new Vec3(0.0D, -vec3d2.y + movement.y, 0.0D), axisalignedbb.move(vec3d2), this.level(), list));
+            if (vec3d2.horizontalDistanceSqr() > limitedMoveVector.horizontalDistanceSqr()) {
+                return vec3d2.add(io.papermc.paper.util.CollisionUtil.performCollisions(new Vec3(0.0D, -vec3d2.y + movement.y, 0.0D), currBoundingBox.move(vec3d2), potentialCollisionsVoxel, potentialCollisionsBB));
             }
-        }
 
-        return vec3d1;
+            return limitedMoveVector;
+        } else {
+            return limitedMoveVector;
+        }
+        // Paper end - optimise collisions
     }
 
     public static Vec3 collideBoundingBox(@Nullable Entity entity, Vec3 movement, AABB entityBoundingBox, Level world, List<VoxelShape> collisions) {
@@ -2707,11 +2792,70 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             float f = this.dimensions.width * 0.8F;
             AABB axisalignedbb = AABB.ofSize(this.getEyePosition(), (double) f, 1.0E-6D, (double) f);
 
-            return BlockPos.betweenClosedStream(axisalignedbb).anyMatch((blockposition) -> {
-                BlockState iblockdata = this.level().getBlockState(blockposition);
+            // Paper start - optimise collisions
+            if (io.papermc.paper.util.CollisionUtil.isEmpty(axisalignedbb)) {
+                return false;
+            }
 
-                return !iblockdata.isAir() && iblockdata.isSuffocating(this.level(), blockposition) && Shapes.joinIsNotEmpty(iblockdata.getCollisionShape(this.level(), blockposition).move((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ()), Shapes.create(axisalignedbb), BooleanOp.AND);
-            });
+            final BlockPos.MutableBlockPos tempPos = new BlockPos.MutableBlockPos();
+
+            final int minX = Mth.floor(axisalignedbb.minX);
+            final int minY = Mth.floor(axisalignedbb.minY);
+            final int minZ = Mth.floor(axisalignedbb.minZ);
+            final int maxX = Mth.floor(axisalignedbb.maxX);
+            final int maxY = Mth.floor(axisalignedbb.maxY);
+            final int maxZ = Mth.floor(axisalignedbb.maxZ);
+
+            final net.minecraft.server.level.ServerChunkCache chunkProvider = (net.minecraft.server.level.ServerChunkCache)this.level.getChunkSource();
+
+            long lastChunkKey = ChunkPos.INVALID_CHUNK_POS;
+            net.minecraft.world.level.chunk.LevelChunk lastChunk = null;
+            for (int fz = minZ; fz <= maxZ; ++fz) {
+                tempPos.setZ(fz);
+                for (int fx = minX; fx <= maxX; ++fx) {
+                    final int newChunkX = fx >> 4;
+                    final int newChunkZ = fz >> 4;
+                    final net.minecraft.world.level.chunk.LevelChunk chunk = lastChunkKey == (lastChunkKey = io.papermc.paper.util.CoordinateUtils.getChunkKey(newChunkX, newChunkZ)) ?
+                        lastChunk : (lastChunk = chunkProvider.getChunkAtIfLoadedImmediately(newChunkX, newChunkZ));
+                    tempPos.setX(fx);
+                    if (chunk == null) {
+                        continue;
+                    }
+                    for (int fy = minY; fy <= maxY; ++fy) {
+                        tempPos.setY(fy);
+
+                        final BlockState state = chunk.getBlockState(tempPos);
+
+                        if (state.emptyCollisionShape() || !state.isSuffocating(this.level, tempPos)) {
+                            continue;
+                        }
+
+                        // Yes, it does not use the Entity context stuff.
+                        final VoxelShape collisionShape = state.getCollisionShape(this.level, tempPos);
+
+                        if (collisionShape.isEmpty()) {
+                            continue;
+                        }
+
+                        final AABB toCollide = axisalignedbb.move(-(double)fx, -(double)fy, -(double)fz);
+
+                        final AABB singleAABB = collisionShape.getSingleAABBRepresentation();
+                        if (singleAABB != null) {
+                            if (io.papermc.paper.util.CollisionUtil.voxelShapeIntersect(singleAABB, toCollide)) {
+                                return true;
+                            }
+                            continue;
+                        }
+
+                        if (io.papermc.paper.util.CollisionUtil.voxelShapeIntersectNoEmpty(collisionShape, toCollide)) {
+                            return true;
+                        }
+                        continue;
+                    }
+                }
+            }
+            // Paper end - optimise collisions
+            return false;
         }
     }
 

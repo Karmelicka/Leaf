@@ -25,6 +25,17 @@ public class AABB {
         this.maxZ = Math.max(z1, z2);
     }
 
+    // Paper start
+    public AABB(double minX, double minY, double minZ, double maxX, double maxY, double maxZ, boolean dummy) {
+        this.minX = minX;
+        this.minY = minY;
+        this.minZ = minZ;
+        this.maxX = maxX;
+        this.maxY = maxY;
+        this.maxZ = maxZ;
+    }
+    // Paper end
+
     public AABB(BlockPos pos) {
         this((double)pos.getX(), (double)pos.getY(), (double)pos.getZ(), (double)(pos.getX() + 1), (double)(pos.getY() + 1), (double)(pos.getZ() + 1));
     }
@@ -305,7 +316,7 @@ public class AABB {
     }
 
     @Nullable
-    private static Direction getDirection(AABB box, Vec3 intersectingVector, double[] traceDistanceResult, @Nullable Direction approachDirection, double deltaX, double deltaY, double deltaZ) {
+    public static Direction getDirection(AABB box, Vec3 intersectingVector, double[] traceDistanceResult, @Nullable Direction approachDirection, double deltaX, double deltaY, double deltaZ) { // Paper - optimise collisions - public
         if (deltaX > 1.0E-7D) {
             approachDirection = clipPoint(traceDistanceResult, approachDirection, deltaX, deltaY, deltaZ, box.minX, box.minY, box.maxY, box.minZ, box.maxZ, Direction.WEST, intersectingVector.x, intersectingVector.y, intersectingVector.z);
         } else if (deltaX < -1.0E-7D) {

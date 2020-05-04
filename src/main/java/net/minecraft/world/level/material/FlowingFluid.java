@@ -240,6 +240,17 @@ public abstract class FlowingFluid extends Fluid {
     }
 
     private boolean canPassThroughWall(Direction face, BlockGetter world, BlockPos pos, BlockState state, BlockPos fromPos, BlockState fromState) {
+        // Paper start - optimise collisions
+        if (state.emptyCollisionShape() & fromState.emptyCollisionShape()) {
+            // don't even try to cache simple cases
+            return true;
+        }
+
+        if (state.occludesFullBlock() | fromState.occludesFullBlock()) {
+            // don't even try to cache simple cases
+            return false;
+        }
+        // Paper end - optimise collisions
         Object2ByteLinkedOpenHashMap object2bytelinkedopenhashmap;
 
         if (!state.getBlock().hasDynamicShape() && !fromState.getBlock().hasDynamicShape()) {

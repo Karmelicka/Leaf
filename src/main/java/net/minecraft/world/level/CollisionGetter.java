@@ -35,6 +35,12 @@ public interface CollisionGetter extends BlockGetter {
         return this.isUnobstructed(entity, Shapes.create(entity.getBoundingBox()));
     }
 
+    // Paper start - optimise collisions
+    default boolean noCollision(Entity entity, AABB box, boolean loadChunks) {
+        return this.noCollision(entity, box);
+    }
+    // Paper end - optimise collisions
+
     default boolean noCollision(AABB box) {
         return this.noCollision((Entity)null, box);
     }

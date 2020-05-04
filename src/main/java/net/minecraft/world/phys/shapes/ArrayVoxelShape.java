@@ -15,7 +15,7 @@ public class ArrayVoxelShape extends VoxelShape {
         this(shape, (DoubleList)DoubleArrayList.wrap(Arrays.copyOf(xPoints, shape.getXSize() + 1)), (DoubleList)DoubleArrayList.wrap(Arrays.copyOf(yPoints, shape.getYSize() + 1)), (DoubleList)DoubleArrayList.wrap(Arrays.copyOf(zPoints, shape.getZSize() + 1)));
     }
 
-    ArrayVoxelShape(DiscreteVoxelShape shape, DoubleList xPoints, DoubleList yPoints, DoubleList zPoints) {
+    public ArrayVoxelShape(DiscreteVoxelShape shape, DoubleList xPoints, DoubleList yPoints, DoubleList zPoints) { // Paper - optimise collisions - public
         super(shape);
         int i = shape.getXSize() + 1;
         int j = shape.getYSize() + 1;
@@ -27,6 +27,7 @@ public class ArrayVoxelShape extends VoxelShape {
         } else {
             throw (IllegalArgumentException)Util.pauseInIde(new IllegalArgumentException("Lengths of point arrays must be consistent with the size of the VoxelShape."));
         }
+        this.initCache(); // Paper - optimise collisions
     }
 
     @Override
@@ -42,4 +43,5 @@ public class ArrayVoxelShape extends VoxelShape {
                 throw new IllegalArgumentException();
         }
     }
+
 }

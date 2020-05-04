@@ -496,7 +496,7 @@ public class ServerPlayer extends Player {
 
                 if (blockposition1 != null) {
                     this.moveTo(blockposition1, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
-                    if (world.noCollision((Entity) this)) {
+                    if (world.noCollision(this, this.getBoundingBox(), true)) { // Paper - make sure this loads chunks, we default to NOT loading now
                         break;
                     }
                 }
@@ -504,7 +504,7 @@ public class ServerPlayer extends Player {
         } else {
             this.moveTo(blockposition, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
 
-            while (!world.noCollision((Entity) this) && this.getY() < (double) (world.getMaxBuildHeight() - 1)) {
+            while (!world.noCollision(this, this.getBoundingBox(), true) && this.getY() < (double) (world.getMaxBuildHeight() - 1)) { // Paper - make sure this loads chunks, we default to NOT loading now
                 this.setPos(this.getX(), this.getY() + 1.0D, this.getZ());
             }
         }

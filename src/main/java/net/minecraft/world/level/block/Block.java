@@ -284,7 +284,7 @@ public class Block extends BlockBehaviour implements ItemLike {
     }
 
     public static boolean isShapeFullBlock(VoxelShape shape) {
-        return (Boolean) Block.SHAPE_FULL_BLOCK_CACHE.getUnchecked(shape);
+        return shape.isFullBlock(); // Paper - optimise collisions
     }
 
     public boolean propagatesSkylightDown(BlockState state, BlockGetter world, BlockPos pos) {

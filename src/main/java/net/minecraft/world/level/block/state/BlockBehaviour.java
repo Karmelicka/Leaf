@@ -882,6 +882,10 @@ public abstract class BlockBehaviour implements FeatureElement {
             this.instrument = blockbase_info.instrument;
             this.replaceable = blockbase_info.replaceable;
             this.conditionallyFullOpaque = this.canOcclude & this.useShapeForLightOcclusion; // Paper
+            // Paper start - optimise collisions
+            this.id1 = it.unimi.dsi.fastutil.HashCommon.murmurHash3(it.unimi.dsi.fastutil.HashCommon.murmurHash3(ID_GENERATOR.getAndIncrement() + RANDOM_OFFSET) + RANDOM_OFFSET);
+            this.id2 = it.unimi.dsi.fastutil.HashCommon.murmurHash3(it.unimi.dsi.fastutil.HashCommon.murmurHash3(ID_GENERATOR.getAndIncrement() + RANDOM_OFFSET) + RANDOM_OFFSET);
+            // Paper end - optimise collisions
         }
         // Paper start - Perf: impl cached craft block data, lazy load to fix issue with loading at the wrong time
         private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
@@ -930,6 +934,52 @@ public abstract class BlockBehaviour implements FeatureElement {
             return this.conditionallyFullOpaque;
         }
         // Paper end - starlight
+        // Paper start - optimise collisions
+        private static final int RANDOM_OFFSET = 704237939;
+        private static final Direction[] DIRECTIONS_CACHED = Direction.values();
+        private static final java.util.concurrent.atomic.AtomicInteger ID_GENERATOR = new java.util.concurrent.atomic.AtomicInteger();
+        private final int id1, id2;
+        private boolean occludesFullBlock;
+        private boolean emptyCollisionShape;
+        private VoxelShape constantCollisionShape;
+        private AABB constantAABBCollision;
+        private static void initCaches(final VoxelShape shape) {
+            shape.isFullBlock();
+            shape.occludesFullBlock();
+            shape.toAabbs();
+            if (!shape.isEmpty()) {
+                shape.bounds();
+            }
+        }
+
+        public final boolean hasCache() {
+            return this.cache != null;
+        }
+
+        public final boolean occludesFullBlock() {
+            return this.occludesFullBlock;
+        }
+
+        public final boolean emptyCollisionShape() {
+            return this.emptyCollisionShape;
+        }
+
+        public final int uniqueId1() {
+            return this.id1;
+        }
+
+        public final int uniqueId2() {
+            return this.id2;
+        }
+
+        public final VoxelShape getConstantCollisionShape() {
+            return this.constantCollisionShape;
+        }
+
+        public final AABB getConstantCollisionAABB() {
+            return this.constantAABBCollision;
+        }
+        // Paper end - optimise collisions
 
         public void initCache() {
             this.fluidState = ((Block) this.owner).getFluidState(this.asState());
@@ -941,6 +991,39 @@ public abstract class BlockBehaviour implements FeatureElement {
             this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque() ? -1 : this.cache.lightBlock; // Paper - starlight - cache opacity for light
 
             this.legacySolid = this.calculateSolid();
+            // Paper start - optimise collisions
+            if (this.cache != null) {
+                final VoxelShape collisionShape = this.cache.collisionShape;
+                try {
+                    this.constantCollisionShape = this.getCollisionShape(null, null, null);
+                    this.constantAABBCollision = this.constantCollisionShape == null ? null : this.constantCollisionShape.getSingleAABBRepresentation();
+                } catch (final Throwable throwable) {
+                    this.constantCollisionShape = null;
+                    this.constantAABBCollision = null;
+                }
+                this.occludesFullBlock = collisionShape.occludesFullBlock();
+                this.emptyCollisionShape = collisionShape.isEmpty();
+                // init caches
+                initCaches(collisionShape);
+                if (collisionShape != Shapes.empty() && collisionShape != Shapes.block()) {
+                    for (final Direction direction : DIRECTIONS_CACHED) {
+                        // initialise the directional face shape cache as well
+                        final VoxelShape shape = Shapes.getFaceShape(collisionShape, direction);
+                        initCaches(shape);
+                    }
+                }
+                if (this.cache.occlusionShapes != null) {
+                    for (final VoxelShape shape : this.cache.occlusionShapes) {
+                        initCaches(shape);
+                    }
+                }
+            } else {
+                this.occludesFullBlock = false;
+                this.emptyCollisionShape = false;
+                this.constantCollisionShape = null;
+                this.constantAABBCollision = null;
+            }
+            // Paper end - optimise collisions
         }
 
         public Block getBlock() {
