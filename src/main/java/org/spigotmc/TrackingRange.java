@@ -55,4 +55,48 @@ public class TrackingRange
             return config.otherTrackingRange;
         }
     }
+
+    // Paper start - optimise entity tracking
+    // copied from above, TODO check on update
+    public static TrackingRangeType getTrackingRangeType(Entity entity)
+    {
+        if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) return TrackingRangeType.ENDERDRAGON; // Paper - enderdragon is exempt
+        if ( entity instanceof ServerPlayer )
+        {
+            return TrackingRangeType.PLAYER;
+            // Paper start - Simplify and set water mobs to animal tracking range
+        }
+        switch (entity.activationType) {
+            case RAIDER:
+            case MONSTER:
+            case FLYING_MONSTER:
+                return TrackingRangeType.MONSTER;
+            case WATER:
+            case VILLAGER:
+            case ANIMAL:
+                return TrackingRangeType.ANIMAL;
+            case MISC:
+        }
+        if ( entity instanceof ItemFrame || entity instanceof Painting || entity instanceof ItemEntity || entity instanceof ExperienceOrb )
+        // Paper end
+        {
+            return TrackingRangeType.MISC;
+        } else if (entity instanceof Display) {
+            return TrackingRangeType.DISPLAY;
+        } else
+        {
+            return TrackingRangeType.OTHER;
+        }
+    }
+
+    public static enum TrackingRangeType {
+        PLAYER,
+        ANIMAL,
+        MONSTER,
+        MISC,
+        OTHER,
+        ENDERDRAGON,
+        DISPLAY;
+    }
+    // Paper end - optimise entity tracking
 }
