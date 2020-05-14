@@ -189,7 +189,7 @@ public abstract class BlockBehaviour implements FeatureElement {
     /** @deprecated */
     @Deprecated
     public void onExplosionHit(BlockState state, Level world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
-        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK) {
+        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && state.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
             Block block = state.getBlock();
             boolean flag = explosion.getIndirectSourceEntity() instanceof Player;
 
@@ -285,7 +285,7 @@ public abstract class BlockBehaviour implements FeatureElement {
     /** @deprecated */
     @Deprecated
     public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
-        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
+        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper - Protect Bedrock and End Portal/Frames from being destroyed
     }
 
     /** @deprecated */
@@ -965,6 +965,12 @@ public abstract class BlockBehaviour implements FeatureElement {
             return this.legacySolid;
         }
 
+        // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
+        public final boolean isDestroyable() {
+            return getBlock().isDestroyable();
+        }
+        // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
+
         public boolean isValidSpawn(BlockGetter world, BlockPos pos, EntityType<?> type) {
             return this.getBlock().properties.isValidSpawn.test(this.asState(), world, pos, type);
         }
@@ -1068,7 +1074,7 @@ public abstract class BlockBehaviour implements FeatureElement {
         }
 
         public PushReaction getPistonPushReaction() {
-            return this.pushReaction;
+            return !this.isDestroyable() ? PushReaction.BLOCK : this.pushReaction; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
         }
 
         public boolean isSolidRender(BlockGetter world, BlockPos pos) {
