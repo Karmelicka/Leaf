@@ -220,6 +220,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
 
                     entity1.setPortalCooldown();
                     ((ServerPlayer) entity1).connection.teleport(teleEvent.getTo());
+                    entity1.teleportPassengers(); // Paper - teleport passengers as well, preventing invisible passengers post teleport.
                     TheEndGatewayBlockEntity.triggerCooldown(world, pos, state, blockEntity); // CraftBukkit - call at end of method
                     return;
 
