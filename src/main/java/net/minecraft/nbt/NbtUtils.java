@@ -72,6 +72,14 @@ public final class NbtUtils {
     @Nullable
     public static GameProfile readGameProfile(CompoundTag nbt) {
         UUID uUID = nbt.hasUUID("Id") ? nbt.getUUID("Id") : Util.NIL_UUID;
+        // Paper start - Support old UUID format
+        if (nbt.contains("Id", Tag.TAG_STRING)) {
+            try {
+                uUID = UUID.fromString(nbt.getString("Id"));
+            } catch (IllegalArgumentException ignored){
+            }
+        }
+        // Paper end - Support old UUID format
         String string = nbt.getString("Name");
 
         try {
