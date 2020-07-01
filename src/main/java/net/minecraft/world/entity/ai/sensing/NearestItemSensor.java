@@ -25,14 +25,18 @@ public class NearestItemSensor extends Sensor<Mob> {
     protected void doTick(ServerLevel world, Mob entity) {
         Brain<?> brain = entity.getBrain();
         List<ItemEntity> list = world.getEntitiesOfClass(ItemEntity.class, entity.getBoundingBox().inflate(32.0D, 16.0D, 32.0D), (itemEntity) -> {
-            return true;
+            return itemEntity.closerThan(entity, MAX_DISTANCE_TO_WANTED_ITEM) && entity.wantsToPickUp(itemEntity.getItem()); // Paper - Perf: Move predicate into getEntities
         });
         list.sort(Comparator.comparingDouble(entity::distanceToSqr));
-        Optional<ItemEntity> optional = list.stream().filter((itemEntity) -> {
-            return entity.wantsToPickUp(itemEntity.getItem());
-        }).filter((itemEntity) -> {
-            return itemEntity.closerThan(entity, 32.0D);
-        }).filter(entity::hasLineOfSight).findFirst();
-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, optional);
+        // Paper start - Perf: remove streams from hot code
+        ItemEntity nearest = null;
+        for (ItemEntity entityItem : list) {
+            if (entity.hasLineOfSight(entityItem)) { // Paper - Perf: Move predicate into getEntities
+                nearest = entityItem;
+                break;
+            }
+        }
+        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, Optional.ofNullable(nearest));
+        // Paper end - Perf: remove streams from hot code
     }
 }
