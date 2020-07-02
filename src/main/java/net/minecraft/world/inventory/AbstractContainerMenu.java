@@ -768,6 +768,14 @@ public abstract class AbstractContainerMenu {
     public abstract boolean stillValid(Player player);
 
     protected boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean fromLast) {
+        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
+        return this.moveItemStackTo(stack, startIndex, endIndex, fromLast, false);
+    }
+    protected boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean fromLast, boolean isCheck) {
+        if (isCheck) {
+            stack = stack.copy();
+        }
+        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
         boolean flag1 = false;
         int k = startIndex;
 
@@ -790,18 +798,27 @@ public abstract class AbstractContainerMenu {
 
                 slot = (Slot) this.slots.get(k);
                 itemstack1 = slot.getItem();
+                // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent; clone if only a check
+                if (isCheck) {
+                    itemstack1 = itemstack1.copy();
+                }
+                // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
                 if (!itemstack1.isEmpty() && ItemStack.isSameItemSameTags(stack, itemstack1)) {
                     int l = itemstack1.getCount() + stack.getCount();
 
                     if (l <= stack.getMaxStackSize()) {
                         stack.setCount(0);
                         itemstack1.setCount(l);
+                        if (!isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                         slot.setChanged();
+                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                         flag1 = true;
                     } else if (itemstack1.getCount() < stack.getMaxStackSize()) {
                         stack.shrink(stack.getMaxStackSize() - itemstack1.getCount());
                         itemstack1.setCount(stack.getMaxStackSize());
+                        if (!isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                         slot.setChanged();
+                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                         flag1 = true;
                     }
                 }
@@ -832,14 +849,33 @@ public abstract class AbstractContainerMenu {
 
                 slot = (Slot) this.slots.get(k);
                 itemstack1 = slot.getItem();
+                // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
+                if (isCheck) {
+                    itemstack1 = itemstack1.copy();
+                }
+                // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
                 if (itemstack1.isEmpty() && slot.mayPlace(stack)) {
                     if (stack.getCount() > slot.getMaxStackSize()) {
+                        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
+                        if (isCheck) {
+                            stack.shrink(slot.getMaxStackSize());
+                        } else {
+                        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
                         slot.setByPlayer(stack.split(slot.getMaxStackSize()));
+                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                     } else {
+                        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
+                        if (isCheck) {
+                            stack.shrink(stack.getCount());
+                        } else {
+                        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
                         slot.setByPlayer(stack.split(stack.getCount()));
+                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                     }
 
+                    if (!isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                     slot.setChanged();
+                    } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                     flag1 = true;
                     break;
                 }
