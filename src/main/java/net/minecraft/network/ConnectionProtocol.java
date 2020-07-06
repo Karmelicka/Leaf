@@ -341,6 +341,7 @@ public enum ConnectionProtocol {
 
         @Nullable
         public Packet<?> createPacket(int id, FriendlyByteBuf buf) {
+            if (id < 0 || id >= this.idToDeserializer.size()) return null; // Paper - Perf: Optimize exception handling
             Function<FriendlyByteBuf, ? extends Packet<? super T>> function = this.idToDeserializer.get(id);
             return function != null ? function.apply(buf) : null;
         }
