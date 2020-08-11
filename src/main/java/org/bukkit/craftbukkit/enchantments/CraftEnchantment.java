@@ -152,6 +152,11 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
     public net.kyori.adventure.text.Component displayName(int level) {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(getHandle().getFullname(level));
     }
+
+    @Override
+    public String translationKey() {
+        return this.handle.getDescriptionId();
+    }
     // Paper end
 
     @Override
