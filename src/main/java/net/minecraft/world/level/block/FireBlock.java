@@ -368,8 +368,10 @@ public class FireBlock extends BaseFireBlock {
     }
 
     @Override
-    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
-        super.onPlace(state, world, pos, oldState, notify);
+    // Paper start - UseOnContext param
+    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
+        super.onPlace(state, world, pos, oldState, notify, context);
+        // Paper end - UseOnContext param
         world.scheduleTick(pos, (Block) this, FireBlock.getFireTickDelay(world.random));
     }
 

@@ -480,7 +480,7 @@ public final class ItemStack {
                         net.minecraft.world.level.block.state.BlockState block = world.getBlockState(newblockposition);
 
                         if (!(block.getBlock() instanceof BaseEntityBlock)) { // Containers get placed automatically
-                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true);
+                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true, context); // Paper - pass context
                         }
 
                         world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getBlockState(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point

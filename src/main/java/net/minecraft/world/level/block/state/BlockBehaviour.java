@@ -163,6 +163,13 @@ public abstract class BlockBehaviour implements FeatureElement {
         DebugPackets.sendNeighborsUpdatePacket(world, pos);
     }
 
+    // Paper start - UseOnContext param
+    @Deprecated
+    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
+        this.onPlace(state, world, pos, oldState, notify);
+    }
+    // Paper end - UseOnContext param
+
     /** @deprecated */
     @Deprecated
     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {

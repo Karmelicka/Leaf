@@ -190,7 +190,14 @@ public class PortalShape {
     }
 
     // CraftBukkit start - return boolean
+    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
     public boolean createPortalBlocks() {
+        // Paper start - UseOnContext param
+        return this.createPortalBlocks(null);
+    }
+
+    public boolean createPortalBlocks(net.minecraft.world.item.context.UseOnContext useOnContext) {
+        // Paper end - UseOnContext param
         org.bukkit.World bworld = this.level.getMinecraftWorld().getWorld();
 
         // Copy below for loop
@@ -200,7 +207,7 @@ public class PortalShape {
             this.blocks.setBlock(blockposition, iblockdata, 18);
         });
 
-        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) this.blocks.getList(), bworld, null, PortalCreateEvent.CreateReason.FIRE);
+        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blocks.getList(), bworld, useOnContext == null || useOnContext.getPlayer() == null ? null : useOnContext.getPlayer().getBukkitEntity(), PortalCreateEvent.CreateReason.FIRE); // Paper - pass entity param
         this.level.getMinecraftWorld().getServer().server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {

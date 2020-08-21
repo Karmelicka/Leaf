@@ -144,12 +144,19 @@ public abstract class BaseFireBlock extends Block {
 
     @Override
     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+        // Paper start - UseOnContext param
+        this.onPlace(state, world, pos, oldState, notify, null);
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify, net.minecraft.world.item.context.UseOnContext context) {
+        // Paper end - UseOnContext param
         if (!oldState.is(state.getBlock())) {
             if (BaseFireBlock.inPortalDimension(world)) {
                 Optional<PortalShape> optional = PortalShape.findEmptyPortalShape(world, pos, Direction.Axis.X);
 
                 if (optional.isPresent()) {
-                    ((PortalShape) optional.get()).createPortalBlocks();
+                    ((PortalShape) optional.get()).createPortalBlocks(context); // Paper - pass context param
                     return;
                 }
             }
