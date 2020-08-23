@@ -1983,6 +1983,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     public boolean isPushable() {
+        // Paper start - Climbing should not bypass cramming gamerule
+        return isCollidable(false);
+    }
+
+    public boolean isCollidable(boolean ignoreClimbing) {
+        // Paper end - Climbing should not bypass cramming gamerule
         return false;
     }
 

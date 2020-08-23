@@ -172,7 +172,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
     }
 
     @Override
-    public boolean isPushable() {
+    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
         return true;
     }
 
