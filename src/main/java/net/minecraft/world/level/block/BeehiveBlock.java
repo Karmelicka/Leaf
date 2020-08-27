@@ -127,7 +127,7 @@ public class BeehiveBlock extends BaseEntityBlock {
     }
 
     public static void dropHoneycomb(Level world, BlockPos pos) {
-        popResource(world, pos, new ItemStack(Items.HONEYCOMB, 3));
+        popResource(world, pos, new ItemStack(Items.HONEYCOMB, 3)); // Paper - Add PlayerShearBlockEvent; conflict on change, item needs to be set below
     }
 
     @Override
@@ -140,8 +140,19 @@ public class BeehiveBlock extends BaseEntityBlock {
             Item item = itemstack.getItem();
 
             if (itemstack.is(Items.SHEARS)) {
+                // Paper start - Add PlayerShearBlockEvent
+                io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), new java.util.ArrayList<>());
+                event.getDrops().add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.HONEYCOMB, 3)));
+                if (!event.callEvent()) {
+                    return InteractionResult.PASS;
+                }
+                // Paper end
                 world.playSound(player, player.getX(), player.getY(), player.getZ(), SoundEvents.BEEHIVE_SHEAR, SoundSource.BLOCKS, 1.0F, 1.0F);
-                BeehiveBlock.dropHoneycomb(world, pos);
+                // Paper start - Add PlayerShearBlockEvent
+                for (org.bukkit.inventory.ItemStack itemDrop : event.getDrops()) {
+                    popResource(world, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemDrop));
+                }
+                // Paper end - Add PlayerShearBlockEvent
                 itemstack.hurtAndBreak(1, player, (entityhuman1) -> {
                     entityhuman1.broadcastBreakEvent(hand);
                 });
