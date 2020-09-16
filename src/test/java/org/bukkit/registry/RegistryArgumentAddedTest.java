@@ -23,6 +23,7 @@ public class RegistryArgumentAddedTest extends AbstractTestingBase {
 
         Set<Class<?>> loadedRegistries = new HashSet<>(DummyServer.registers.keySet());
         Set<Class<?>> notFound = new HashSet<>();
+        loadedRegistries.remove(io.papermc.paper.world.structure.ConfiguredStructure.class); // Paper - ignore
 
         RegistriesArgumentProvider
                 .getData()

@@ -36,6 +36,7 @@ public class PerRegistryTest extends AbstractTestingBase {
                 if (!(object instanceof CraftRegistry<?, ?> registry)) {
                     continue;
                 }
+                if (object instanceof io.papermc.paper.world.structure.PaperConfiguredStructure.LegacyRegistry) continue; // Paper - skip
 
                 data.add(Arguments.of(registry));
             } catch (ReflectiveOperationException e) {
