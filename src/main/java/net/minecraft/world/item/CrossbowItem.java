@@ -89,7 +89,14 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
         int j = this.getUseDuration(stack) - remainingUseTicks;
         float f = CrossbowItem.getPowerForTime(j, stack);
 
-        if (f >= 1.0F && !CrossbowItem.isCharged(stack) && CrossbowItem.tryLoadProjectiles(user, stack)) {
+        // Paper start - Add EntityLoadCrossbowEvent
+        if (f >= 1.0F && !CrossbowItem.isCharged(stack) /*&& CrossbowItem.tryLoadProjectiles(entityliving, itemstack)*/) {
+            final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(user.getBukkitLivingEntity(), stack.asBukkitMirror(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(user.getUsedItemHand()));
+            if (!event.callEvent() || !tryLoadProjectiles(user, stack, event.shouldConsumeItem())) {
+                if (user instanceof ServerPlayer player) player.containerMenu.sendAllDataToRemote();
+                return;
+            }
+            // Paper end - Add EntityLoadCrossbowEvent
             CrossbowItem.setCharged(stack, true);
             SoundSource soundcategory = user instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
 
@@ -98,10 +105,16 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
 
     }
 
+    @io.papermc.paper.annotation.DoNotUse // Paper - Add EntityLoadCrossbowEvent
     private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbow) {
+        // Paper start - Add EntityLoadCrossbowEvent
+        return CrossbowItem.tryLoadProjectiles(shooter, crossbow, true);
+    }
+    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbow, boolean consume) {
+        // Paper end - Add EntityLoadCrossbowEvent
         int i = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MULTISHOT, crossbow);
         int j = i == 0 ? 1 : 3;
-        boolean flag = shooter instanceof Player && ((Player) shooter).getAbilities().instabuild;
+        boolean flag = !consume || shooter instanceof Player && ((Player) shooter).getAbilities().instabuild; // Paper - Add EntityLoadCrossbowEvent
         ItemStack itemstack1 = shooter.getProjectile(crossbow);
         ItemStack itemstack2 = itemstack1.copy();
 
