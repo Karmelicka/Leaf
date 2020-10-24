@@ -152,4 +152,12 @@ public class AttributeMap {
         }
 
     }
+
+    // Paper - start - living entity allow attribute registration
+    public void registerAttribute(Attribute attributeBase) {
+        AttributeInstance attributeModifiable = new AttributeInstance(attributeBase, AttributeInstance::getAttribute);
+        attributes.put(attributeBase, attributeModifiable);
+    }
+    // Paper - end - living entity allow attribute registration
+
 }
