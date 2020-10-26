@@ -720,4 +720,19 @@ public class CraftBlockData implements BlockData {
     public BlockState createBlockState() {
         return CraftBlockStates.getBlockState(this.state, null);
     }
+
+    // Paper start - destroy speed API
+    @Override
+    public float getDestroySpeed(final ItemStack itemStack, final boolean considerEnchants) {
+        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(itemStack);
+        float speed = nmsItemStack.getDestroySpeed(this.state);
+        if (speed > 1.0F && considerEnchants) {
+            int enchantLevel = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BLOCK_EFFICIENCY, nmsItemStack);
+            if (enchantLevel > 0) {
+                speed += enchantLevel * enchantLevel + 1;
+            }
+        }
+        return speed;
+    }
+    // Paper end - destroy speed API
 }
