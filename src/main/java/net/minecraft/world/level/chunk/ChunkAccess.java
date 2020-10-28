@@ -74,7 +74,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
     @Nullable
     protected BlendingData blendingData;
     public final Map<Heightmap.Types, Heightmap> heightmaps = Maps.newEnumMap(Heightmap.Types.class);
-    protected ChunkSkyLightSources skyLightSources;
+    // Paper - starlight - remove skyLightSources
     private final Map<Structure, StructureStart> structureStarts = Maps.newHashMap();
     private final Map<Structure, LongSet> structuresRefences = Maps.newHashMap();
     protected final Map<BlockPos, CompoundTag> pendingBlockEntities = Maps.newHashMap();
@@ -86,8 +86,55 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
     private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
     public org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer(ChunkAccess.DATA_TYPE_REGISTRY);
     // CraftBukkit end
+    // Paper start - rewrite light engine
+    private volatile ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] blockNibbles;
+
+    private volatile ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] skyNibbles;
+
+    private volatile boolean[] skyEmptinessMap;
+
+    private volatile boolean[] blockEmptinessMap;
+
+    public ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] getBlockNibbles() {
+        return this.blockNibbles;
+    }
+
+    public void setBlockNibbles(final ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] nibbles) {
+        this.blockNibbles = nibbles;
+    }
+
+    public ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] getSkyNibbles() {
+        return this.skyNibbles;
+    }
+
+    public void setSkyNibbles(final ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] nibbles) {
+        this.skyNibbles = nibbles;
+    }
+
+    public boolean[] getSkyEmptinessMap() {
+        return this.skyEmptinessMap;
+    }
+
+    public void setSkyEmptinessMap(final boolean[] emptinessMap) {
+        this.skyEmptinessMap = emptinessMap;
+    }
+
+    public boolean[] getBlockEmptinessMap() {
+        return this.blockEmptinessMap;
+    }
+
+    public void setBlockEmptinessMap(final boolean[] emptinessMap) {
+        this.blockEmptinessMap = emptinessMap;
+    }
+    // Paper end - rewrite light engine
 
     public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biomeRegistry, long inhabitedTime, @Nullable LevelChunkSection[] sectionArray, @Nullable BlendingData blendingData) {
+        // Paper start - rewrite light engine
+        if (!(this instanceof ImposterProtoChunk)) {
+            this.setBlockNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(heightLimitView));
+            this.setSkyNibbles(ca.spottedleaf.starlight.common.light.StarLightEngine.getFilledEmptyLight(heightLimitView));
+        }
+        // Paper end - rewrite light engine
         this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
         this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
         this.upgradeData = upgradeData;
@@ -96,7 +143,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
         this.inhabitedTime = inhabitedTime;
         this.postProcessing = new ShortList[heightLimitView.getSectionsCount()];
         this.blendingData = blendingData;
-        this.skyLightSources = new ChunkSkyLightSources(heightLimitView);
+        // Paper - starlight - remove skyLightSources
         if (sectionArray != null) {
             if (this.sections.length == sectionArray.length) {
                 System.arraycopy(sectionArray, 0, this.sections, 0, this.sections.length);
@@ -507,12 +554,12 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
     }
 
     public void initializeLightSources() {
-        this.skyLightSources.fillFrom(this);
+        // Paper - starlight - remove skyLightSources
     }
 
     @Override
     public ChunkSkyLightSources getSkyLightSources() {
-        return this.skyLightSources;
+        return null; // Paper - starlight - remove skyLightSources
     }
 
     public static record TicksToSave(SerializableTickContainer<Block> blocks, SerializableTickContainer<Fluid> fluids) {

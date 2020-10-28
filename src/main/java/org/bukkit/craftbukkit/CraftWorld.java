@@ -496,12 +496,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             }
         }
 
-        for (final ChunkPos pos : chunksToRelight) {
-            final ChunkAccess chunk = serverChunkCache.getChunk(pos.x, pos.z, false);
-            if (chunk != null) {
-                serverChunkCache.getLightEngine().lightChunk(chunk, false);
-            }
-        }
+        serverChunkCache.getLightEngine().relight(chunksToRelight, pos -> {}, relit -> {}); // Paper - Starlight
 
         return true;
         // Paper end - implement regenerate chunk method

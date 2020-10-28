@@ -107,6 +107,27 @@ public class WorldGenRegion implements WorldGenLevel {
         }
     }
 
+    // Paper start - starlight
+    @Override
+    public int getBrightness(final net.minecraft.world.level.LightLayer lightLayer, final BlockPos blockPos) {
+        final ChunkAccess chunk = this.getChunk(blockPos.getX() >> 4, blockPos.getZ() >> 4);
+        if (!chunk.isLightCorrect()) {
+            return 0;
+        }
+        return this.getLightEngine().getLayerListener(lightLayer).getLightValue(blockPos);
+    }
+
+
+    @Override
+    public int getRawBrightness(final BlockPos blockPos, final int subtract) {
+        final ChunkAccess chunk = this.getChunk(blockPos.getX() >> 4, blockPos.getZ() >> 4);
+        if (!chunk.isLightCorrect()) {
+            return 0;
+        }
+        return this.getLightEngine().getRawBrightness(blockPos, subtract);
+    }
+    // Paper end - starlight
+
     public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
         return this.level.getChunkSource().chunkMap.isOldChunkAround(chunkPos, checkRadius);
     }

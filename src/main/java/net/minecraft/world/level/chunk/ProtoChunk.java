@@ -130,7 +130,7 @@ public class ProtoChunk extends ChunkAccess {
                     }
 
                     if (LightEngine.hasDifferentLightProperties(this, pos, blockState, state)) {
-                        this.skyLightSources.update(this, m, j, o);
+                        // Paper - starlight - remove skyLightSources
                         this.lightEngine.checkBlock(pos);
                     }
                 }

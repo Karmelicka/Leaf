@@ -220,6 +220,12 @@ public class LevelChunk extends ChunkAccess {
 
     public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
         this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), entityLoader, protoChunk.getBlendingData());
+        // Paper start - rewrite light engine
+        this.setBlockNibbles(protoChunk.getBlockNibbles());
+        this.setSkyNibbles(protoChunk.getSkyNibbles());
+        this.setSkyEmptinessMap(protoChunk.getSkyEmptinessMap());
+        this.setBlockEmptinessMap(protoChunk.getBlockEmptinessMap());
+        // Paper end - rewrite light engine
         Iterator iterator = protoChunk.getBlockEntities().values().iterator();
 
         while (iterator.hasNext()) {
@@ -246,7 +252,7 @@ public class LevelChunk extends ChunkAccess {
             }
         }
 
-        this.skyLightSources = protoChunk.skyLightSources;
+        // Paper - starlight - remove skyLightSources
         this.setLightCorrect(protoChunk.isLightCorrect());
         this.unsaved = true;
         this.needsDecoration = true; // CraftBukkit
@@ -437,7 +443,7 @@ public class LevelChunk extends ChunkAccess {
                     ProfilerFiller gameprofilerfiller = this.level.getProfiler();
 
                     gameprofilerfiller.push("updateSkyLightSources");
-                    this.skyLightSources.update(this, j, i, l);
+                    // Paper - starlight - remove skyLightSources
                     gameprofilerfiller.popPush("queueCheckLight");
                     this.level.getChunkSource().getLightEngine().checkBlock(blockposition);
                     gameprofilerfiller.pop();
