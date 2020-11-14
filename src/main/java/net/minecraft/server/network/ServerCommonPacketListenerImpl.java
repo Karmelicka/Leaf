@@ -315,6 +315,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         final Component ichatbasecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
         // CraftBukkit end
 
+        this.player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.KICKED; // Paper - Add API for quit reason
         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
             this.connection.disconnect(ichatbasecomponent);
         }));
