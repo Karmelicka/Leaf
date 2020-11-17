@@ -848,7 +848,7 @@ public abstract class PlayerList {
             if (location == null) {
                 worldserver1 = this.server.getLevel(Level.OVERWORLD);
                 blockposition = entityplayer1.getSpawnPoint(worldserver1);
-                location = CraftLocation.toBukkit(blockposition, worldserver1.getWorld()).add(0.5F, 0.1F, 0.5F);
+                location = CraftLocation.toBukkit(blockposition, worldserver1.getWorld(), worldserver1.levelData.getSpawnAngle(), 0.0F).add(0.5F, 0.1F, 0.5F); // Paper - Expose world spawn angle
             }
 
             Player respawnPlayer = entityplayer1.getBukkitEntity();
