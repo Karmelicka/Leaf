@@ -42,6 +42,10 @@ public class TargetBlock extends Block {
     @Override
     public void onProjectileHit(Level world, BlockState state, BlockHitResult hit, Projectile projectile) {
         int i = updateRedstoneOutput(world, state, hit, projectile);
+        // Paper start - Add TargetHitEvent
+    }
+    private static void awardTargetHitCriteria(Projectile projectile, BlockHitResult hit, int i) {
+        // Paper end - Add TargetHitEvent
         Entity entity = projectile.getOwner();
         if (entity instanceof ServerPlayer serverPlayer) {
             serverPlayer.awardStat(Stats.TARGET_HIT);
@@ -53,6 +57,20 @@ public class TargetBlock extends Block {
     private static int updateRedstoneOutput(LevelAccessor world, BlockState state, BlockHitResult hitResult, Entity entity) {
         int i = getRedstoneStrength(hitResult, hitResult.getLocation());
         int j = entity instanceof AbstractArrow ? 20 : 8;
+        // Paper start - Add TargetHitEvent
+        if (entity instanceof Projectile) {
+            final Projectile projectile = (Projectile) entity;
+            final org.bukkit.craftbukkit.block.CraftBlock craftBlock = org.bukkit.craftbukkit.block.CraftBlock.at(world, hitResult.getBlockPos());
+            final org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(hitResult.getDirection());
+            final io.papermc.paper.event.block.TargetHitEvent targetHitEvent = new io.papermc.paper.event.block.TargetHitEvent((org.bukkit.entity.Projectile) projectile.getBukkitEntity(), craftBlock, blockFace, i);
+            if (targetHitEvent.callEvent()) {
+                i = targetHitEvent.getSignalStrength();
+                awardTargetHitCriteria(projectile, hitResult, i);
+            } else {
+                return i;
+            }
+        }
+        // Paper end - Add TargetHitEvent
         if (!world.getBlockTicks().hasScheduledTick(hitResult.getBlockPos(), state.getBlock())) {
             setOutputPower(world, state, i, hitResult.getBlockPos(), j);
         }
