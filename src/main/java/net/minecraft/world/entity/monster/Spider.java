@@ -135,7 +135,7 @@ public class Spider extends Monster {
 
     @Override
     public boolean canBeAffected(MobEffectInstance effect) {
-        return effect.getEffect() == MobEffects.POISON ? false : super.canBeAffected(effect);
+        return effect.getEffect() == MobEffects.POISON && this.level().paperConfig().entities.mobEffects.spidersImmuneToPoisonEffect ? false : super.canBeAffected(effect); // Paper - Add config for mobs immune to default effects
     }
 
     public boolean isClimbing() {

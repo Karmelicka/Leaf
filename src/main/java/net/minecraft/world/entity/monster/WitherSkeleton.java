@@ -128,6 +128,6 @@ public class WitherSkeleton extends AbstractSkeleton {
 
     @Override
     public boolean canBeAffected(MobEffectInstance effect) {
-        return effect.getEffect() == MobEffects.WITHER ? false : super.canBeAffected(effect);
+        return effect.getEffect() == MobEffects.WITHER && this.level().paperConfig().entities.mobEffects.immuneToWitherEffect.witherSkeleton ? false : super.canBeAffected(effect); // Paper - Add config for mobs immune to default effects
     }
 }
