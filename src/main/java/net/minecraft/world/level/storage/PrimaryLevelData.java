@@ -373,6 +373,11 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
 
     @Override
     public void setThundering(boolean thundering) {
+        // Paper start - Add cause to Weather/ThunderChangeEvents
+        this.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.UNKNOWN);
+    }
+    public void setThundering(boolean thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause cause) {
+        // Paper end - Add cause to Weather/ThunderChangeEvents
         // CraftBukkit start
         if (this.thundering == thundering) {
             return;
@@ -380,7 +385,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
 
         org.bukkit.World world = Bukkit.getWorld(this.getLevelName());
         if (world != null) {
-            ThunderChangeEvent thunder = new ThunderChangeEvent(world, thundering);
+            ThunderChangeEvent thunder = new ThunderChangeEvent(world, thundering, cause); // Paper - Add cause to Weather/ThunderChangeEvents
             Bukkit.getServer().getPluginManager().callEvent(thunder);
             if (thunder.isCancelled()) {
                 return;
@@ -407,6 +412,12 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
 
     @Override
     public void setRaining(boolean raining) {
+        // Paper start - Add cause to Weather/ThunderChangeEvents
+        this.setRaining(raining, org.bukkit.event.weather.WeatherChangeEvent.Cause.UNKNOWN);
+    }
+
+    public void setRaining(boolean raining, org.bukkit.event.weather.WeatherChangeEvent.Cause cause) {
+        // Paper end - Add cause to Weather/ThunderChangeEvents
         // CraftBukkit start
         if (this.raining == raining) {
             return;
@@ -414,7 +425,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
 
         org.bukkit.World world = Bukkit.getWorld(this.getLevelName());
         if (world != null) {
-            WeatherChangeEvent weather = new WeatherChangeEvent(world, raining);
+            WeatherChangeEvent weather = new WeatherChangeEvent(world, raining, cause); // Paper - Add cause to Weather/ThunderChangeEvents
             Bukkit.getServer().getPluginManager().callEvent(weather);
             if (weather.isCancelled()) {
                 return;
