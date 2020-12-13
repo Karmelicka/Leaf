@@ -180,7 +180,7 @@ public abstract class Player extends LivingEntity {
     private Optional<GlobalPos> lastDeathLocation;
     @Nullable
     public FishingHook fishing;
-    protected float hurtDir;
+    public float hurtDir; // Paper - protected -> public
     public boolean affectsSpawning = true; // Paper - Affects Spawning API
 
     // CraftBukkit start
