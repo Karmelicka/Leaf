@@ -504,6 +504,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
     // Paper end - optimise entity tracking
 
+    // Pufferfish start
+    public boolean activatedPriorityReset = false; // DAB
+    public int activatedPriority = org.dreeam.leaf.config.modules.opt.DynamicActivationofBrain.maximumActivationPrio; // golf score
+    // Pufferfish end
+
     public float getBukkitYaw() {
         return this.yRot;
     }

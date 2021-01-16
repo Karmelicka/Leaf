@@ -145,6 +145,8 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
         return holder.is(PoiTypes.MEETING);
     });
 
+    public long nextGolemPanic = -1; // Pufferfish
+
     public Villager(EntityType<? extends Villager> entityType, Level world) {
         this(entityType, world, VillagerType.PLAINS);
     }
@@ -248,6 +250,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
     }
     // Spigot End
 
+    private int behaviorTick = 0; // Pufferfish
     @Override
     @Deprecated // Paper
     protected void customServerAiStep() {
@@ -256,7 +259,11 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
     }
     protected void customServerAiStep(final boolean inactive) {
         // Paper end
-        if (!inactive) this.getBrain().tick((ServerLevel) this.level(), this); // Paper
+        // Pufferfish start
+        if (!inactive && this.behaviorTick++ % this.activatedPriority == 0) {
+            this.getBrain().tick((ServerLevel) this.level(), this); // Paper
+        }
+        // Pufferfish end
         if (this.assignProfessionWhenSpawned) {
             this.assignProfessionWhenSpawned = false;
         }

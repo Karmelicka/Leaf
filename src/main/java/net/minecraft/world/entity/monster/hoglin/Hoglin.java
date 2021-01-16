@@ -128,8 +128,10 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
         return (Brain<Hoglin>) super.getBrain(); // Paper - decompile fix
     }
 
+    private int behaviorTick; // Pufferfish
     @Override
     protected void customServerAiStep() {
+        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
         this.getBrain().tick((ServerLevel)this.level(), this);
         HoglinAi.updateActivity(this);
         if (this.isConverting()) {

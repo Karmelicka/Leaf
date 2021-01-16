@@ -159,8 +159,10 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
 
     }
 
+    private int behaviorTick = 0; // Pufferfish
     @Override
     protected void customServerAiStep() {
+        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
         this.getBrain().tick((ServerLevel)this.level(), this);
         FrogAi.updateActivity(this);
         super.customServerAiStep();

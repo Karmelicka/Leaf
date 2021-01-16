@@ -273,10 +273,12 @@ public class Warden extends Monster implements VibrationSystem {
 
     }
 
+    private int behaviorTick = 0; // Pufferfish
     @Override
     protected void customServerAiStep() {
         ServerLevel worldserver = (ServerLevel) this.level();
 
+        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
         this.getBrain().tick(worldserver, this);
         super.customServerAiStep();
         if ((this.tickCount + this.getId()) % 120 == 0) {

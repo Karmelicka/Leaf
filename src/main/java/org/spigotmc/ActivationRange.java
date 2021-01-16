@@ -40,6 +40,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.galemc.gale.configuration.GaleWorldConfiguration;
+// Pufferfish start
+import net.minecraft.world.phys.Vec3;
+// Pufferfish end
 
 public class ActivationRange
 {
@@ -236,6 +239,25 @@ public class ActivationRange
                 }
                 // Paper end - Configurable marker ticking
                 ActivationRange.activateEntity(entity);
+
+                // Pufferfish start
+                if (org.dreeam.leaf.config.modules.opt.DynamicActivationofBrain.enabled && entity.getType().dabEnabled) {
+                    if (!entity.activatedPriorityReset) {
+                        entity.activatedPriorityReset = true;
+                        entity.activatedPriority = org.dreeam.leaf.config.modules.opt.DynamicActivationofBrain.maximumActivationPrio;
+                    }
+                    Vec3 playerVec = player.position();
+                    Vec3 entityVec = entity.position();
+                    double diffX = playerVec.x - entityVec.x, diffY = playerVec.y - entityVec.y, diffZ = playerVec.z - entityVec.z;
+                    int squaredDistance = (int) (diffX * diffX + diffY * diffY + diffZ * diffZ);
+                    entity.activatedPriority = squaredDistance > org.dreeam.leaf.config.modules.opt.DynamicActivationofBrain.startDistanceSquared ?
+                      Math.max(1, Math.min(squaredDistance >> org.dreeam.leaf.config.modules.opt.DynamicActivationofBrain.activationDistanceMod, entity.activatedPriority)) :
+                      1;
+                } else {
+                    entity.activatedPriority = 1;
+                }
+                // Pufferfish end
+
             }
             // Paper end
         }
@@ -252,12 +274,12 @@ public class ActivationRange
         if ( MinecraftServer.currentTick > entity.activatedTick )
         {
             if ( entity.defaultActivationState )
-            {
+            { // Pufferfish - diff on change
                 entity.activatedTick = MinecraftServer.currentTick;
                 return;
             }
             if ( entity.activationType.boundingBox.intersects( entity.getBoundingBox() ) )
-            {
+            {  // Pufferfish - diff on change
                 entity.activatedTick = MinecraftServer.currentTick;
             }
         }

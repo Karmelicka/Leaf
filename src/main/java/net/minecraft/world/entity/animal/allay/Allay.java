@@ -221,8 +221,10 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
         return 0.4F;
     }
 
+    private int behaviorTick = 0; // Pufferfish
     @Override
     protected void customServerAiStep() {
+        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
         this.getBrain().tick((ServerLevel) this.level(), this);
         AllayAi.updateActivity(this);
         super.customServerAiStep();

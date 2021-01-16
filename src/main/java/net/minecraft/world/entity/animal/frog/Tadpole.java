@@ -80,8 +80,10 @@ public class Tadpole extends AbstractFish {
         return SoundEvents.TADPOLE_FLOP;
     }
 
+    private int behaviorTick = 0; // Pufferfish
     @Override
     protected void customServerAiStep() {
+        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
         this.getBrain().tick((ServerLevel) this.level(), this);
         TadpoleAi.updateActivity(this);
         super.customServerAiStep();
