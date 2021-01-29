@@ -35,6 +35,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
             } else {
                 FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(byteBuf);
                 friendlyByteBuf.writeVarInt(i);
+                friendlyByteBuf.adventure$locale = channelHandlerContext.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get(); // Paper - adventure; set player's locale
 
                 try {
                     int j = friendlyByteBuf.writerIndex();

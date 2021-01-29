@@ -55,12 +55,58 @@ public class ComponentSerialization {
         return ExtraCodecs.orCompressed(mapCodec3, mapCodec2);
     }
 
+    // Paper start - adventure; create separate codec for each locale
+    private static final java.util.Map<java.util.Locale, Codec<Component>> LOCALIZED_CODECS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static Codec<Component> localizedCodec(final java.util.@org.checkerframework.checker.nullness.qual.Nullable Locale locale) {
+        if (locale == null) {
+            return CODEC;
+        }
+        return LOCALIZED_CODECS.computeIfAbsent(locale,
+            loc -> ExtraCodecs.recursive("Component", selfCodec -> createCodec(selfCodec, loc)));
+    }
+    // Paper end - adventure; create separate codec for each locale
+
     private static Codec<Component> createCodec(Codec<Component> selfCodec) {
+        // Paper start - adventure; create separate codec for each locale
+        return createCodec(selfCodec, null);
+    }
+
+    private static Codec<Component> createCodec(Codec<Component> selfCodec, @javax.annotation.Nullable java.util.Locale locale) {
+        // Paper end - adventure; create separate codec for each locale
         ComponentContents.Type<?>[] types = new ComponentContents.Type[]{PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE};
         MapCodec<ComponentContents> mapCodec = createLegacyComponentMatcher(types, ComponentContents.Type::codec, ComponentContents::type, "type");
         Codec<Component> codec = RecordCodecBuilder.create((instance) -> {
             return instance.group(mapCodec.forGetter(Component::getContents), ExtraCodecs.strictOptionalField(ExtraCodecs.nonEmptyList(selfCodec.listOf()), "extra", List.of()).forGetter(Component::getSiblings), Style.Serializer.MAP_CODEC.forGetter(Component::getStyle)).apply(instance, MutableComponent::new);
         });
+        // Paper start - adventure; create separate codec for each locale
+        final Codec<Component> origCodec = codec;
+        codec = new Codec<>() {
+            @Override
+            public <T> DataResult<com.mojang.datafixers.util.Pair<Component, T>> decode(final DynamicOps<T> ops, final T input) {
+                return origCodec.decode(ops, input);
+            }
+
+            @Override
+            public <T> DataResult<T> encode(final Component input, final DynamicOps<T> ops, final T prefix) {
+                final net.kyori.adventure.text.Component adventureComponent;
+                if (input instanceof io.papermc.paper.adventure.AdventureComponent adv) {
+                    adventureComponent = adv.adventure$component();
+                } else if (locale != null && input.getContents() instanceof TranslatableContents && io.papermc.paper.adventure.PaperAdventure.hasAnyTranslations()) {
+                    adventureComponent = io.papermc.paper.adventure.PaperAdventure.asAdventure(input);
+                } else {
+                    return origCodec.encode(input, ops, prefix);
+                }
+                return io.papermc.paper.adventure.PaperAdventure.localizedCodec(locale)
+                    .encode(adventureComponent, ops, prefix);
+            }
+
+            @Override
+            public String toString() {
+                return origCodec.toString() + "[AdventureComponentAware]";
+            }
+        };
+        // Paper end - adventure; create separate codec for each locale
         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec).xmap((either) -> {
             return either.map((either2) -> {
                 return either2.map(Component::literal, ComponentSerialization::createFromList);

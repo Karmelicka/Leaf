@@ -492,4 +492,17 @@ public final class CraftItemFactory implements ItemFactory {
         CraftItemStack craft = (CraftItemStack) itemStack;
         return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, allowTreasures));
     }
+
+    // Paper start - Adventure
+    @Override
+    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
+        final net.minecraft.nbt.CompoundTag tag = CraftItemStack.asNMSCopy(item).getTag();
+        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(item.getType().getKey(), item.getAmount(), io.papermc.paper.adventure.PaperAdventure.asBinaryTagHolder(tag))));
+    }
+
+    @Override
+    public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component displayName(@org.jetbrains.annotations.NotNull ItemStack itemStack) {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(itemStack).getDisplayName());
+    }
+    // Paper end - Adventure
 }

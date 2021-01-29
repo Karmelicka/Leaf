@@ -44,6 +44,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.TickablePacketListener;
+import net.minecraft.network.chat.ChatDecorator;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.LastSeenMessages;
@@ -188,6 +189,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.slf4j.Logger;
 
 // CraftBukkit start
+import io.papermc.paper.adventure.ChatProcessor; // Paper
+import io.papermc.paper.adventure.PaperAdventure; // Paper
 import com.mojang.datafixers.util.Pair;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
@@ -1717,9 +1720,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         */
 
         this.player.disconnect();
-        String quitMessage = this.server.getPlayerList().remove(this.player);
-        if ((quitMessage != null) && (quitMessage.length() > 0)) {
-            this.server.getPlayerList().broadcastMessage(CraftChatMessage.fromString(quitMessage));
+        // Paper start - Adventure
+        net.kyori.adventure.text.Component quitMessage = this.server.getPlayerList().remove(this.player);
+        if ((quitMessage != null) && !quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
+            this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(quitMessage), false);
+            // Paper end
         }
         // CraftBukkit end
         this.player.getTextFilter().leave();
@@ -1783,10 +1788,10 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                     }
 
                     CompletableFuture<FilteredText> completablefuture = this.filterTextPacket(playerchatmessage.signedContent()).thenApplyAsync(Function.identity(), this.server.chatExecutor); // CraftBukkit - async chat
-                    Component ichatbasecomponent = this.server.getChatDecorator().decorate(this.player, playerchatmessage.decoratedContent());
+                    CompletableFuture<ChatDecorator.Result> componentFuture = this.server.getChatDecorator().decorate(this.player, null, playerchatmessage.decoratedContent()); // Paper
 
-                    this.chatMessageChain.append(completablefuture, (filteredtext) -> {
-                        PlayerChatMessage playerchatmessage1 = playerchatmessage.withUnsignedContent(ichatbasecomponent).filter(filteredtext.mask());
+                    this.chatMessageChain.append(CompletableFuture.allOf(completablefuture, componentFuture), (filteredtext) -> {
+                        PlayerChatMessage playerchatmessage1 = playerchatmessage.filter(completablefuture.join().mask()).withResult(componentFuture.join()); // Paper
 
                         this.broadcastChatMessage(playerchatmessage1);
                     });
@@ -1931,7 +1936,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
             this.handleCommand(s);
         } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
             // Do nothing, this is coming from a plugin
-        } else {
+        // Paper start
+        } else if (true) {
+            if (!async && !org.bukkit.Bukkit.isPrimaryThread()) {
+                org.spigotmc.AsyncCatcher.catchOp("Asynchronous player chat is not allowed here");
+            }
+            final ChatProcessor cp = new ChatProcessor(this.server, this.player, original, async);
+            cp.process();
+            // Paper end
+        } else if (false) { // Paper
             Player player = this.getCraftPlayer();
             AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
             String originalFormat = event.getFormat(), originalMessage = event.getMessage();
@@ -2239,7 +2252,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
 
     public void sendPlayerChatMessage(PlayerChatMessage message, ChatType.Bound params) {
         // CraftBukkit start - SPIGOT-7262: if hidden we have to send as disguised message. Query whether we should send at all (but changing this may not be expected).
-        if (!this.getCraftPlayer().canSee(message.link().sender())) {
+        // Paper start - Do not query the world for players, if they're not in the player list, then they're not in the world - don't query world state
+        // Also, mirror the logic for canSee in terms of "missing" players
+        final ServerPlayer sender = this.server.getPlayerList().getPlayer(message.link().sender());
+        if (sender == null || !this.getCraftPlayer().canSee(sender.getBukkitEntity())) {
+        // Paper end
             this.sendDisguisedChatMessage(message.decoratedContent(), params);
             return;
         }
@@ -2918,6 +2935,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
     public void handleClientInformation(ServerboundClientInformationPacket packet) {
         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
         this.player.updateOptions(packet.information());
+        this.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(net.kyori.adventure.translation.Translator.parseLocale(packet.information().language())); // Paper
     }
 
     @Override

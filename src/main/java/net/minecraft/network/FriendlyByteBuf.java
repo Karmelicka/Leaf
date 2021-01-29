@@ -87,6 +87,7 @@ public class FriendlyByteBuf extends ByteBuf {
 
     public static final int DEFAULT_NBT_QUOTA = 2097152;
     private final ByteBuf source;
+    public java.util.Locale adventure$locale; // Paper - track player's locale for server-side translations
     public static final short MAX_STRING_LENGTH = 32767;
     public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
     private static final int PUBLIC_KEY_SIZE = 256;
@@ -135,11 +136,16 @@ public class FriendlyByteBuf extends ByteBuf {
     }
 
     public <T> void writeJsonWithCodec(Codec<T> codec, T value) {
+        // Paper start - Adventure; add max length parameter
+        this.writeJsonWithCodec(codec, value, MAX_STRING_LENGTH);
+    }
+    public <T> void writeJsonWithCodec(Codec<T> codec, T value, int maxLength) {
+        // Paper end - Adventure; add max length parameter
         DataResult<JsonElement> dataresult = codec.encodeStart(JsonOps.INSTANCE, value);
 
         this.writeUtf(FriendlyByteBuf.GSON.toJson((JsonElement) Util.getOrThrow(dataresult, (s) -> {
             return new EncoderException("Failed to encode: " + s + " " + value);
-        })));
+        })), maxLength); // Paper - Adventure; add max length parameter
     }
 
     public <T> void writeId(IdMap<T> registry, T value) {
@@ -526,8 +532,18 @@ public class FriendlyByteBuf extends ByteBuf {
         return (Component) this.readWithCodecTrusted(NbtOps.INSTANCE, ComponentSerialization.CODEC);
     }
 
+    // Paper start - adventure; support writing adventure components directly and server-side translations
+    public FriendlyByteBuf writeComponent(final net.kyori.adventure.text.Component component) {
+        return this.writeWithCodec(NbtOps.INSTANCE, io.papermc.paper.adventure.PaperAdventure.localizedCodec(this.adventure$locale), component);
+    }
+
     public FriendlyByteBuf writeComponent(Component text) {
-        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.CODEC, text);
+        if (text instanceof io.papermc.paper.adventure.AdventureComponent adv) {
+            return this.writeComponent(adv.adventure$component());
+        }
+
+        return this.writeWithCodec(NbtOps.INSTANCE, ComponentSerialization.localizedCodec(this.adventure$locale), text);
+        // Paper end - adventure; support writing adventure components directly and server-side translations
     }
 
     public <T extends Enum<T>> T readEnum(Class<T> enumClass) {

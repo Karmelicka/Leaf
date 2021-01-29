@@ -47,12 +47,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
     public static final int LATENCY_CHECK_INTERVAL = 15000;
     private static final Component TIMEOUT_DISCONNECTION_MESSAGE = Component.translatable("disconnect.timeout");
     protected final MinecraftServer server;
-    protected final Connection connection;
+    public final Connection connection; // Paper
     private long keepAliveTime;
     private boolean keepAlivePending;
     private long keepAliveChallenge;
     private int latency;
     private volatile boolean suspendFlushingOnServerThread = false;
+    public final java.util.Map<java.util.UUID, net.kyori.adventure.resource.ResourcePackCallback> packCallbacks = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - adventure resource pack callbacks
 
     public ServerCommonPacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, CommonListenerCookie commonlistenercookie, ServerPlayer player) { // CraftBukkit
         this.server = minecraftserver;
@@ -156,6 +157,18 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
             ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
             this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
         }
+        // Paper start - adventure pack callbacks
+        // call the callbacks before the previously-existing event so the event has final say
+        final net.kyori.adventure.resource.ResourcePackCallback callback;
+        if (packet.action().isTerminal()) {
+            callback = this.packCallbacks.remove(packet.id());
+        } else {
+            callback = this.packCallbacks.get(packet.id());
+        }
+        if (callback != null) {
+            callback.packEventReceived(packet.id(), net.kyori.adventure.resource.ResourcePackStatus.valueOf(packet.action().name()), this.getCraftPlayer());
+        }
+        // Paper end
         this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()])); // CraftBukkit
 
     }
@@ -217,12 +230,18 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
 
     // CraftBukkit start
     @Deprecated
-    public void disconnect(Component reason) {
-        this.disconnect(CraftChatMessage.fromComponent(reason));
+    public void disconnect(String s) { // Paper
+        this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s)); // Paper
     }
     // CraftBukkit end
 
-    public void disconnect(String s) {
+    // Paper start
+    public void disconnect(final Component reason) {
+        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asAdventure(reason));
+    }
+
+    public void disconnect(net.kyori.adventure.text.Component reason) {
+        // Paper end
         // CraftBukkit start - fire PlayerKickEvent
         if (this.processedDisconnect) {
             return;
@@ -231,7 +250,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
             Waitable waitable = new Waitable() {
                 @Override
                 protected Object evaluate() {
-                    ServerCommonPacketListenerImpl.this.disconnect(s);
+                    ServerCommonPacketListenerImpl.this.disconnect(reason); // Paper - adventure
                     return null;
                 }
             };
@@ -248,9 +267,9 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
             return;
         }
 
-        String leaveMessage = ChatFormatting.YELLOW + this.player.getScoreboardName() + " left the game.";
+        net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? this.player.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(this.player.getScoreboardName())); // Paper - Adventure
 
-        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), s, leaveMessage);
+        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), reason, leaveMessage); // Paper - adventure
 
         if (this.cserver.getServer().isRunning()) {
             this.cserver.getPluginManager().callEvent(event);
@@ -262,7 +281,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         }
         this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
         // Send the possibly modified leave message
-        final Component ichatbasecomponent = CraftChatMessage.fromString(event.getReason(), true)[0];
+        final Component ichatbasecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
         // CraftBukkit end
 
         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
