@@ -57,6 +57,10 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
 
     @Override
     public void onDisconnect(Component reason) {
+        // Paper start - Debugging
+        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) {
+            ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}, while in configuration phase {}", this.gameProfile, reason.getString(), currentTask != null ? currentTask.type().id() : "null");
+        } else // Paper end
         ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}", this.gameProfile, reason.getString());
         super.onDisconnect(reason);
     }
@@ -131,6 +135,11 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
             this.connection.resumeInboundAfterProtocolChange();
         } catch (Exception exception) {
             ServerConfigurationPacketListenerImpl.LOGGER.error("Couldn't place player in world", exception);
+            // Paper start - Debugging
+            if (MinecraftServer.getServer().isDebugging()) {
+                exception.printStackTrace();
+            }
+            // Paper end - Debugging
             this.connection.send(new ClientboundDisconnectPacket(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA));
             this.connection.disconnect(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA);
         }
