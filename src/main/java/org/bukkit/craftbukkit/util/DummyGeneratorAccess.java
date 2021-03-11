@@ -268,4 +268,19 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     @Override
     public void scheduleTick(BlockPos pos, Fluid fluid, int delay, net.minecraft.world.ticks.TickPriority priority) {}
     // Paper end - add more methods
+    // Paper start
+    @Override
+    public List<Entity> getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {
+        return java.util.Collections.emptyList();
+    }
+
+    @Override
+    public void getEntities(Entity except, AABB box, Predicate<? super Entity> predicate, List<Entity> into) {}
+
+    @Override
+    public void getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate, List<Entity> into) {}
+
+    @Override
+    public <T> void getEntitiesByClass(Class<? extends T> clazz, Entity except, AABB box, List<? super T> into, Predicate<? super T> predicate) {}
+    // Paper end
 }

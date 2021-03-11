@@ -25,30 +25,98 @@ public class RegionFileStorage implements AutoCloseable {
     private final Path folder;
     private final boolean sync;
 
-    RegionFileStorage(Path directory, boolean dsync) {
+    // Paper start - cache regionfile does not exist state
+    static final int MAX_NON_EXISTING_CACHE = 1024 * 64;
+    private final it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet nonExistingRegionFiles = new it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet();
+    private synchronized boolean doesRegionFilePossiblyExist(long position) {
+        if (this.nonExistingRegionFiles.contains(position)) {
+            this.nonExistingRegionFiles.addAndMoveToFirst(position);
+            return false;
+        }
+        return true;
+    }
+
+    private synchronized void createRegionFile(long position) {
+        this.nonExistingRegionFiles.remove(position);
+    }
+
+    private synchronized void markNonExisting(long position) {
+        if (this.nonExistingRegionFiles.addAndMoveToFirst(position)) {
+            while (this.nonExistingRegionFiles.size() >= MAX_NON_EXISTING_CACHE) {
+                this.nonExistingRegionFiles.removeLastLong();
+            }
+        }
+    }
+
+    public synchronized boolean doesRegionFileNotExistNoIO(ChunkPos pos) {
+        long key = ChunkPos.asLong(pos.getRegionX(), pos.getRegionZ());
+        return !this.doesRegionFilePossiblyExist(key);
+    }
+    // Paper end - cache regionfile does not exist state
+
+    protected RegionFileStorage(Path directory, boolean dsync) { // Paper - protected constructor
         this.folder = directory;
         this.sync = dsync;
     }
 
-    private RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
-        long i = ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
+    // Paper start
+    public synchronized RegionFile getRegionFileIfLoaded(ChunkPos chunkcoordintpair) {
+        return this.regionCache.getAndMoveToFirst(ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
+    }
+
+    public synchronized boolean chunkExists(ChunkPos pos) throws IOException {
+        RegionFile regionfile = getRegionFile(pos, true);
+
+        return regionfile != null ? regionfile.hasChunk(pos) : false;
+    }
+
+    public synchronized RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+        return this.getRegionFile(chunkcoordintpair, existingOnly, false);
+    }
+    public synchronized RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly, boolean lock) throws IOException {
+        // Paper end
+        long i = ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()); final long regionPos = i; // Paper - OBFHELPER
         RegionFile regionfile = (RegionFile) this.regionCache.getAndMoveToFirst(i);
 
         if (regionfile != null) {
+            // Paper start
+            if (lock) {
+                // must be in this synchronized block
+                regionfile.fileLock.lock();
+            }
+            // Paper end
             return regionfile;
         } else {
+            // Paper start - cache regionfile does not exist state
+            if (existingOnly && !this.doesRegionFilePossiblyExist(regionPos)) {
+                return null;
+            }
+            // Paper end - cache regionfile does not exist state
             if (this.regionCache.size() >= io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize) { // Paper - Sanitise RegionFileCache and make configurable
                 ((RegionFile) this.regionCache.removeLast()).close();
             }
 
-            FileUtil.createDirectoriesSafe(this.folder);
+            // Paper - only create directory if not existing only - moved down
             Path path = this.folder;
             int j = chunkcoordintpair.getRegionX();
             Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
-            if (existingOnly && !java.nio.file.Files.exists(path1)) return null; // CraftBukkit
+            if (existingOnly && !java.nio.file.Files.exists(path1)) { // Paper start - cache regionfile does not exist state
+                this.markNonExisting(regionPos);
+                return null; // CraftBukkit
+            } else {
+                this.createRegionFile(regionPos);
+            }
+            // Paper end - cache regionfile does not exist state
+            FileUtil.createDirectoriesSafe(this.folder); // Paper - only create directory if not existing only - moved from above
             RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
 
             this.regionCache.putAndMoveToFirst(i, regionfile1);
+            // Paper start
+            if (lock) {
+                // must be in this synchronized block
+                regionfile1.fileLock.lock();
+            }
+            // Paper end
             return regionfile1;
         }
     }
@@ -56,11 +124,12 @@ public class RegionFileStorage implements AutoCloseable {
     @Nullable
     public CompoundTag read(ChunkPos pos) throws IOException {
         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-        RegionFile regionfile = this.getRegionFile(pos, true);
+        RegionFile regionfile = this.getRegionFile(pos, true, true); // Paper
         if (regionfile == null) {
             return null;
         }
         // CraftBukkit end
+        try { // Paper
         DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
 
         CompoundTag nbttagcompound;
@@ -97,6 +166,9 @@ public class RegionFileStorage implements AutoCloseable {
         }
 
         return nbttagcompound;
+        } finally { // Paper start
+            regionfile.fileLock.unlock();
+        } // Paper end
     }
 
     public void scanChunk(ChunkPos chunkPos, StreamTagVisitor scanner) throws IOException {
@@ -131,7 +203,13 @@ public class RegionFileStorage implements AutoCloseable {
     }
 
     protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
-        RegionFile regionfile = this.getRegionFile(pos, false); // CraftBukkit
+        // Paper start - rewrite chunk system
+        RegionFile regionfile = this.getRegionFile(pos, nbt == null, true); // CraftBukkit
+        if (nbt == null && regionfile == null) {
+            return;
+        }
+        try { // Try finally to unlock the region file
+        // Paper end - rewrite chunk system
         // Paper start - Chunk save reattempt
         int attempts = 0;
         Exception lastException = null;
@@ -177,9 +255,14 @@ public class RegionFileStorage implements AutoCloseable {
             net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk {}", pos, lastException);
         }
         // Paper end - Chunk save reattempt
+        // Paper start - rewrite chunk system
+        } finally {
+            regionfile.fileLock.unlock();
+        }
+        // Paper end - rewrite chunk system
     }
 
-    public void close() throws IOException {
+    public synchronized void close() throws IOException { // Paper -> synchronized
         ExceptionCollector<IOException> exceptionsuppressor = new ExceptionCollector<>();
         ObjectIterator objectiterator = this.regionCache.values().iterator();
 
@@ -196,7 +279,7 @@ public class RegionFileStorage implements AutoCloseable {
         exceptionsuppressor.throwIfPresent();
     }
 
-    public void flush() throws IOException {
+    public synchronized void flush() throws IOException { // Paper - synchronize
         ObjectIterator objectiterator = this.regionCache.values().iterator();
 
         while (objectiterator.hasNext()) {

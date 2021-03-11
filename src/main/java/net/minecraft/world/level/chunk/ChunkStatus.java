@@ -30,6 +30,30 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 public class ChunkStatus {
 
+    // Paper start - rewrite chunk system
+    public boolean isParallelCapable; // Paper
+    public int writeRadius = -1;
+    public int loadRange = 0;
+
+    protected static final java.util.List<ChunkStatus> statuses = new java.util.ArrayList<>();
+
+    private ChunkStatus nextStatus;
+
+    public final ChunkStatus getNextStatus() {
+        return this.nextStatus;
+    }
+
+    public final boolean isEmptyLoadStatus() {
+        return this.loadingTask == PASSTHROUGH_LOAD_TASK;
+    }
+
+    public final boolean isEmptyGenStatus() {
+        return this == ChunkStatus.EMPTY;
+    }
+
+    public final java.util.concurrent.atomic.AtomicBoolean warnedAboutNoImmediateComplete = new java.util.concurrent.atomic.AtomicBoolean();
+    // Paper end - rewrite chunk system
+
     public static final int MAX_STRUCTURE_DISTANCE = 8;
     private static final EnumSet<Heightmap.Types> PRE_FEATURES = EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG);
     public static final EnumSet<Heightmap.Types> POST_FEATURES = EnumSet.of(Heightmap.Types.OCEAN_FLOOR, Heightmap.Types.WORLD_SURFACE, Heightmap.Types.MOTION_BLOCKING, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES);
@@ -151,13 +175,13 @@ public class ChunkStatus {
         ((ProtoChunk) chunk).setLightEngine(lightingProvider);
         boolean flag = ChunkStatus.isLighted(chunk);
 
-        return lightingProvider.initializeLight(chunk, flag).thenApply(Either::left);
+        return CompletableFuture.completedFuture(Either.left(chunk)); // Paper - rewrite chunk system
     }
 
     private static CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> lightChunk(ThreadedLevelLightEngine lightingProvider, ChunkAccess chunk) {
         boolean flag = ChunkStatus.isLighted(chunk);
 
-        return lightingProvider.lightChunk(chunk, flag).thenApply(Either::left);
+        return CompletableFuture.completedFuture(Either.left(chunk)); // Paper - rewrite chunk system
     }
 
     private static ChunkStatus registerSimple(String id, @Nullable ChunkStatus previous, int taskMargin, EnumSet<Heightmap.Types> heightMapTypes, ChunkStatus.ChunkType chunkType, ChunkStatus.SimpleGenerationTask task) {
@@ -211,6 +235,13 @@ public class ChunkStatus {
         this.chunkType = chunkType;
         this.heightmapsAfter = heightMapTypes;
         this.index = previous == null ? 0 : previous.getIndex() + 1;
+        // Paper start
+        this.nextStatus = this;
+        if (statuses.size() > 0) {
+            statuses.get(statuses.size() - 1).nextStatus = this;
+        }
+        statuses.add(this);
+        // Paper end
     }
 
     public int getIndex() {

@@ -1,12 +1,20 @@
 package io.papermc.paper.util;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class TickThread extends Thread {
+public class TickThread extends Thread {
 
     public static final boolean STRICT_THREAD_CHECKS = Boolean.getBoolean("paper.strict-thread-checks");
 
@@ -16,6 +24,10 @@ public final class TickThread extends Thread {
         }
     }
 
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public static void softEnsureTickThread(final String reason) {
         if (!STRICT_THREAD_CHECKS) {
             return;
@@ -23,8 +35,26 @@ public final class TickThread extends Thread {
         ensureTickThread(reason);
     }
 
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public static void ensureTickThread(final String reason) {
         if (!isTickThread()) {
+            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+            throw new IllegalStateException(reason);
+        }
+    }
+
+    public static void ensureTickThread(final ServerLevel world, final BlockPos pos, final String reason) {
+        if (!isTickThreadFor(world, pos)) {
+            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+            throw new IllegalStateException(reason);
+        }
+    }
+
+    public static void ensureTickThread(final ServerLevel world, final ChunkPos pos, final String reason) {
+        if (!isTickThreadFor(world, pos)) {
             MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
             throw new IllegalStateException(reason);
         }
@@ -39,6 +69,20 @@ public final class TickThread extends Thread {
 
     public static void ensureTickThread(final Entity entity, final String reason) {
         if (!isTickThreadFor(entity)) {
+            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+            throw new IllegalStateException(reason);
+        }
+    }
+
+    public static void ensureTickThread(final ServerLevel world, final AABB aabb, final String reason) {
+        if (!isTickThreadFor(world, aabb)) {
+            MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+            throw new IllegalStateException(reason);
+        }
+    }
+
+    public static void ensureTickThread(final ServerLevel world, final double blockX, final double blockZ, final String reason) {
+        if (!isTickThreadFor(world, blockX, blockZ)) {
             MinecraftServer.LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
             throw new IllegalStateException(reason);
         }
@@ -66,10 +110,42 @@ public final class TickThread extends Thread {
     }
 
     public static boolean isTickThread() {
-        return Bukkit.isPrimaryThread();
+        return Thread.currentThread() instanceof TickThread;
+    }
+
+    public static boolean isShutdownThread() {
+        return false;
+    }
+
+    public static boolean isTickThreadFor(final ServerLevel world, final BlockPos pos) {
+        return isTickThread();
+    }
+
+    public static boolean isTickThreadFor(final ServerLevel world, final ChunkPos pos) {
+        return isTickThread();
+    }
+
+    public static boolean isTickThreadFor(final ServerLevel world, final Vec3 pos) {
+        return isTickThread();
     }
 
     public static boolean isTickThreadFor(final ServerLevel world, final int chunkX, final int chunkZ) {
+        return isTickThread();
+    }
+
+    public static boolean isTickThreadFor(final ServerLevel world, final AABB aabb) {
+        return isTickThread();
+    }
+
+    public static boolean isTickThreadFor(final ServerLevel world, final double blockX, final double blockZ) {
+        return isTickThread();
+    }
+
+    public static boolean isTickThreadFor(final ServerLevel world, final Vec3 position, final Vec3 deltaMovement, final int buffer) {
+        return isTickThread();
+    }
+
+    public static boolean isTickThreadFor(final ServerLevel world, final int fromChunkX, final int fromChunkZ, final int toChunkX, final int toChunkZ) {
         return isTickThread();
     }
 

@@ -294,7 +294,7 @@ public abstract class PlayerList {
         boolean flag2 = gamerules.getBoolean(GameRules.RULE_LIMITED_CRAFTING);
 
         // Spigot - view distance
-        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), this.server.levelKeys(), this.getMaxPlayers(), worldserver1.spigotConfig.viewDistance, worldserver1.spigotConfig.simulationDistance, flag1, !flag, flag2, player.createCommonSpawnInfo(worldserver1)));
+        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), this.server.levelKeys(), this.getMaxPlayers(), worldserver1.getWorld().getSendViewDistance(), worldserver1.getWorld().getSimulationDistance(), flag1, !flag, flag2, player.createCommonSpawnInfo(worldserver1))); // Paper - replace old player chunk management
         player.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
         playerconnection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
         playerconnection.send(new ClientboundPlayerAbilitiesPacket(player.getAbilities()));
@@ -944,8 +944,8 @@ public abstract class PlayerList {
         LevelData worlddata = worldserver2.getLevelData();
 
         entityplayer1.connection.send(new ClientboundRespawnPacket(entityplayer1.createCommonSpawnInfo(worldserver2), (byte) i));
-        entityplayer1.connection.send(new ClientboundSetChunkCacheRadiusPacket(worldserver1.spigotConfig.viewDistance)); // Spigot
-        entityplayer1.connection.send(new ClientboundSetSimulationDistancePacket(worldserver1.spigotConfig.simulationDistance)); // Spigot
+        entityplayer1.connection.send(new ClientboundSetChunkCacheRadiusPacket(worldserver1.getWorld().getSendViewDistance())); // Spigot // Paper - replace old player chunk management
+        entityplayer1.connection.send(new ClientboundSetSimulationDistancePacket(worldserver1.getWorld().getSimulationDistance())); // Spigot // Paper - replace old player chunk management
         entityplayer1.connection.teleport(CraftLocation.toBukkit(entityplayer1.position(), worldserver2.getWorld(), entityplayer1.getYRot(), entityplayer1.getXRot())); // CraftBukkit
         entityplayer1.connection.send(new ClientboundSetDefaultSpawnPositionPacket(worldserver1.getSharedSpawnPos(), worldserver1.getSharedSpawnAngle()));
         entityplayer1.connection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
@@ -1497,7 +1497,7 @@ public abstract class PlayerList {
 
     public void setViewDistance(int viewDistance) {
         this.viewDistance = viewDistance;
-        this.broadcastAll(new ClientboundSetChunkCacheRadiusPacket(viewDistance));
+        //this.broadcastAll(new ClientboundSetChunkCacheRadiusPacket(viewDistance)); // Paper - move into setViewDistance
         Iterator iterator = this.server.getAllLevels().iterator();
 
         while (iterator.hasNext()) {
@@ -1512,7 +1512,7 @@ public abstract class PlayerList {
 
     public void setSimulationDistance(int simulationDistance) {
         this.simulationDistance = simulationDistance;
-        this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance));
+        //this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance)); // Paper - handled by playerchunkloader
         Iterator iterator = this.server.getAllLevels().iterator();
 
         while (iterator.hasNext()) {

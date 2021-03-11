@@ -110,6 +110,17 @@ public class ChunkSerializer {
         }
     }
     // Paper end - guard against serializing mismatching coordinates
+    // Paper start - rewrite chunk system
+    public static final class InProgressChunkHolder {
+
+        public final ProtoChunk protoChunk;
+
+        public CompoundTag poiData;
+
+        public InProgressChunkHolder(final ProtoChunk protoChunk) {
+            this.protoChunk = protoChunk;
+        }
+    }
     public static ProtoChunk read(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
         // Paper start - Do not let the server load chunks from newer versions
         if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
@@ -120,6 +131,12 @@ public class ChunkSerializer {
             }
         }
         // Paper end - Do not let the server load chunks from newer versions
+        InProgressChunkHolder holder = readInProgressChunkHolder(world, poiStorage, chunkPos, nbt);
+        return holder.protoChunk;
+    }
+
+    public static InProgressChunkHolder readInProgressChunkHolder(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt) {
+        // Paper end - rewrite chunk system
         ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
 
         if (!Objects.equals(chunkPos, chunkcoordintpair1)) {
@@ -185,7 +202,7 @@ public class ChunkSerializer {
                 achunksection[k] = chunksection;
                 SectionPos sectionposition = SectionPos.of(chunkPos, b0);
 
-                poiStorage.checkConsistencyWithBlocks(sectionposition, chunksection);
+                // Paper - rewrite chunk system - moved to final load stage
             }
 
             boolean flag3 = nbttagcompound1.contains("BlockLight", 7);
@@ -331,7 +348,7 @@ public class ChunkSerializer {
         }
 
         if (chunkstatus_type == ChunkStatus.ChunkType.LEVELCHUNK) {
-            return new ImposterProtoChunk((LevelChunk) object1, false);
+            return new InProgressChunkHolder(new ImposterProtoChunk((LevelChunk) object1, false)); // Paper - Async chunk loading
         } else {
             ProtoChunk protochunk1 = (ProtoChunk) object1;
 
@@ -366,9 +383,41 @@ public class ChunkSerializer {
                 protochunk1.setCarvingMask(worldgenstage_features, new CarvingMask(nbttagcompound5.getLongArray(s1), ((ChunkAccess) object1).getMinBuildHeight()));
             }
 
-            return protochunk1;
+            return new InProgressChunkHolder(protochunk1); // Paper - Async chunk loading
         }
     }
+
+    // Paper start - async chunk save for unload
+    public record AsyncSaveData(
+        Tag blockTickList, // non-null if we had to go to the server's tick list
+        Tag fluidTickList, // non-null if we had to go to the server's tick list
+        ListTag blockEntities,
+        long worldTime
+    ) {}
+
+    // must be called sync
+    public static AsyncSaveData getAsyncSaveData(ServerLevel world, ChunkAccess chunk) {
+        org.spigotmc.AsyncCatcher.catchOp("preparation of chunk data for async save");
+
+        final CompoundTag tickLists = new CompoundTag();
+        ChunkSerializer.saveTicks(world, tickLists, chunk.getTicksForSerialization());
+
+        ListTag blockEntitiesSerialized = new ListTag();
+        for (final BlockPos blockPos : chunk.getBlockEntitiesPos()) {
+            final CompoundTag blockEntityNbt = chunk.getBlockEntityNbtForSaving(blockPos);
+            if (blockEntityNbt != null) {
+                blockEntitiesSerialized.add(blockEntityNbt);
+            }
+        }
+
+        return new AsyncSaveData(
+            tickLists.get(BLOCK_TICKS_TAG),
+            tickLists.get(FLUID_TICKS_TAG),
+            blockEntitiesSerialized,
+            world.getGameTime()
+        );
+    }
+    // Paper end
 
     private static void logErrors(ChunkPos chunkPos, int y, String message) {
         ChunkSerializer.LOGGER.error("Recoverable errors when loading section [" + chunkPos.x + ", " + y + ", " + chunkPos.z + "]: " + message);
@@ -385,6 +434,11 @@ public class ChunkSerializer {
     // CraftBukkit end
 
     public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
+        // Paper start
+        return saveChunk(world, chunk, null);
+    }
+    public static CompoundTag saveChunk(ServerLevel world, ChunkAccess chunk, @org.checkerframework.checker.nullness.qual.Nullable AsyncSaveData asyncsavedata) {
+        // Paper end
         // Paper start - rewrite light impl
         final int minSection = io.papermc.paper.util.WorldUtil.getMinLightSection(world);
         final int maxSection = io.papermc.paper.util.WorldUtil.getMaxLightSection(world);
@@ -397,7 +451,7 @@ public class ChunkSerializer {
         nbttagcompound.putInt("xPos", chunkcoordintpair.x);
         nbttagcompound.putInt("yPos", chunk.getMinSection());
         nbttagcompound.putInt("zPos", chunkcoordintpair.z);
-        nbttagcompound.putLong("LastUpdate", world.getGameTime());
+        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading
         nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
         nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(chunk.getStatus()).toString());
         BlendingData blendingdata = chunk.getBlendingData();
@@ -497,8 +551,17 @@ public class ChunkSerializer {
             nbttagcompound.putBoolean("isLightOn", false); // Paper - set to false but still store, this allows us to detect --eraseCache (as eraseCache _removes_)
         }
 
-        ListTag nbttaglist1 = new ListTag();
-        Iterator iterator = chunk.getBlockEntitiesPos().iterator();
+        // Paper start
+        ListTag nbttaglist1;
+        Iterator<BlockPos> iterator;
+        if (asyncsavedata != null) {
+            nbttaglist1 = asyncsavedata.blockEntities;
+            iterator = java.util.Collections.emptyIterator();
+        } else {
+            nbttaglist1 = new ListTag();
+            iterator = chunk.getBlockEntitiesPos().iterator();
+        }
+        // Paper end
 
         CompoundTag nbttagcompound2;
 
@@ -534,7 +597,14 @@ public class ChunkSerializer {
             nbttagcompound.put("CarvingMasks", nbttagcompound2);
         }
 
+        // Paper start
+        if (asyncsavedata != null) {
+            nbttagcompound.put(BLOCK_TICKS_TAG, asyncsavedata.blockTickList);
+            nbttagcompound.put(FLUID_TICKS_TAG, asyncsavedata.fluidTickList);
+        } else {
         ChunkSerializer.saveTicks(world, nbttagcompound, chunk.getTicksForSerialization());
+        }
+        // Paper end
         nbttagcompound.put("PostProcessing", ChunkSerializer.packOffsets(chunk.getPostProcessing()));
         CompoundTag nbttagcompound3 = new CompoundTag();
         Iterator iterator1 = chunk.getHeightmaps().iterator();
@@ -590,7 +660,7 @@ public class ChunkSerializer {
 
         return nbttaglist == null && nbttaglist1 == null ? null : (chunk) -> {
             if (nbttaglist != null) {
-                world.addLegacyChunkEntities(EntityType.loadEntitiesRecursive(nbttaglist, world));
+                world.addLegacyChunkEntities(EntityType.loadEntitiesRecursive(nbttaglist, world), chunk.getPos()); // Paper - rewrite chunk system
             }
 
             if (nbttaglist1 != null) {

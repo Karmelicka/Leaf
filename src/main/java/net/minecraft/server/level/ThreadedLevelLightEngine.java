@@ -37,15 +37,12 @@ import net.minecraft.world.level.chunk.ChunkStatus;
 public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
     public static final int DEFAULT_BATCH_SIZE = 1000;
     private static final Logger LOGGER = LogUtils.getLogger();
-    private final ProcessorMailbox<Runnable> taskMailbox;
-    private final ObjectList<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> lightTasks = new ObjectArrayList<>();
+    // Paper - rewrite chunk system
     private final ChunkMap chunkMap;
-    private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> sorterMailbox;
-    private final int taskPerBatch = 1000;
-    private final AtomicBoolean scheduled = new AtomicBoolean();
+    // Paper - rewrite chunk system
 
     // Paper start - replace light engine impl
-    protected final ca.spottedleaf.starlight.common.light.StarLightInterface theLightEngine;
+    public final ca.spottedleaf.starlight.common.light.StarLightInterface theLightEngine;
     public final boolean hasBlockLight;
     public final boolean hasSkyLight;
     // Paper end - replace light engine impl
@@ -53,8 +50,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     public ThreadedLevelLightEngine(LightChunkGetter chunkProvider, ChunkMap chunkStorage, boolean hasBlockLight, ProcessorMailbox<Runnable> processor, ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> executor) {
         super(chunkProvider, false, false); // Paper - destroy vanilla light engine state
         this.chunkMap = chunkStorage;
-        this.sorterMailbox = executor;
-        this.taskMailbox = processor;
+        // Paper - rewrite chunk system
         // Paper start - replace light engine impl
         this.hasBlockLight = true;
         this.hasSkyLight = hasBlockLight; // Nice variable name.
@@ -98,7 +94,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
             ++totalChunks;
         }
 
-        this.taskMailbox.tell(() -> {
+        this.chunkMap.level.chunkTaskScheduler.radiusAwareScheduler.queueInfiniteRadiusTask(() -> { // Paper - rewrite chunk system
             this.theLightEngine.relightChunks(chunks, (ChunkPos chunkPos) -> {
                 chunkLightCallback.accept(chunkPos);
                 ((java.util.concurrent.Executor)((ServerLevel)this.theLightEngine.getWorld()).getChunkSource().mainThreadProcessor).execute(() -> {
@@ -115,7 +111,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     private final Long2IntOpenHashMap chunksBeingWorkedOn = new Long2IntOpenHashMap();
 
     private void queueTaskForSection(final int chunkX, final int chunkY, final int chunkZ,
-                                     final Supplier<ca.spottedleaf.starlight.common.light.StarLightInterface.LightQueue.ChunkTasks> runnable) {
+                                     final Supplier<io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks> runnable) { // Paper - rewrite chunk system
         final ServerLevel world = (ServerLevel)this.theLightEngine.getWorld();
 
         final ChunkAccess center = this.theLightEngine.getAnyChunkNow(chunkX, chunkZ);
@@ -142,7 +138,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
 
         final long key = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 
-        final ca.spottedleaf.starlight.common.light.StarLightInterface.LightQueue.ChunkTasks updateFuture = runnable.get();
+        final io.papermc.paper.chunk.system.light.LightQueue.ChunkTasks updateFuture = runnable.get(); // Paper - rewrite chunk system
 
         if (updateFuture == null) {
             // not scheduled
@@ -282,17 +278,11 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     }
 
     private void addTask(int x, int z, ThreadedLevelLightEngine.TaskType stage, Runnable task) {
-        this.addTask(x, z, this.chunkMap.getChunkQueueLevel(ChunkPos.asLong(x, z)), stage, task);
+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
     }
 
     private void addTask(int x, int z, IntSupplier completedLevelSupplier, ThreadedLevelLightEngine.TaskType stage, Runnable task) {
-        this.sorterMailbox.tell(ChunkTaskPriorityQueueSorter.message(() -> {
-            this.lightTasks.add(Pair.of(stage, task));
-            if (this.lightTasks.size() >= 1000) {
-                this.runUpdate();
-            }
-
-        }, ChunkPos.asLong(x, z), completedLevelSupplier));
+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
     }
 
     @Override
@@ -334,90 +324,15 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
     }
 
     public CompletableFuture<ChunkAccess> lightChunk(ChunkAccess chunk, boolean excludeBlocks) {
-        // Paper start - replace light engine impl
-        if (true) {
-            boolean lit = excludeBlocks;
-            final ChunkPos chunkPos = chunk.getPos();
-
-            return CompletableFuture.supplyAsync(() -> {
-                final Boolean[] emptySections = StarLightEngine.getEmptySectionsForChunk(chunk);
-                if (!lit) {
-                    chunk.setLightCorrect(false);
-                    this.theLightEngine.lightChunk(chunk, emptySections);
-                    chunk.setLightCorrect(true);
-                } else {
-                    this.theLightEngine.forceLoadInChunk(chunk, emptySections);
-                    // can't really force the chunk to be edged checked, as we need neighbouring chunks - but we don't have
-                    // them, so if it's not loaded then i guess we can't do edge checks. later loads of the chunk should
-                    // catch what we miss here.
-                    this.theLightEngine.checkChunkEdges(chunkPos.x, chunkPos.z);
-                }
-
-                this.chunkMap.releaseLightTicket(chunkPos);
-                return chunk;
-            }, (runnable) -> {
-                this.theLightEngine.scheduleChunkLight(chunkPos, runnable);
-                this.tryScheduleUpdate();
-            }).whenComplete((final ChunkAccess c, final Throwable throwable) -> {
-                if (throwable != null) {
-                    LOGGER.error("Failed to light chunk " + chunkPos, throwable);
-                }
-            });
-        }
-        // Paper end - replace light engine impl
-        ChunkPos chunkPos = chunk.getPos();
-        chunk.setLightCorrect(false);
-        this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
-            if (!excludeBlocks) {
-                super.propagateLightSources(chunkPos);
-            }
-
-        }, () -> {
-            return "lightChunk " + chunkPos + " " + excludeBlocks;
-        }));
-        return CompletableFuture.supplyAsync(() -> {
-            chunk.setLightCorrect(true);
-            this.chunkMap.releaseLightTicket(chunkPos);
-            return chunk;
-        }, (task) -> {
-            this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, task);
-        });
+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
     }
 
     public void tryScheduleUpdate() {
-        if (this.hasLightWork() && this.scheduled.compareAndSet(false, true)) { // Paper  // Paper - rewrite light engine
-            this.taskMailbox.tell(() -> {
-                this.runUpdate();
-                this.scheduled.set(false);
-            });
-        }
-
+        // Paper - rewrite chunk system
     }
 
     private void runUpdate() {
-        int i = Math.min(this.lightTasks.size(), 1000);
-        ObjectListIterator<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> objectListIterator = this.lightTasks.iterator();
-
-        int j;
-        for(j = 0; objectListIterator.hasNext() && j < i; ++j) {
-            Pair<ThreadedLevelLightEngine.TaskType, Runnable> pair = objectListIterator.next();
-            if (pair.getFirst() == ThreadedLevelLightEngine.TaskType.PRE_UPDATE) {
-                pair.getSecond().run();
-            }
-        }
-
-        objectListIterator.back(j);
-        this.theLightEngine.propagateChanges(); // Paper - rewrite light engine
-
-        for(int var5 = 0; objectListIterator.hasNext() && var5 < i; ++var5) {
-            Pair<ThreadedLevelLightEngine.TaskType, Runnable> pair2 = objectListIterator.next();
-            if (pair2.getFirst() == ThreadedLevelLightEngine.TaskType.POST_UPDATE) {
-                pair2.getSecond().run();
-            }
-
-            objectListIterator.remove();
-        }
-
+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
     }
 
     public CompletableFuture<?> waitForPendingTasks(int x, int z) {

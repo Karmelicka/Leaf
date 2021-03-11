@@ -44,6 +44,7 @@ public class RegionFile implements AutoCloseable {
     private final IntBuffer timestamps;
     @VisibleForTesting
     protected final RegionBitmap usedSectors;
+    public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
 
     public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
         this(file, directory, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
@@ -228,7 +229,7 @@ public class RegionFile implements AutoCloseable {
         return (byteCount + 4096 - 1) / 4096;
     }
 
-    public boolean doesChunkExist(ChunkPos pos) {
+    public synchronized boolean doesChunkExist(ChunkPos pos) { // Paper - synchronized
         int i = this.getOffset(pos);
 
         if (i == 0) {
@@ -395,6 +396,11 @@ public class RegionFile implements AutoCloseable {
     }
 
     public void close() throws IOException {
+        // Paper start - Prevent regionfiles from being closed during use
+        this.fileLock.lock();
+        synchronized (this) {
+        try {
+        // Paper end
         try {
             this.padToFullSector();
         } finally {
@@ -404,6 +410,10 @@ public class RegionFile implements AutoCloseable {
                 this.file.close();
             }
         }
+        } finally { // Paper start - Prevent regionfiles from being closed during use
+            this.fileLock.unlock();
+        }
+        } // Paper end
 
     }
 

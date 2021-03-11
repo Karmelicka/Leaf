@@ -44,17 +44,23 @@ public class PlayerChunkSender {
 
     public void dropChunk(ServerPlayer player, ChunkPos pos) {
         if (!this.pendingChunks.remove(pos.toLong()) && player.isAlive()) {
+            // Paper start - rewrite player chunk loader
+           dropChunkStatic(player, pos);
+        }
+    }
+    public static void dropChunkStatic(ServerPlayer player, ChunkPos pos) {
+            player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(pos.toLong()).removePlayer(player);
             player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
             // Paper start - PlayerChunkUnloadEvent
             if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
                 new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(player.getBukkitEntity().getWorld().getChunkAt(pos.longKey), player.getBukkitEntity()).callEvent();
             }
             // Paper end - PlayerChunkUnloadEvent
-        }
-
     }
+    // Paper end - rewrite player chunk loader
 
     public void sendNextChunks(ServerPlayer player) {
+        if (true) return; // Paper - rewrite player chunk loader
         if (this.unacknowledgedBatches < this.maxUnacknowledgedBatches) {
             float f = Math.max(1.0F, this.desiredChunksPerTick);
             this.batchQuota = Math.min(this.batchQuota + this.desiredChunksPerTick, f);
@@ -80,7 +86,8 @@ public class PlayerChunkSender {
         }
     }
 
-    private static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) {
+    public static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) { // Paper - rewrite chunk loader - public
+        handler.player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(chunk.getPos().toLong()).addPlayer(handler.player);
         handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), (BitSet)null, (BitSet)null));
         // Paper start - PlayerChunkLoadEvent
         if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
@@ -110,6 +117,7 @@ public class PlayerChunkSender {
     }
 
     public void onChunkBatchReceivedByClient(float desiredBatchSize) {
+        if (true) return; // Paper - rewrite player chunk loader
         --this.unacknowledgedBatches;
         this.desiredChunksPerTick = Double.isNaN((double)desiredBatchSize) ? 0.01F : Mth.clamp(desiredBatchSize, 0.01F, 64.0F);
         if (this.unacknowledgedBatches == 0) {

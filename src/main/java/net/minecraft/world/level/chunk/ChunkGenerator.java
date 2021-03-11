@@ -114,7 +114,7 @@ public abstract class ChunkGenerator {
         return CompletableFuture.supplyAsync(Util.wrapThreadWithTaskName("init_biomes", () -> {
             chunk.fillBiomesFromNoise(this.biomeSource, noiseConfig.sampler());
             return chunk;
-        }), Util.backgroundExecutor());
+        }), executor); // Paper - run with supplied executor
     }
 
     public abstract void applyCarvers(WorldGenRegion chunkRegion, long seed, RandomState noiseConfig, BiomeManager biomeAccess, StructureManager structureAccessor, ChunkAccess chunk, GenerationStep.Carving carverStep);
@@ -309,7 +309,7 @@ public abstract class ChunkGenerator {
                         return Pair.of(placement.getLocatePos(pos), holder);
                     }
 
-                    ChunkAccess ichunkaccess = world.getChunk(pos.x, pos.z, ChunkStatus.STRUCTURE_STARTS);
+                    ChunkAccess ichunkaccess = world.syncLoadNonFull(pos.x, pos.z, ChunkStatus.STRUCTURE_STARTS); // Paper - rewrite chunk system
 
                     structurestart = structureAccessor.getStartForStructure(SectionPos.bottomOf(ichunkaccess), (Structure) holder.value(), ichunkaccess);
                 } while (structurestart == null);

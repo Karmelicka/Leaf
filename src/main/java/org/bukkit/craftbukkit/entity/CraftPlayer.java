@@ -3400,31 +3400,31 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public int getViewDistance() {
-        return io.papermc.paper.chunk.system.ChunkSystem.getLoadViewDistance(this.getHandle());
+        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPIViewDistance(this);
     }
 
     @Override
     public void setViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        this.getHandle().setLoadViewDistance(viewDistance < 0 ? viewDistance : viewDistance + 1);
     }
 
     @Override
     public int getSimulationDistance() {
-        return io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(this.getHandle());
+        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPITickViewDistance(this);
     }
 
     @Override
     public void setSimulationDistance(final int simulationDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        this.getHandle().setTickViewDistance(simulationDistance);
     }
 
     @Override
     public int getSendViewDistance() {
-        return io.papermc.paper.chunk.system.ChunkSystem.getSendViewDistance(this.getHandle());
+        return io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.getAPISendViewDistance(this);
     }
 
     @Override
     public void setSendViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        this.getHandle().setSendViewDistance(viewDistance);
     }
 }

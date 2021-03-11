@@ -480,6 +480,58 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
     // Paper end
 
+    // Paper start
+    /**
+     * Overriding this field will cause memory leaks.
+     */
+    private final boolean hardCollides;
+
+    private static final java.util.Map<Class<? extends Entity>, Boolean> cachedOverrides = java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+    {
+        /* // Goodbye, broken on reobf...
+        Boolean hardCollides = cachedOverrides.get(this.getClass());
+        if (hardCollides == null) {
+            try {
+                java.lang.reflect.Method getHardCollisionBoxEntityMethod = Entity.class.getMethod("canCollideWith", Entity.class);
+                java.lang.reflect.Method hasHardCollisionBoxMethod = Entity.class.getMethod("canBeCollidedWith");
+                if (!this.getClass().getMethod(hasHardCollisionBoxMethod.getName(), hasHardCollisionBoxMethod.getParameterTypes()).equals(hasHardCollisionBoxMethod)
+                        || !this.getClass().getMethod(getHardCollisionBoxEntityMethod.getName(), getHardCollisionBoxEntityMethod.getParameterTypes()).equals(getHardCollisionBoxEntityMethod)) {
+                    hardCollides = Boolean.TRUE;
+                } else {
+                    hardCollides = Boolean.FALSE;
+                }
+                cachedOverrides.put(this.getClass(), hardCollides);
+            }
+            catch (ThreadDeath thr) { throw thr; }
+            catch (Throwable thr) {
+                // shouldn't happen, just explode
+                throw new RuntimeException(thr);
+            }
+        } */
+        this.hardCollides = this instanceof Boat
+            || this instanceof net.minecraft.world.entity.monster.Shulker
+            || this instanceof net.minecraft.world.entity.vehicle.AbstractMinecart
+            || this.shouldHardCollide();
+    }
+
+    // plugins can override
+    protected boolean shouldHardCollide() {
+        return false;
+    }
+
+    public final boolean hardCollides() {
+        return this.hardCollides;
+    }
+
+    public net.minecraft.server.level.FullChunkStatus chunkStatus;
+
+    public int sectionX = Integer.MIN_VALUE;
+    public int sectionY = Integer.MIN_VALUE;
+    public int sectionZ = Integer.MIN_VALUE;
+
+    public boolean updatingSectionStatus = false;
+    // Paper end
+
     public Entity(EntityType<?> type, Level world) {
         this.id = Entity.ENTITY_COUNTER.incrementAndGet();
         this.passengers = ImmutableList.of();
@@ -2580,11 +2632,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         return InteractionResult.PASS;
     }
 
-    public boolean canCollideWith(Entity other) {
+    public boolean canCollideWith(Entity other) { // Paper - diff on change, hard colliding entities override this - TODO CHECK ON UPDATE - AbstractMinecart/Boat override
         return other.canBeCollidedWith() && !this.isPassengerOfSameVehicle(other);
     }
 
-    public boolean canBeCollidedWith() {
+    public boolean canBeCollidedWith() { // Paper - diff on change, hard colliding entities override this TODO CHECK ON UPDATE - Boat/Shulker override
         return false;
     }
 
@@ -4009,6 +4061,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         }).count();
     }
 
+    // Paper start - rewrite chunk system
+    public boolean hasAnyPlayerPassengers() {
+        // copied from below
+        if (this.passengers.isEmpty()) { return false; }
+        return this.getIndirectPassengersStream().anyMatch((entity) -> entity instanceof Player);
+    }
+    // Paper end - rewrite chunk system
     public boolean hasExactlyOnePlayerPassenger() {
         if (this.passengers.isEmpty()) { return false; } // Paper - Optimize indirect passenger iteration
         return this.countPlayerPassengers() == 1;
@@ -4361,6 +4420,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             return;
         }
         // Paper end - Block invalid positions and bounding box
+        // Paper start - rewrite chunk system
+        if (this.updatingSectionStatus) {
+            LOGGER.error("Refusing to update position for entity {} to position {} since it is processing a section status update", this, new Vec3(x, y, z), new Throwable());
+            return;
+        }
+        // Paper end - rewrite chunk system
         // Paper start - Fix MC-4
         if (this instanceof ItemEntity) {
             if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.fixEntityPositionDesync) {
@@ -4490,6 +4555,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
 
     @Override
     public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
+        // Paper start - rewrite chunk system
+        io.papermc.paper.util.TickThread.ensureTickThread(this, "Cannot remove entity off-main");
+        if (!((ServerLevel)this.level).getEntityLookup().canRemoveEntity(this)) {
+            LOGGER.warn("Entity " + this + " is currently prevented from being removed from the world since it is processing section status updates", new Throwable());
+            return;
+        }
+        // Paper end - rewrite chunk system
         CraftEventFactory.callEntityRemoveEvent(this, cause);
         // CraftBukkit end
         final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
@@ -4501,7 +4573,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             this.stopRiding();
         }
 
-        this.getPassengers().forEach(Entity::stopRiding);
+        if (entity_removalreason != RemovalReason.UNLOADED_TO_CHUNK) this.getPassengers().forEach(Entity::stopRiding); // Paper - chunk system - don't adjust passenger state when unloading, it's just not safe (and messes with our logic in entity chunk unload)
         this.levelCallback.onRemove(entity_removalreason);
         // Paper start - Folia schedulers
         if (!(this instanceof ServerPlayer) && entity_removalreason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
@@ -4532,7 +4604,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
 
     @Override
     public boolean shouldBeSaved() {
-        return this.removalReason != null && !this.removalReason.shouldSave() ? false : (this.isPassenger() ? false : !this.isVehicle() || !this.hasExactlyOnePlayerPassenger());
+        return this.removalReason != null && !this.removalReason.shouldSave() ? false : (this.isPassenger() ? false : !this.isVehicle() || !this.hasAnyPlayerPassengers()); // Paper - rewrite chunk system - it should check if the entity has ANY player passengers
     }
 
     @Override
