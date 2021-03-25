@@ -221,6 +221,15 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
                 BeaconBlockEntity.playSound(world, pos, SoundEvents.BEACON_AMBIENT);
             }
         }
+        // Paper start - beacon activation/deactivation events
+        if (i1 <= 0 && blockEntity.levels > 0) {
+            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
+            new io.papermc.paper.event.block.BeaconActivatedEvent(block).callEvent();
+        } else if (i1 > 0 && blockEntity.levels <= 0) {
+            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
+            new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
+        }
+        // Paper end - beacon activation/deactivation events
 
         if (blockEntity.lastCheckY >= l) {
             blockEntity.lastCheckY = world.getMinBuildHeight() - 1;
@@ -278,6 +287,10 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
 
     @Override
     public void setRemoved() {
+        // Paper start - beacon activation/deactivation events
+        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, worldPosition);
+        new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
+        // Paper end - beacon activation/deactivation events
         BeaconBlockEntity.playSound(this.level, this.worldPosition, SoundEvents.BEACON_DEACTIVATE);
         super.setRemoved();
     }
