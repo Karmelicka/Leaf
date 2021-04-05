@@ -260,6 +260,7 @@ public class ServerPlayer extends Player {
     public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
     public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper
     // Paper end - Optional per player mob spawns
+    public final int[] mobBackoffCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper - per player mob count backoff
 
     // CraftBukkit start
     public String displayName;

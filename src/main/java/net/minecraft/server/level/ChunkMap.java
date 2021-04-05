@@ -306,8 +306,25 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         }
     }
 
+    // Paper start - per player mob count backoff
+    public void updateFailurePlayerMobTypeMap(int chunkX, int chunkZ, net.minecraft.world.entity.MobCategory mobCategory) {
+        if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
+            return;
+        }
+        int idx = mobCategory.ordinal();
+        final com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> inRange =
+            this.getNearbyPlayers().getPlayersByChunk(chunkX, chunkZ, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
+        if (inRange == null) {
+            return;
+        }
+        final Object[] backingSet = inRange.getRawData();
+        for (int i = 0, len = inRange.size(); i < len; i++) {
+            ++((ServerPlayer)backingSet[i]).mobBackoffCounts[idx];
+        }
+    }
+    // Paper end - per player mob count backoff
     public int getMobCountNear(final ServerPlayer player, final net.minecraft.world.entity.MobCategory mobCategory) {
-        return player.mobCounts[mobCategory.ordinal()];
+        return player.mobCounts[mobCategory.ordinal()] + player.mobBackoffCounts[mobCategory.ordinal()]; // Paper - per player mob count backoff
     }
     // Paper end - Optional per player mob spawns
 
