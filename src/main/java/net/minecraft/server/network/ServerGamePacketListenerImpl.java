@@ -1187,7 +1187,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         }
 
         itemstack.addTagElement("pages", nbttaglist);
-        CraftEventFactory.handleEditBookEvent(this.player, slot, handItem, itemstack); // CraftBukkit
+        this.player.getInventory().setItem(slot, CraftEventFactory.handleEditBookEvent(this.player, slot, handItem, itemstack)); // CraftBukkit // Paper - Don't ignore result (see other callsite for handleEditBookEvent)
     }
 
     @Override
