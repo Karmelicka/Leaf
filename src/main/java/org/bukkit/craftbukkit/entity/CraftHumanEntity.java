@@ -133,6 +133,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
     // Paper end
 
+    // Paper start
+    @Override
+    public boolean isDeeplySleeping() {
+        return getHandle().isSleepingLongEnough();
+    }
+    // Paper end
+
     @Override
     public int getSleepTicks() {
         return this.getHandle().sleepCounter;
