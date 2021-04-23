@@ -780,6 +780,12 @@ public abstract class PlayerList {
     }
 
     public ServerPlayer respawn(ServerPlayer entityplayer, ServerLevel worldserver, boolean flag, Location location, boolean avoidSuffocation, RespawnReason reason) {
+        // Paper start - Expand PlayerRespawnEvent
+        return respawn(entityplayer, worldserver, flag, location, avoidSuffocation, reason, new org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag[0]);
+    }
+
+    public ServerPlayer respawn(ServerPlayer entityplayer, ServerLevel worldserver, boolean flag, Location location, boolean avoidSuffocation, RespawnReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag...respawnFlags) {
+        // Paper end - Expand PlayerRespawnEvent
         entityplayer.stopRiding(); // CraftBukkit
         this.players.remove(entityplayer);
         this.playersByName.remove(entityplayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
@@ -821,6 +827,7 @@ public abstract class PlayerList {
 
         // Paper start - Add PlayerPostRespawnEvent
         boolean isBedSpawn = false;
+        boolean isAnchorSpawn = false; // Paper - Fix PlayerRespawnEvent
         boolean isRespawn = false;
         boolean isLocAltered = false; // Paper - Fix SPIGOT-5989
         // Paper end - Add PlayerPostRespawnEvent
@@ -841,6 +848,7 @@ public abstract class PlayerList {
                 if (optional.isPresent()) {
                     BlockState iblockdata = worldserver1.getBlockState(blockposition);
                     boolean flag3 = iblockdata.is(Blocks.RESPAWN_ANCHOR);
+                    isAnchorSpawn = flag3; // Paper - Fix PlayerRespawnEvent
                     Vec3 vec3d = (Vec3) optional.get();
                     float f1;
 
@@ -869,7 +877,7 @@ public abstract class PlayerList {
             }
 
             Player respawnPlayer = entityplayer1.getBukkitEntity();
-            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn && !flag2, flag2, reason);
+            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn && !isAnchorSpawn, isAnchorSpawn, reason, com.google.common.collect.ImmutableSet.<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag>builder().add(respawnFlags)); // Paper - PlayerRespawnEvent changes
             this.cserver.getPluginManager().callEvent(respawnEvent);
             // Spigot Start
             if (entityplayer.connection.isDisconnected()) {
