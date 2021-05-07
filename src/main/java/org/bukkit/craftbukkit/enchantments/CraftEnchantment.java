@@ -81,7 +81,7 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
 
     @Override
     public boolean isCursed() {
-        return this.handle instanceof BindingCurseEnchantment || this.handle instanceof VanishingCurseEnchantment;
+        return this.handle.isCurse(); // Paper - More Enchantment API
     }
 
     @Override
@@ -156,6 +156,55 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
     @Override
     public String translationKey() {
         return this.handle.getDescriptionId();
+    }
+
+    @Override
+    public boolean isTradeable() {
+        return handle.isTradeable();
+    }
+
+    @Override
+    public boolean isDiscoverable() {
+        return handle.isDiscoverable();
+    }
+
+    @Override
+    public int getMinModifiedCost(int level) {
+        return handle.getMinCost(level);
+    }
+
+    @Override
+    public int getMaxModifiedCost(int level) {
+        return handle.getMaxCost(level);
+    }
+
+    @Override
+    public io.papermc.paper.enchantments.EnchantmentRarity getRarity() {
+        return fromNMSRarity(handle.getRarity());
+    }
+
+    @Override
+    public float getDamageIncrease(int level, org.bukkit.entity.EntityCategory entityCategory) {
+        return handle.getDamageBonus(level, org.bukkit.craftbukkit.entity.CraftLivingEntity.fromBukkitEntityCategory(entityCategory));
+    }
+
+    @Override
+    public java.util.Set<org.bukkit.inventory.EquipmentSlot> getActiveSlots() {
+        return java.util.stream.Stream.of(handle.slots).map(org.bukkit.craftbukkit.CraftEquipmentSlot::getSlot).collect(java.util.stream.Collectors.toSet());
+    }
+
+    public static io.papermc.paper.enchantments.EnchantmentRarity fromNMSRarity(net.minecraft.world.item.enchantment.Enchantment.Rarity nmsRarity) {
+        if (nmsRarity == net.minecraft.world.item.enchantment.Enchantment.Rarity.COMMON) {
+            return io.papermc.paper.enchantments.EnchantmentRarity.COMMON;
+        } else if (nmsRarity == net.minecraft.world.item.enchantment.Enchantment.Rarity.UNCOMMON) {
+            return io.papermc.paper.enchantments.EnchantmentRarity.UNCOMMON;
+        } else if (nmsRarity == net.minecraft.world.item.enchantment.Enchantment.Rarity.RARE) {
+            return io.papermc.paper.enchantments.EnchantmentRarity.RARE;
+        } else if (nmsRarity == net.minecraft.world.item.enchantment.Enchantment.Rarity.VERY_RARE) {
+            return io.papermc.paper.enchantments.EnchantmentRarity.VERY_RARE;
+        }
+
+        throw new IllegalArgumentException(String.format("Unable to convert %s to a enum value of %s.", nmsRarity, io.papermc.paper.enchantments.EnchantmentRarity.class));
     }
     // Paper end
 
