@@ -22,6 +22,7 @@ public class WebBlock extends Block {
 
     @Override
     public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
+        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
         entity.makeStuckInBlock(state, new Vec3(0.25D, (double)0.05F, 0.25D));
     }
 }
