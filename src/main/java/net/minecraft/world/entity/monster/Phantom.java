@@ -145,7 +145,7 @@ public class Phantom extends FlyingMob implements Enemy {
 
     @Override
     public void aiStep() {
-        if (this.isAlive() && this.isSunBurnTick()) {
+        if (this.isAlive() && shouldBurnInDay && this.isSunBurnTick()) { // Paper - shouldBurnInDay API
             this.setSecondsOnFire(8);
         }
 
@@ -176,6 +176,9 @@ public class Phantom extends FlyingMob implements Enemy {
         if (nbt.hasUUID("Paper.SpawningEntity")) {
             this.spawningEntity = nbt.getUUID("Paper.SpawningEntity");
         }
+        if (nbt.contains("Paper.ShouldBurnInDay")) {
+            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
+        }
         // Paper end
     }
 
@@ -190,6 +193,7 @@ public class Phantom extends FlyingMob implements Enemy {
         if (this.spawningEntity != null) {
             nbt.putUUID("Paper.SpawningEntity", this.spawningEntity);
         }
+        nbt.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay);
         // Paper end
     }
 
@@ -258,6 +262,9 @@ public class Phantom extends FlyingMob implements Enemy {
         return spawningEntity;
     }
     public void setSpawningEntity(java.util.UUID entity) { this.spawningEntity = entity; }
+    private boolean shouldBurnInDay = true;
+    public boolean shouldBurnInDay() { return shouldBurnInDay; }
+    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
     // Paper end
     private static enum AttackPhase {
 
