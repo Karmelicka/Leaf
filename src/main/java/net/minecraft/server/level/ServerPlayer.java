@@ -1940,8 +1940,16 @@ public class ServerPlayer extends Player {
     }
 
     public boolean setGameMode(GameType gameMode) {
-        if (!this.gameMode.changeGameModeForPlayer(gameMode)) {
-            return false;
+        // Paper start - Expand PlayerGameModeChangeEvent
+        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
+        return event == null ? false : event.isCancelled();
+    }
+    @Nullable
+    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component message) {
+        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(gameMode, cause, message);
+        if (event == null || event.isCancelled()) {
+            return null;
+            // Paper end - Expand PlayerGameModeChangeEvent
         } else {
             this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
             if (gameMode == GameType.SPECTATOR) {
@@ -1953,7 +1961,7 @@ public class ServerPlayer extends Player {
 
             this.onUpdateAbilities();
             this.updateEffectVisibility();
-            return true;
+            return event; // Paper - Expand PlayerGameModeChangeEvent
         }
     }
 
@@ -2365,6 +2373,16 @@ public class ServerPlayer extends Player {
     }
 
     public void loadGameTypes(@Nullable CompoundTag nbt) {
+        // Paper start - Expand PlayerGameModeChangeEvent
+        if (this.server.getForcedGameType() != null && this.server.getForcedGameType() != ServerPlayer.readPlayerMode(nbt, "playerGameType")) {
+            if (new org.bukkit.event.player.PlayerGameModeChangeEvent(this.getBukkitEntity(), org.bukkit.GameMode.getByValue(this.server.getDefaultGameType().getId()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null).callEvent()) {
+                this.gameMode.setGameModeForPlayer(this.server.getForcedGameType(), GameType.DEFAULT_MODE);
+            } else {
+                this.gameMode.setGameModeForPlayer(ServerPlayer.readPlayerMode(nbt,"playerGameType"), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
+            }
+            return;
+        }
+        // Paper end - Expand PlayerGameModeChangeEvent
         this.gameMode.setGameModeForPlayer(this.calculateGameModeForNewPlayer(ServerPlayer.readPlayerMode(nbt, "playerGameType")), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
     }
 
