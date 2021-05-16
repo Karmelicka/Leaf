@@ -3291,6 +3291,28 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             } else {
                 // CraftBukkit start
                 worldserver = shapedetectorshape.world;
+                // Paper start - Call EntityPortalExitEvent
+                Vec3 position = shapedetectorshape.pos;
+                float yaw = shapedetectorshape.yRot;
+                float pitch = this.getXRot(); // Keep entity pitch as per moveTo line below
+                Vec3 velocity = shapedetectorshape.speed;
+                CraftEntity bukkitEntity = this.getBukkitEntity();
+                org.bukkit.event.entity.EntityPortalExitEvent event = new org.bukkit.event.entity.EntityPortalExitEvent(bukkitEntity,
+                    bukkitEntity.getLocation(), new Location(worldserver.getWorld(), position.x, position.y, position.z, yaw, pitch),
+                    bukkitEntity.getVelocity(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(shapedetectorshape.speed));
+                event.callEvent();
+                if (this.isRemoved()) {
+                    return null;
+                }
+
+                if (!event.isCancelled() && event.getTo() != null) {
+                    worldserver = ((CraftWorld) event.getTo().getWorld()).getHandle();
+                    position = CraftLocation.toVec3D(event.getTo());
+                    yaw = event.getTo().getYaw();
+                    pitch = event.getTo().getPitch();
+                    velocity = org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getAfter());
+                }
+                // Paper end - Call EntityPortalExitEvent
                 if (worldserver == this.level) {
                     // SPIGOT-6782: Just move the entity if a plugin changed the world to the one the entity is already in
                     this.moveTo(shapedetectorshape.pos.x, shapedetectorshape.pos.y, shapedetectorshape.pos.z, shapedetectorshape.yRot, shapedetectorshape.xRot);
@@ -3310,8 +3332,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
 
                 if (entity != null) {
                     entity.restoreFrom(this);
-                    entity.moveTo(shapedetectorshape.pos.x, shapedetectorshape.pos.y, shapedetectorshape.pos.z, shapedetectorshape.yRot, entity.getXRot());
-                    entity.setDeltaMovement(shapedetectorshape.speed);
+                    entity.moveTo(position.x, position.y, position.z, yaw, pitch); // Paper - EntityPortalExitEvent
+                    entity.setDeltaMovement(velocity); // Paper - EntityPortalExitEvent
                     // CraftBukkit start - Don't spawn the new entity if the current entity isn't spawned
                     if (this.inWorld) {
                         worldserver.addDuringTeleport(entity);
