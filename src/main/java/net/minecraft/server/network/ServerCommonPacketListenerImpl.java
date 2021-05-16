@@ -95,7 +95,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         } else if (!this.isSingleplayerOwner()) {
             // Paper start - This needs to be handled on the main thread for plugins
             server.submit(() -> {
-                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
+                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
             });
             // Paper end - This needs to be handled on the main thread for plugins
         }
@@ -131,7 +131,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                 }
             } catch (Exception ex) {
                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t register custom payload", ex);
-                this.disconnect("Invalid payload REGISTER!");
+                this.disconnect("Invalid payload REGISTER!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
             }
         } else if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_UNREGISTER)) {
             try {
@@ -141,7 +141,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                 }
             } catch (Exception ex) {
                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t unregister custom payload", ex);
-                this.disconnect("Invalid payload UNREGISTER!");
+                this.disconnect("Invalid payload UNREGISTER!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
             }
         } else {
             try {
@@ -159,7 +159,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                 this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
             } catch (Exception ex) {
                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
-                this.disconnect("Invalid custom payload!");
+                this.disconnect("Invalid custom payload!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
             }
         }
 
@@ -175,7 +175,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         PacketUtils.ensureRunningOnSameThread(packet, this, (BlockableEventLoop) this.server);
         if (packet.action() == ServerboundResourcePackPacket.Action.DECLINED && this.server.isResourcePackRequired()) {
             ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
-            this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
+            this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"), org.bukkit.event.player.PlayerKickEvent.Cause.RESOURCE_PACK_REJECTION); // Paper - kick event cause
         }
         // Paper start - adventure pack callbacks
         // call the callbacks before the previously-existing event so the event has final say
@@ -207,7 +207,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         if (this.keepAlivePending) {
             if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
                 ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // more info
-                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
+                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
             }
         } else {
             if (elapsedTime >= 15000L) { // 15 seconds
@@ -260,18 +260,28 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
     }
 
     // CraftBukkit start
-    @Deprecated
+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
     public void disconnect(String s) { // Paper
-        this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s)); // Paper
+        this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); // Paper
     }
     // CraftBukkit end
 
-    // Paper start
-    public void disconnect(final Component reason) {
-        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asAdventure(reason));
+    // Paper start - kick event cause
+    public void disconnect(String s, PlayerKickEvent.Cause cause) {
+        this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s), cause);
     }
 
-    public void disconnect(net.kyori.adventure.text.Component reason) {
+    // Paper start
+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    public void disconnect(final Component reason) {
+        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asAdventure(reason), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
+    }
+
+    public void disconnect(final Component reason, PlayerKickEvent.Cause cause) {
+        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asAdventure(reason), cause);
+    }
+
+    public void disconnect(net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) { // Paper - kick event cause
         // Paper end
         // CraftBukkit start - fire PlayerKickEvent
         if (this.processedDisconnect) {
@@ -281,7 +291,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
             Waitable waitable = new Waitable() {
                 @Override
                 protected Object evaluate() {
-                    ServerCommonPacketListenerImpl.this.disconnect(reason); // Paper - adventure
+                    ServerCommonPacketListenerImpl.this.disconnect(reason, cause); // Paper - adventure
                     return null;
                 }
             };
@@ -300,7 +310,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
 
         net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? this.player.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(this.player.getScoreboardName())); // Paper - Adventure
 
-        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), reason, leaveMessage); // Paper - adventure
+        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), reason, leaveMessage, cause); // Paper - adventure
 
         if (this.cserver.getServer().isRunning()) {
             this.cserver.getPluginManager().callEvent(event);

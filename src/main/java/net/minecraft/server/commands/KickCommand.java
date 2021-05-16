@@ -33,7 +33,7 @@ public class KickCommand {
 
             for(ServerPlayer serverPlayer : targets) {
                 if (!source.getServer().isSingleplayerOwner(serverPlayer.getGameProfile())) {
-                    serverPlayer.connection.disconnect(reason);
+                    serverPlayer.connection.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.KICK_COMMAND); // Paper - kick event cause
                     source.sendSuccess(() -> {
                         return Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason);
                     }, true);
