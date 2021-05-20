@@ -399,6 +399,15 @@ public class Main {
         return new WorldLoader.InitConfig(worldloader_d, Commands.CommandSelection.DEDICATED, serverPropertiesHandler.functionPermissionLevel);
     }
 
+    // Paper start - fix and optimise world upgrading
+    public static void convertWorldButItWorks(net.minecraft.resources.ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimensionType, net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess worldSession,
+                                              DataFixer dataFixer, Optional<net.minecraft.resources.ResourceKey<com.mojang.serialization.Codec<? extends net.minecraft.world.level.chunk.ChunkGenerator>>> generatorKey, boolean removeCaches) {
+        int threads = Runtime.getRuntime().availableProcessors() * 3 / 8;
+        final io.papermc.paper.world.ThreadedWorldUpgrader worldUpgrader = new io.papermc.paper.world.ThreadedWorldUpgrader(dimensionType, worldSession.getLevelId(), worldSession.levelDirectory.path().toFile(), threads, dataFixer, generatorKey, removeCaches);
+        worldUpgrader.convert();
+    }
+    // Paper end - fix and optimise world upgrading
+
     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, Registry<LevelStem> dimensionOptionsRegistry) {
         Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, dimensionOptionsRegistry, eraseCache);
