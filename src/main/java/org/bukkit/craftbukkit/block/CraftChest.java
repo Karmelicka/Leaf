@@ -87,4 +87,11 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
     public CraftChest copy() {
         return new CraftChest(this);
     }
+
+    // Paper start - More Lidded Block API
+    @Override
+    public boolean isOpen() {
+        return getTileEntity().openersCounter.opened;
+    }
+    // Paper end - More Lidded Block API
 }

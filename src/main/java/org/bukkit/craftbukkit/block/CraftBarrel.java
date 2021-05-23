@@ -67,4 +67,11 @@ public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Bar
     public CraftBarrel copy() {
         return new CraftBarrel(this);
     }
+
+    // Paper start - More Lidded Block API
+    @Override
+    public boolean isOpen() {
+        return getTileEntity().openersCounter.opened;
+    }
+    // Paper end - More Lidded Block API
 }
