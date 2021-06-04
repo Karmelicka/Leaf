@@ -421,6 +421,36 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         return this.originWorld;
     }
     // Paper end - Entity origin API
+    // Paper start - make end portalling safe
+    public BlockPos portalBlock;
+    public ServerLevel portalWorld;
+    public void tickEndPortal() {
+        BlockPos pos = this.portalBlock;
+        ServerLevel world = this.portalWorld;
+        this.portalBlock = null;
+        this.portalWorld = null;
+
+        if (pos == null || world == null || world != this.level) {
+            return;
+        }
+
+        if (this.isPassenger() || this.isVehicle() || !this.canChangeDimensions() || this.isRemoved() || !this.valid || !this.isAlive()) {
+            return;
+        }
+
+        ResourceKey<Level> resourcekey = world.getTypeKey() == LevelStem.END ? Level.OVERWORLD : Level.END; // CraftBukkit - SPIGOT-6152: send back to main overworld in custom ends
+        ServerLevel worldserver = world.getServer().getLevel(resourcekey);
+
+        org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(this.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
+        event.callEvent();
+
+        if (this instanceof ServerPlayer) {
+            ((ServerPlayer) this).changeDimension(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
+            return;
+        }
+        this.teleportTo(worldserver, null);
+    }
+    // Paper end - make end portalling safe
     public float getBukkitYaw() {
         return this.yRot;
     }
@@ -2798,6 +2828,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             }
 
             this.processPortalCooldown();
+            if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowUnsafeEndPortalTeleportation) this.tickEndPortal(); // Paper - make end portalling safe
         }
     }
 
