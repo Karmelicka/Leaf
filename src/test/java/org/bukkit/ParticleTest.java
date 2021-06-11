@@ -231,7 +231,7 @@ public class ParticleTest extends AbstractTestingBase {
                 Check in CraftParticle if the conversion is still correct.
                 """, bukkit.getKey()));
 
-        DataResult<Tag> encoded = assertDoesNotThrow(() -> minecraft.codec().encodeStart(DynamicOpsNBT.INSTANCE, particleParam),
+        DataResult<Tag> encoded = assertDoesNotThrow(() -> minecraft.codec().encodeStart(NbtOps.INSTANCE, particleParam), // Paper - remap fix
                 String.format("""
                         Could not encoded particle param for particle %s.
                         This can indicated, that the wrong particle param is created in CraftParticle.

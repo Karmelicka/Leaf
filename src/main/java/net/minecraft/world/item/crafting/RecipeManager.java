@@ -193,7 +193,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
         Builder<ResourceLocation, RecipeHolder<?>> builder = ImmutableMap.builder();
 
         recipes.forEach((recipeholder) -> {
-            Map<ResourceLocation, RecipeHolder<?>> map1 = (Map) map.computeIfAbsent(recipeholder.value().getType(), (recipes) -> {
+            Map<ResourceLocation, RecipeHolder<?>> map1 = (Map) map.computeIfAbsent(recipeholder.value().getType(), (recipes_) -> { // Paper - remap fix
                 return new Object2ObjectLinkedOpenHashMap<>(); // CraftBukkit
             });
             ResourceLocation minecraftkey = recipeholder.id();
