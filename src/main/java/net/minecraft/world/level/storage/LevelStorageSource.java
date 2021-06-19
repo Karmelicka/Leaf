@@ -290,10 +290,10 @@ public class LevelStorageSource {
     static Dynamic<?> readLevelDataTagFixed(Path path, DataFixer dataFixer) throws IOException {
         CompoundTag nbttagcompound = LevelStorageSource.readLevelDataTagRaw(path);
         CompoundTag nbttagcompound1 = nbttagcompound.getCompound("Data");
-        int i = NbtUtils.getDataVersion(nbttagcompound1, -1);
+        int i = NbtUtils.getDataVersion(nbttagcompound1, -1); final int version = i; // Paper - obfuscation helpers
         Dynamic<?> dynamic = DataFixTypes.LEVEL.updateToCurrentVersion(dataFixer, new Dynamic(NbtOps.INSTANCE, nbttagcompound1), i);
         Dynamic<?> dynamic1 = dynamic.get("Player").orElseEmptyMap();
-        Dynamic<?> dynamic2 = DataFixTypes.PLAYER.updateToCurrentVersion(dataFixer, dynamic1, i);
+        Dynamic<?> dynamic2 = LevelStorageSource.dank(dynamic1, version); // Paper
 
         dynamic = dynamic.set("Player", dynamic2);
         Dynamic<?> dynamic3 = dynamic.get("WorldGenSettings").orElseEmptyMap();
@@ -302,6 +302,12 @@ public class LevelStorageSource {
         dynamic = dynamic.set("WorldGenSettings", dynamic4);
         return dynamic;
     }
+
+    // Paper start
+    private static <T> Dynamic<T> dank(final Dynamic<T> input, final int version) {
+        return new Dynamic<>(input.getOps(), (T) ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.PLAYER, (CompoundTag)input.getValue(), version, net.minecraft.SharedConstants.getCurrentVersion().getDataVersion().getVersion()));
+    }
+    // Paper end
 
     private LevelSummary readLevelSummary(LevelStorageSource.LevelDirectory save, boolean locked) {
         Path path = save.dataFile();
