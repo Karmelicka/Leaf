@@ -20,4 +20,15 @@ public interface BitStorage {
     void unpack(int[] out);
 
     BitStorage copy();
+
+    // Paper start
+    void forEach(DataBitConsumer consumer);
+
+    @FunctionalInterface
+    interface DataBitConsumer {
+
+        void accept(int location, int data);
+
+    }
+    // Paper end
 }

@@ -855,6 +855,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
             entityplayer.stopSleepInBed(false, false);
         });
     }
+    // Paper start - optimise random block ticking
+    private final BlockPos.MutableBlockPos chunkTickMutablePosition = new BlockPos.MutableBlockPos();
+    private final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(this.random.nextLong());
+    // Paper end
 
     public void tickChunk(LevelChunk chunk, int randomTickSpeed) {
         ChunkPos chunkcoordintpair = chunk.getPos();
@@ -864,8 +868,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
         ProfilerFiller gameprofilerfiller = this.getProfiler();
 
         gameprofilerfiller.push("thunder");
+        final BlockPos.MutableBlockPos blockposition = this.chunkTickMutablePosition; // Paper - use mutable to reduce allocation rate, final to force compile fail on change
+
         if (!this.paperConfig().environment.disableThunder && flag && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
-            BlockPos blockposition = this.findLightningTargetAround(this.getBlockRandomPos(j, 0, k, 15));
+            blockposition.set(this.findLightningTargetAround(this.getBlockRandomPos(j, 0, k, 15))); // Paper
 
             if (this.isRainingAt(blockposition)) {
                 DifficultyInstance difficultydamagescaler = this.getCurrentDifficultyAt(blockposition);
@@ -897,7 +903,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
         if (!this.paperConfig().environment.disableIceAndSnow) { // Paper - Option to disable ice and snow
         for (int l = 0; l < randomTickSpeed; ++l) {
             if (this.random.nextInt(48) == 0) {
-                this.tickPrecipitation(this.getBlockRandomPos(j, 0, k, 15));
+                // Paper start
+                this.getRandomBlockPosition(j, 0, k, 15, blockposition);
+                this.tickPrecipitation(blockposition, chunk);
+                // Paper end
             }
         }
         } // Paper - Option to disable ice and snow
@@ -905,36 +914,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
         gameprofilerfiller.popPush("tickBlocks");
         timings.chunkTicksBlocks.startTiming(); // Paper
         if (randomTickSpeed > 0) {
-            LevelChunkSection[] achunksection = chunk.getSections();
+            // Paper start - optimize random block ticking
+            LevelChunkSection[] sections = chunk.getSections();
+            final int minSection = io.papermc.paper.util.WorldUtil.getMinSection(this);
+            for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+                LevelChunkSection section = sections[sectionIndex];
+                if (section == null || section.tickingList.size() == 0) continue;
 
-            for (int i1 = 0; i1 < achunksection.length; ++i1) {
-                LevelChunkSection chunksection = achunksection[i1];
-
-                if (chunksection.isRandomlyTicking()) {
-                    int j1 = chunk.getSectionYFromSectionIndex(i1);
-                    int k1 = SectionPos.sectionToBlockCoord(j1);
-
-                    for (int l1 = 0; l1 < randomTickSpeed; ++l1) {
-                        BlockPos blockposition1 = this.getBlockRandomPos(j, k1, k, 15);
-
-                        gameprofilerfiller.push("randomTick");
-                        BlockState iblockdata = chunksection.getBlockState(blockposition1.getX() - j, blockposition1.getY() - k1, blockposition1.getZ() - k);
-
-                        if (iblockdata.isRandomlyTicking()) {
-                            iblockdata.randomTick(this, blockposition1, this.random);
-                        }
-
-                        FluidState fluid = iblockdata.getFluidState();
-
-                        if (fluid.isRandomlyTicking()) {
-                            fluid.randomTick(this, blockposition1, this.random);
-                        }
-
-                        gameprofilerfiller.pop();
+                int yPos = (sectionIndex + minSection) << 4;
+                for (int a = 0; a < randomTickSpeed; ++a) {
+                    int tickingBlocks = section.tickingList.size();
+                    int index = this.randomTickRandom.nextInt(16 * 16 * 16);
+                    if (index >= tickingBlocks) {
+                        continue;
                     }
+
+                    long raw = section.tickingList.getRaw(index);
+                    int location = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
+                    int randomX = location & 15;
+                    int randomY = ((location >>> (4 + 4)) & 255) | yPos;
+                    int randomZ = (location >>> 4) & 15;
+
+                    BlockPos blockposition2 = blockposition.set(j + randomX, randomY, k + randomZ);
+                    BlockState iblockdata = com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
+
+                    iblockdata.randomTick(this, blockposition2, this.randomTickRandom);
                 }
+                // We drop the fluid tick since LAVA is ALREADY TICKED by the above method (See LiquidBlock).
+                // TODO CHECK ON UPDATE (ping the Canadian)
             }
         }
+        // Paper end - optimise random block ticking
 
         timings.chunkTicksBlocks.stopTiming(); // Paper
         gameprofilerfiller.pop();
@@ -942,17 +952,25 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
     @VisibleForTesting
     public void tickPrecipitation(BlockPos pos) {
-        BlockPos blockposition1 = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
-        BlockPos blockposition2 = blockposition1.below();
+    // Paper start - optimise chunk ticking
+        tickPrecipitation(pos.mutable(), this.getChunkAt(pos));
+    }
+    public void tickPrecipitation(BlockPos.MutableBlockPos blockposition1, final LevelChunk chunk) {
+        int normalY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, blockposition1.getX() & 15, blockposition1.getZ() & 15) + 1;
+        int downY = normalY - 1;
+        blockposition1.setY(normalY);
+        // Paper end - optimise chunk ticking
         Biome biomebase = (Biome) this.getBiome(blockposition1).value();
 
-        if (biomebase.shouldFreeze(this, blockposition2)) {
-            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition2, Blocks.ICE.defaultBlockState(), null); // CraftBukkit
+        blockposition1.setY(downY);
+        if (biomebase.shouldFreeze(this, blockposition1)) {
+            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition1, Blocks.ICE.defaultBlockState(), null); // CraftBukkit
         }
 
         if (this.isRaining()) {
             int i = this.getGameRules().getInt(GameRules.RULE_SNOW_ACCUMULATION_HEIGHT);
 
+            blockposition1.setY(normalY); // Paper - optimise chunk ticking
             if (i > 0 && biomebase.shouldSnow(this, blockposition1)) {
                 BlockState iblockdata = this.getBlockState(blockposition1);
 
@@ -970,12 +988,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 }
             }
 
-            Biome.Precipitation biomebase_precipitation = biomebase.getPrecipitationAt(blockposition2);
+            blockposition1.setY(downY); // Paper - optimise chunk ticking
+            Biome.Precipitation biomebase_precipitation = biomebase.getPrecipitationAt(blockposition1); // Paper - optimise chunk ticking
 
             if (biomebase_precipitation != Biome.Precipitation.NONE) {
-                BlockState iblockdata2 = this.getBlockState(blockposition2);
+                BlockState iblockdata2 = this.getBlockState(blockposition1); // Paper - optimise chunk ticking
 
-                iblockdata2.getBlock().handlePrecipitation(iblockdata2, this, blockposition2, biomebase_precipitation);
+                iblockdata2.getBlock().handlePrecipitation(iblockdata2, this, blockposition1, biomebase_precipitation); // Paper - optimise chunk ticking
             }
         }
 
