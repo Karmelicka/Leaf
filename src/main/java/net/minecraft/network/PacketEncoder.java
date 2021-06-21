@@ -47,7 +47,14 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
 
                     JvmProfiler.INSTANCE.onPacketSent(codecData.protocol(), i, channelHandlerContext.channel().remoteAddress(), k);
                 } catch (Throwable var13) {
-                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", i, packet.isSkippable(), var13); // Paper - Give proper error message
+                    // Paper start - Give proper error message
+                    String packetName = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(packet.getClass().getName());
+                    if (packetName.contains(".")) {
+                        packetName = packetName.substring(packetName.lastIndexOf(".") + 1);
+                    }
+
+                    LOGGER.error("Packet encoding of packet {} (ID: {}) threw (skippable? {})", packetName, i, packet.isSkippable(), var13);
+                    // Paper end
                     if (packet.isSkippable()) {
                         throw new SkipPacketException(var13);
                     }

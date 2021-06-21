@@ -137,7 +137,7 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
             ServerConfigurationPacketListenerImpl.LOGGER.error("Couldn't place player in world", exception);
             // Paper start - Debugging
             if (MinecraftServer.getServer().isDebugging()) {
-                exception.printStackTrace();
+                io.papermc.paper.util.TraceUtil.printStackTrace(exception);
             }
             // Paper end - Debugging
             this.connection.send(new ClientboundDisconnectPacket(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA));

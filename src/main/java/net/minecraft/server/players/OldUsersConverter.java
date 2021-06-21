@@ -357,7 +357,7 @@ public class OldUsersConverter {
                         try {
                             root = NbtIo.readCompressed(new java.io.FileInputStream(file5), NbtAccounter.unlimitedHeap());
                         } catch (Exception exception) {
-                            exception.printStackTrace();
+                            io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
                             com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                         }
 
@@ -371,7 +371,7 @@ public class OldUsersConverter {
                             try {
                                 NbtIo.writeCompressed(root, new java.io.FileOutputStream(file2));
                             } catch (Exception exception) {
-                                exception.printStackTrace();
+                                io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
                                 com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
                             }
                        }
