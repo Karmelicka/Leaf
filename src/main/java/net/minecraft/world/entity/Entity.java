@@ -1790,6 +1790,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         this.setXRot(Mth.clamp(pitch, -90.0F, 90.0F) % 360.0F);
         this.yRotO = this.getYRot();
         this.xRotO = this.getXRot();
+        this.setYHeadRot(yaw); // Paper - Update head rotation
     }
 
     public void absMoveTo(double x, double y, double z) {
@@ -1828,6 +1829,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         this.setXRot(pitch);
         this.setOldPosAndRot();
         this.reapplyPosition();
+        this.setYHeadRot(yaw); // Paper - Update head rotation
     }
 
     public final void setOldPosAndRot() {
