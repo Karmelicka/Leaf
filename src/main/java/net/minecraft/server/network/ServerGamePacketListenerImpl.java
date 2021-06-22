@@ -1096,7 +1096,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         // Paper end - Book size limits
         // CraftBukkit start
         if (this.lastBookTick + 20 > MinecraftServer.currentTick) {
-            this.disconnect("Book edited too quickly!", org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause
+            server.scheduleOnMain(() -> this.disconnect("Book edited too quickly!", org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION)); // Paper - kick event cause // Paper - Also ensure this is called on main
             return;
         }
         this.lastBookTick = MinecraftServer.currentTick;
