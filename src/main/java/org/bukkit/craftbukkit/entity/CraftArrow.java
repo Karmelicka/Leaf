@@ -58,20 +58,7 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
         this.getHandle().setCritArrow(critical);
     }
 
-    @Override
-    public ProjectileSource getShooter() {
-        return this.getHandle().projectileSource;
-    }
-
-    @Override
-    public void setShooter(ProjectileSource shooter) {
-        if (shooter instanceof Entity) {
-            this.getHandle().setOwner(((CraftEntity) shooter).getHandle());
-        } else {
-            this.getHandle().setOwner(null);
-        }
-        this.getHandle().projectileSource = shooter;
-    }
+    // Paper - moved to AbstractProjectile
 
     @Override
     public boolean isInBlock() {
@@ -103,6 +90,27 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
     @Override
     public org.bukkit.craftbukkit.inventory.CraftItemStack getItemStack() {
         return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(getHandle().getPickupItem());
+    }
+
+    @Override
+    public void setLifetimeTicks(int ticks) {
+        this.getHandle().life = ticks;
+    }
+
+    @Override
+    public int getLifetimeTicks() {
+        return this.getHandle().life;
+    }
+
+    @org.jetbrains.annotations.NotNull
+    @Override
+    public org.bukkit.Sound getHitSound() {
+        return org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(this.getHandle().soundEvent);
+    }
+
+    @Override
+    public void setHitSound(@org.jetbrains.annotations.NotNull org.bukkit.Sound sound) {
+        this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(sound));
     }
 
     @Override
