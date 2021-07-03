@@ -1290,7 +1290,7 @@ public final class CraftServer implements Server {
 
         ServerLevel internal = (ServerLevel) new ServerLevel(this.console, this.console.executor, worldSession, worlddata, worldKey, worlddimension, this.getServer().progressListenerFactory.create(11),
                 worlddata.isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, this.console.overworld().getRandomSequences(), creator.environment(), generator, biomeProvider);
-        internal.keepSpawnInMemory = creator.keepSpawnInMemory();
+        // internal.keepSpawnInMemory = creator.keepSpawnInMemory(); // Paper - replace
 
         if (!(this.worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
             return null;
@@ -1302,6 +1302,7 @@ public final class CraftServer implements Server {
         internal.setSpawnSettings(true, true);
         // Paper - Put world into worldlist before initing the world; move up
 
+        internal.keepSpawnInMemory = creator.keepSpawnLoaded().toBooleanOrElse(internal.getWorld().getKeepSpawnInMemory()); // Paper
         this.getServer().prepareLevels(internal.getChunkSource().chunkMap.progressListener, internal);
         internal.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
 
