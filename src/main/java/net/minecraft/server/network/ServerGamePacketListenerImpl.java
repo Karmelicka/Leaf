@@ -1882,6 +1882,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
 
     @Override
     public void onDisconnect(Component reason) {
+        // Paper start - Fix kick event leave message not being sent
+        this.onDisconnect(reason, null);
+    }
+    @Override
+    public void onDisconnect(Component reason, @Nullable net.kyori.adventure.text.Component quitMessage) {
+        // Paper end - Fix kick event leave message not being sent
         // CraftBukkit start - Rarely it would send a disconnect line twice
         if (this.processedDisconnect) {
             return;
@@ -1890,11 +1896,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         }
         // CraftBukkit end
         ServerGamePacketListenerImpl.LOGGER.info("{} lost connection: {}", this.player.getName().getString(), reason.getString());
-        this.removePlayerFromWorld();
-        super.onDisconnect(reason);
+        this.removePlayerFromWorld(quitMessage); // Paper - Fix kick event leave message not being sent
+        super.onDisconnect(reason, quitMessage); // Paper - Fix kick event leave message not being sent
     }
 
+    // Paper start - Fix kick event leave message not being sent
     private void removePlayerFromWorld() {
+        this.removePlayerFromWorld(null);
+    }
+
+    private void removePlayerFromWorld(@Nullable net.kyori.adventure.text.Component quitMessage) {
+        // Paper end - Fix kick event leave message not being sent
         this.chatMessageChain.close();
         // CraftBukkit start - Replace vanilla quit message handling with our own.
         /*
@@ -1904,7 +1916,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
 
         this.player.disconnect();
         // Paper start - Adventure
-        net.kyori.adventure.text.Component quitMessage = this.server.getPlayerList().remove(this.player);
+        quitMessage = quitMessage == null ? this.server.getPlayerList().remove(this.player) : this.server.getPlayerList().remove(this.player, quitMessage); // Paper - pass in quitMessage to fix kick message not being used
         if ((quitMessage != null) && !quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
             this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(quitMessage), false);
             // Paper end

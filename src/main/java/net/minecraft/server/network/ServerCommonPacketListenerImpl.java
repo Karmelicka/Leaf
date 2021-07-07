@@ -77,6 +77,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
 
     @Override
     public void onDisconnect(Component reason) {
+        // Paper start - Fix kick event leave message not being sent
+        this.onDisconnect(reason, null);
+    }
+    public void onDisconnect(Component reason, @Nullable net.kyori.adventure.text.Component quitMessage) {
+        // Paper end - Fix kick event leave message not being sent
         if (this.isSingleplayerOwner()) {
             ServerCommonPacketListenerImpl.LOGGER.info("Stopping singleplayer server as player logged out");
             this.server.halt(false);
@@ -320,7 +325,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
             // Do not kick the player
             return;
         }
-        this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
         // Send the possibly modified leave message
         final Component ichatbasecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
         // CraftBukkit end
@@ -329,7 +333,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
             this.connection.disconnect(ichatbasecomponent);
         }));
-        this.onDisconnect(ichatbasecomponent); // CraftBukkit - fire quit instantly
+        this.onDisconnect(ichatbasecomponent, event.leaveMessage()); // CraftBukkit - fire quit instantly // Paper - use kick event leave message
         this.connection.setReadOnly();
         MinecraftServer minecraftserver = this.server;
         Connection networkmanager = this.connection;
