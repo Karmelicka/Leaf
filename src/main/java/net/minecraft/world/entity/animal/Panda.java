@@ -535,7 +535,9 @@ public class Panda extends Animal {
         }
 
         if (!this.level().isClientSide() && this.random.nextInt(700) == 0 && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+            this.forceDrops = true; // Paper - Add missing forceDrop toggles
             this.spawnAtLocation((ItemLike) Items.SLIME_BALL);
+            this.forceDrops = false; // Paper - Add missing forceDrop toggles
         }
 
     }
@@ -659,7 +661,9 @@ public class Panda extends Animal {
                 ItemStack itemstack1 = this.getItemBySlot(EquipmentSlot.MAINHAND);
 
                 if (!itemstack1.isEmpty() && !player.getAbilities().instabuild) {
+                    this.forceDrops = true; // Paper - Add missing forceDrop toggles
                     this.spawnAtLocation(itemstack1);
+                    this.forceDrops = false; // Paper - Add missing forceDrop toggles
                 }
 
                 this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(itemstack.getItem(), 1));
@@ -941,7 +945,9 @@ public class Panda extends Animal {
             ItemStack itemstack = Panda.this.getItemBySlot(EquipmentSlot.MAINHAND);
 
             if (!itemstack.isEmpty()) {
+                Panda.this.forceDrops = true; // Paper - Add missing forceDrop toggles
                 Panda.this.spawnAtLocation(itemstack);
+                Panda.this.forceDrops = false; // Paper - Add missing forceDrop toggles
                 Panda.this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
                 int i = Panda.this.isLazy() ? Panda.this.random.nextInt(50) + 10 : Panda.this.random.nextInt(150) + 10;
 
