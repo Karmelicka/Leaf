@@ -40,6 +40,11 @@ dependencies {
     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
     runtimeOnly("com.mysql:mysql-connector-j:8.2.0")
     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
+    // Paper start - Use Velocity cipher
+    implementation("com.velocitypowered:velocity-native:3.1.2-SNAPSHOT") {
+        isTransitive = false
+    }
+    // Paper end - Use Velocity cipher
 
     runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
