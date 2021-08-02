@@ -1446,7 +1446,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                 if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
                     Entity entity = source.getDirectEntity();
 
-                    if (entity instanceof LivingEntity) {
+                    if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Improve boat collision performance
                         LivingEntity entityliving = (LivingEntity) entity;
 
                         this.blockUsingShield(entityliving);
@@ -1540,11 +1540,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
                 }
 
                 if (entity1 != null && !source.is(DamageTypeTags.NO_KNOCKBACK)) {
-                    double d0 = entity1.getX() - this.getX();
+                    final boolean far = entity1.distanceToSqr(this) > (200.0 * 200.0); // Paper - Improve boat collision performance
+                    double d0 = far ? (Math.random() - Math.random()) : entity1.getX() - this.getX(); // Paper - Improve boat collision performance
 
                     double d1;
 
-                    for (d1 = entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) {
+                    for (d1 = far ? Math.random() - Math.random() : entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) { // Paper - Improve boat collision performance
                         d0 = (Math.random() - Math.random()) * 0.01D;
                     }
 
@@ -2287,7 +2288,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                 this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
                 Entity entity = damagesource.getDirectEntity();
 
-                if (entity instanceof LivingEntity) {
+                if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Improve boat collision performance
                     this.blockUsingShield((LivingEntity) entity);
                 }
             }
