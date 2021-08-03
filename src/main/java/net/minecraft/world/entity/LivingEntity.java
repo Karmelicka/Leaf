@@ -3210,7 +3210,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
 
             // Paper start - prevent oversized data
             ItemStack toSend = sanitizeItemStack(itemstack1, true);
-            list.add(Pair.of(enumitemslot, toSend));
+            list.add(Pair.of(enumitemslot, stripMeta(toSend, toSend == itemstack1))); // Paper - Hide unnecessary item meta
             // Paper end - prevent oversized data
             switch (enumitemslot.getType()) {
                 case HAND:
@@ -3223,6 +3223,77 @@ public abstract class LivingEntity extends Entity implements Attackable {
         });
         ((ServerLevel) this.level()).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list));
     }
+
+    // Paper start - Hide unnecessary item meta
+    public ItemStack stripMeta(final ItemStack itemStack, final boolean copyItemStack) {
+        if (itemStack.isEmpty() || (!itemStack.hasTag() && itemStack.getCount() < 2)) {
+            return itemStack;
+        }
+
+        final ItemStack copy = copyItemStack ? itemStack.copy() : itemStack;
+        if (this.level().paperConfig().anticheat.obfuscation.items.hideDurability) {
+            // Only show damage values for elytra's, since they show a different texture when broken.
+            if (!copy.is(Items.ELYTRA) || copy.getDamageValue() < copy.getMaxDamage() - 1) {
+                copy.setDamageValue(0);
+            }
+        }
+
+        final CompoundTag tag = copy.getTag();
+        if (this.level().paperConfig().anticheat.obfuscation.items.hideItemmeta) {
+            // Some resource packs show different textures when there is more than one item. Since this shouldn't provide a big advantage,
+            // we'll tell the client if there's one or (more than) two items.
+            copy.setCount(copy.getCount() > 1 ? 2 : 1);
+            // We can't just strip out display, leather helmets still use the display.color tag.
+            if (tag != null) {
+                if (tag.get("display") instanceof CompoundTag displayTag) {
+                    displayTag.remove("Lore");
+                    displayTag.remove("Name");
+                }
+
+                if (tag.get("Enchantments") instanceof ListTag enchantmentsTag && !enchantmentsTag.isEmpty()) {
+                    // The client still renders items with the enchantment glow if the enchantments tag contains at least one (empty) child.
+                    ListTag enchantments = new ListTag();
+                    CompoundTag fakeEnchantment = new CompoundTag();
+                    // Soul speed boots generate client side particles.
+                    if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SOUL_SPEED, itemStack) > 0) {
+                        fakeEnchantment.putString("id", org.bukkit.enchantments.Enchantment.SOUL_SPEED.getKey().asString());
+                        fakeEnchantment.putInt("lvl", 1);
+                    }
+                    enchantments.add(fakeEnchantment);
+                    tag.put("Enchantments", enchantments);
+                }
+                tag.remove("AttributeModifiers");
+                tag.remove("Unbreakable");
+                tag.remove("PublicBukkitValues"); // Persistent data container1
+
+                // Books
+                tag.remove("author");
+                tag.remove("filtered_title");
+                tag.remove("pages");
+                tag.remove("filtered_pages");
+                tag.remove("title");
+                tag.remove("generation");
+
+                // Filled maps
+                tag.remove("map");
+                tag.remove("map_scale_direction");
+                tag.remove("map_to_lock");
+            }
+        }
+
+        if (this.level().paperConfig().anticheat.obfuscation.items.hideItemmetaWithVisualEffects && tag != null) {
+            // Lodestone compasses
+            tag.remove("LodestonePos");
+            if (tag.contains("LodestoneDimension")) {
+                // The client shows the glint if either the position or the dimension is present, so we just wipe
+                // the position and fake the dimension
+                tag.putString("LodestoneDimension", "paper:paper");
+            }
+        }
+
+        return copy;
+    }
+    // Paper end - Hide unnecessary item meta
 
     // Paper start - prevent oversized data
     public static ItemStack sanitizeItemStack(final ItemStack itemStack, final boolean copyItemStack) {

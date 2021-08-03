@@ -337,7 +337,7 @@ public class ServerEntity {
                 if (!itemstack.isEmpty()) {
                     // Paper start - prevent oversized data
                     final ItemStack sanitized = LivingEntity.sanitizeItemStack(itemstack.copy(), false);
-                    list.add(Pair.of(enumitemslot, sanitized));
+                    list.add(Pair.of(enumitemslot, ((LivingEntity) this.entity).stripMeta(sanitized, false))); // Paper - Hide unnecessary item meta
                     // Paper end - prevent oversized data
                 }
             }
