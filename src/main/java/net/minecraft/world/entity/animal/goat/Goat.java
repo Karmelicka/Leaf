@@ -392,4 +392,15 @@ public class Goat extends Animal {
     protected Vector3f getPassengerAttachmentPoint(Entity passenger, EntityDimensions dimensions, float scaleFactor) {
         return new Vector3f(0.0F, dimensions.height - 0.1875F * scaleFactor, 0.0F);
     }
+
+    // Paper start - Goat ram API
+    public void ram(net.minecraft.world.entity.LivingEntity entity) {
+        Brain<Goat> brain = this.getBrain();
+        brain.setMemory(MemoryModuleType.RAM_TARGET, entity.position());
+        brain.eraseMemory(MemoryModuleType.RAM_COOLDOWN_TICKS);
+        brain.eraseMemory(MemoryModuleType.BREED_TARGET);
+        brain.eraseMemory(MemoryModuleType.TEMPTING_PLAYER);
+        brain.setActiveActivityIfPossible(net.minecraft.world.entity.schedule.Activity.RAM);
+    }
+    // Paper end - Goat ram API
 }
