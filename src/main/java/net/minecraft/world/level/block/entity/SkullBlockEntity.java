@@ -80,7 +80,7 @@ public class SkullBlockEntity extends BlockEntity {
             } else {
                 return Optional.empty();
             }
-        }, Util.backgroundExecutor());
+        }, Util.PROFILE_EXECUTOR); // Paper - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
     }
 
     @Override

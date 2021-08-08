@@ -89,6 +89,22 @@ public class Util {
     private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
     private static final ExecutorService IO_POOL = makeIoExecutor("IO-Worker-", false);
     private static final ExecutorService DOWNLOAD_POOL = makeIoExecutor("Download-", true);
+    // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
+    public static final ExecutorService PROFILE_EXECUTOR = Executors.newFixedThreadPool(2, new java.util.concurrent.ThreadFactory() {
+
+        private final AtomicInteger count = new AtomicInteger();
+
+        @Override
+        public Thread newThread(Runnable run) {
+            Thread ret = new Thread(run);
+            ret.setName("Profile Lookup Executor #" + this.count.getAndIncrement());
+            ret.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
+                LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable);
+            });
+            return ret;
+        }
+    });
+    // Paper end - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
     private static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT);
     private static final int LINEAR_LOOKUP_THRESHOLD = 8;
     public static final long NANOS_PER_MILLI = 1000000L;
