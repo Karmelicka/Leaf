@@ -62,6 +62,12 @@ public class CakeBlock extends Block {
             Block block = Block.byItem(item);
 
             if (block instanceof CandleBlock) {
+                // Paper start - call change block event
+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, CandleCakeBlock.byCandle(block))) {
+                    player.containerMenu.sendAllDataToRemote(); // update inv because candle could decrease
+                    return InteractionResult.PASS;
+                }
+                // Paper end - call change block event
                 if (!player.isCreative()) {
                     itemstack.shrink(1);
                 }
@@ -91,6 +97,14 @@ public class CakeBlock extends Block {
         if (!player.canEat(false)) {
             return InteractionResult.PASS;
         } else {
+            // Paper start - call change block event
+            int i = state.getValue(CakeBlock.BITES);
+            final BlockState newState = i < MAX_BITES ? state.setValue(CakeBlock.BITES, i + 1) : world.getFluidState(pos).createLegacyBlock();
+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, newState)) {
+                ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().sendHealthUpdate();
+                return InteractionResult.PASS; // return a non-consume result to cake blocks don't drop their candles
+            }
+            // Paper end - call change block event
             player.awardStat(Stats.EAT_CAKE_SLICE);
             // CraftBukkit start
             // entityhuman.getFoodData().eat(2, 0.1F);
@@ -104,7 +118,7 @@ public class CakeBlock extends Block {
 
             ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().sendHealthUpdate();
             // CraftBukkit end
-            int i = (Integer) state.getValue(CakeBlock.BITES);
+            // Paper - move up
 
             world.gameEvent((Entity) player, GameEvent.EAT, pos);
             if (i < 6) {
