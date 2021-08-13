@@ -656,8 +656,7 @@ public interface DispenseItemBehavior {
                     Item item = Items.BUCKET;
                     stack.shrink(1);
                     if (stack.isEmpty()) {
-                        stack.setItem(Items.BUCKET);
-                        stack.setCount(1);
+                        stack = new ItemStack(item); // Paper - Clear bucket NBT after dispense
                     } else if (pointer.blockEntity().addItem(new ItemStack(item)) < 0) {
                         this.defaultDispenseItemBehavior.dispense(pointer, new ItemStack(item));
                     }
