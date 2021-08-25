@@ -257,6 +257,13 @@ public class Commands {
         }
         this.vanillaCommandNodes.addAll(this.dispatcher.getRoot().getChildren()); // Paper - Add UnknownCommandEvent
 
+        // Paper start - Vanilla command permission fixes
+        for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
+            if (node.getRequirement() == com.mojang.brigadier.builder.ArgumentBuilder.<CommandSourceStack>defaultRequirement()) {
+                node.requirement = stack -> stack.source == CommandSource.NULL || stack.getBukkitSender().hasPermission(org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(node));
+            }
+        }
+        // Paper end - Vanilla command permission fixes
         // CraftBukkit start
     }
 
