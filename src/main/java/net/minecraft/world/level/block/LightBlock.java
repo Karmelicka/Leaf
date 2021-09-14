@@ -54,6 +54,7 @@ public class LightBlock extends Block implements SimpleWaterloggedBlock {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!world.isClientSide && player.canUseGameMasterBlocks()) {
+            if (player.getItemInHand(hand).getItem() != Items.LIGHT || !player.mayInteract(world, pos) || !player.mayUseItemAt(pos, hit.getDirection(), player.getItemInHand(hand))) { return InteractionResult.FAIL; } // Paper - Prevent unintended light block manipulation
             world.setBlock(pos, state.cycle(LEVEL), 2);
             return InteractionResult.SUCCESS;
         } else {
