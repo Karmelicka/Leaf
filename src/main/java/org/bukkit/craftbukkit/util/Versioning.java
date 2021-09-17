@@ -11,7 +11,7 @@ public final class Versioning {
     public static String getBukkitVersion() {
         String result = "Unknown-Version";
 
-        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.galemc.gale/gale-api/pom.properties"); // Gale - branding changes
+        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.dreeam.leaf/leaf-api/pom.properties"); // Gale - branding changes // Leaf
         Properties properties = new Properties();
 
         if (stream != null) {

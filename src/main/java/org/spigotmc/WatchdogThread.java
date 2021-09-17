@@ -160,15 +160,15 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
                 We do not want people to report thread issues to Paper,
                 but we do want people to report thread issues to Gale.
                  */
-                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Paper bug. This could be a Gale bug." ); // Paper
+                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Paper bug. This could be a Leaf bug." ); // Paper // Leaf
                 // Gale end - branding changes
                 log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
                 log.log( Level.SEVERE, "\t *Especially* if it looks like HTTP or MySQL operations are occurring" );
                 log.log( Level.SEVERE, "If you see a world save or edit, then it means you did far more than your server can handle at once" );
                 log.log( Level.SEVERE, "\t If this is the case, consider increasing timeout-time in spigot.yml but note that this will replace the crash with LARGE lag spikes" );
-                log.log( Level.SEVERE, "If you are unsure or think this is a Gale bug, please report this to https://github.com/GaleMC/Gale/issues - and if you think this is a Paper bug, please report this to https://github.com/PaperMC/Paper/issues" ); // Gale - branding changes
+                log.log( Level.SEVERE, "If you are unsure or think this is a Leaf bug, please report this to https://github.com/Winds-Studio/Leaf/issues - and if you think this is a Paper bug, please report this to https://github.com/PaperMC/Paper/issues" ); // Gale - branding changes // Leaf
                 log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
-                log.log( Level.SEVERE, "Gale version: " + Bukkit.getServer().getVersion() ); // Gale - branding changes
+                log.log( Level.SEVERE, "Leaf version: " + Bukkit.getServer().getVersion() ); // Gale - branding changes // Leaf
                 //
                 if ( net.minecraft.world.level.Level.lastPhysicsProblem != null )
                 {
@@ -195,13 +195,13 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
                     We do not want people to report thread issues to Paper,
                     but we do want people to report thread issues to Gale.
                      */
-                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PAPER - If you think this is a Gale bug, please report it at https://github.com/GaleMC/Gale/issues - THIS IS NOT A PAPER BUG OR CRASH - " + Bukkit.getServer().getVersion() + " ---");
+                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PAPER - If you think this is a Leaf bug, please report it at https://github.com/Winds-Studio/Leaf/issues - THIS IS NOT A PAPER BUG OR CRASH - " + Bukkit.getServer().getVersion() + " ---"); // Leaf
                     // Gale end - branding changes
                     log.log(Level.SEVERE, "The server has not responded for " + (currentTime - lastTick) / 1000 + " seconds! Creating thread dump");
                 }
                 // Paper end - Different message for short timeout
                 log.log( Level.SEVERE, "------------------------------" );
-                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Gale!):" ); // Paper // Gale - branding changes
+                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Leaf!):" ); // Paper // Gale - branding changes // Leaf
                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(isLongTimeout); // Paper - rewrite chunk system
                 this.dumpTickingInfo(); // Paper - log detailed tick information
                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
@@ -222,7 +222,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
                     We do not want people to report thread issues to Paper,
                     but we do want people to report thread issues to Gale.
                      */
-                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PAPER - If you think this is a Gale bug, please report it at https://github.com/GaleMC/Gale/issues - THIS IS NOT A PAPER BUG OR CRASH ---");
+                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PAPER - If you think this is a Leaf bug, please report it at https://github.com/Winds-Studio/Leaf/issues - THIS IS NOT A PAPER BUG OR CRASH ---"); // Leaf
                     // Gale end - branding changes
                 }
 

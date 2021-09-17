@@ -68,7 +68,7 @@ public abstract class AbstractPaperVersionFetcher implements VersionFetcher {
         // Gale end - branding changes - version fetcher
         final Component history = getHistory();
 
-        return history != null ? TextComponent.ofChildren(updateMessage, Component.newline(), history) : updateMessage;
+        return history != null ? Component.textOfChildren(updateMessage, Component.newline(), history) : updateMessage; // Leaf
     }
 
     protected @Nullable String getMinecraftVersion() { // Gale - branding changes - version fetcher

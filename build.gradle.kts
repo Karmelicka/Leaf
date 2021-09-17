@@ -15,7 +15,7 @@ val alsoShade: Configuration by configurations.creating
 dependencies {
     // Gale start - project setup
     // Depend on own API
-    implementation(project(":gale-api"))
+    implementation(project(":leaf-api")) // Leaf
     // Depend on Paper MojangAPI
     implementation("io.papermc.paper:paper-mojangapi:${project.version}") {
         exclude("io.papermc.paper", "paper-api")
@@ -88,7 +88,7 @@ tasks.jar {
         attributes(
             "Main-Class" to "org.bukkit.craftbukkit.Main",
             "Implementation-Title" to "CraftBukkit",
-            "Implementation-Version" to "git-Gale-$implementationVersion", // Gale - branding changes
+            "Implementation-Version" to "git-Leaf-$implementationVersion", // Gale - branding changes // Leaf
             "Implementation-Vendor" to date, // Paper
             "Specification-Title" to "Bukkit",
             "Specification-Version" to project.version,

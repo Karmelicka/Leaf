@@ -593,7 +593,7 @@ public class Metrics {
             boolean logFailedRequests = config.getBoolean("logFailedRequests", false);
             // Only start Metrics, if it's enabled in the config
             if (config.getBoolean("enabled", true)) {
-                Metrics metrics = new Metrics("Gale", serverUUID, logFailedRequests, Bukkit.getLogger()); // Gale - branding changes - metrics
+                Metrics metrics = new Metrics("Leaf", serverUUID, logFailedRequests, Bukkit.getLogger()); // Gale - branding changes - metrics // Leaf
 
                 metrics.addCustomChart(new Metrics.SimplePie("minecraft_version", () -> {
                     String minecraftVersion = Bukkit.getVersion();
@@ -603,15 +603,15 @@ public class Metrics {
 
                 metrics.addCustomChart(new Metrics.SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
                 metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : "offline"));
-                final String galeVersion; // Gale - branding changes - metrics
+                final String leafVersion; // Gale - branding changes - metrics // Leaf
                 final String implVersion = org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion();
                 if (implVersion != null) {
                     final String buildOrHash = implVersion.substring(implVersion.lastIndexOf('-') + 1);
-                    galeVersion = "git-Gale-%s-%s".formatted(Bukkit.getServer().getMinecraftVersion(), buildOrHash); // Gale - branding changes - metrics
+                    leafVersion = "git-Leaf-%s-%s".formatted(Bukkit.getServer().getMinecraftVersion(), buildOrHash); // Gale - branding changes - metrics // Leaf
                 } else {
-                    galeVersion = "unknown"; // Gale - branding changes - metrics
+                    leafVersion = "unknown"; // Gale - branding changes - metrics // Leaf
                 }
-                metrics.addCustomChart(new Metrics.SimplePie("gale_version", () -> galeVersion)); // Gale - branding changes - metrics
+                metrics.addCustomChart(new Metrics.SimplePie("leaf_version", () -> leafVersion)); // Gale - branding changes - metrics // Leaf
 
                 metrics.addCustomChart(new Metrics.DrilldownPie("java_version", () -> {
                     Map<String, Map<String, Integer>> map = new HashMap<>(2); // Gale - metrics - reduce HashMap capacity

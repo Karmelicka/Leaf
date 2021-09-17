@@ -940,7 +940,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             We do not want people to report thread issues to Paper,
             but we do want people to report thread issues to Gale.
              */
-            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PAPER - If you think this is a Gale bug, please report it at https://github.com/GaleMC/Gale/issues )");
+            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PAPER - If you think this is a Leaf bug, please report it at https://github.com/Winds-Studio/Leaf/issues )"); // Leaf
             // Gale end - branding changes
             while (this.getRunningThread().isAlive()) {
                 this.getRunningThread().stop();
