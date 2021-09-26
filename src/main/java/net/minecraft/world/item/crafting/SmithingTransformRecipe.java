@@ -23,8 +23,15 @@ public class SmithingTransformRecipe implements SmithingRecipe {
     final Ingredient base;
     final Ingredient addition;
     final ItemStack result;
+    final boolean copyNBT; // Paper - Option to prevent NBT copy
 
     public SmithingTransformRecipe(Ingredient template, Ingredient base, Ingredient addition, ItemStack result) {
+        // Paper start - Option to prevent NBT copy
+        this(template, base, addition, result, true);
+    }
+    public SmithingTransformRecipe(Ingredient template, Ingredient base, Ingredient addition, ItemStack result, boolean copyNBT) {
+        this.copyNBT = copyNBT;
+        // Paper end - Option to prevent NBT copy
         this.template = template;
         this.base = base;
         this.addition = addition;
@@ -39,11 +46,13 @@ public class SmithingTransformRecipe implements SmithingRecipe {
     @Override
     public ItemStack assemble(Container inventory, RegistryAccess registryManager) {
         ItemStack itemstack = this.result.copy();
+        if (this.copyNBT) { // Paper - Option to prevent NBT copy
         CompoundTag nbttagcompound = inventory.getItem(1).getTag();
 
         if (nbttagcompound != null) {
             itemstack.setTag(nbttagcompound.copy());
         }
+        } // Paper - Option to prevent NBT copy
 
         return itemstack;
     }
@@ -83,7 +92,7 @@ public class SmithingTransformRecipe implements SmithingRecipe {
     public Recipe toBukkitRecipe(NamespacedKey id) {
         CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
 
-        CraftSmithingTransformRecipe recipe = new CraftSmithingTransformRecipe(id, result, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition));
+        CraftSmithingTransformRecipe recipe = new CraftSmithingTransformRecipe(id, result, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyNBT); // Paper - Option to prevent NBT copy
 
         return recipe;
     }

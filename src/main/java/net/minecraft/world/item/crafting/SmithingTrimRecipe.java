@@ -29,8 +29,15 @@ public class SmithingTrimRecipe implements SmithingRecipe {
     final Ingredient template;
     final Ingredient base;
     final Ingredient addition;
+    final boolean copyNbt; // Paper - Option to prevent NBT copy
 
     public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition) {
+        // Paper start - Option to prevent NBT copy
+        this(template, base, addition, true);
+    }
+    public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition, boolean copyNbt) {
+        this.copyNbt = copyNbt;
+        // Paper end - Option to prevent NBT copy
         this.template = template;
         this.base = base;
         this.addition = addition;
@@ -56,7 +63,7 @@ public class SmithingTrimRecipe implements SmithingRecipe {
                     return ItemStack.EMPTY;
                 }
 
-                ItemStack itemstack1 = itemstack.copy();
+                ItemStack itemstack1 = this.copyNbt ? itemstack.copy() : new ItemStack(itemstack.getItem(), itemstack.getCount()); // Paper - Option to prevent NBT copy
 
                 itemstack1.setCount(1);
                 ArmorTrim armortrim = new ArmorTrim((Holder) optional.get(), (Holder) optional1.get());
@@ -116,7 +123,7 @@ public class SmithingTrimRecipe implements SmithingRecipe {
     // CraftBukkit start
     @Override
     public Recipe toBukkitRecipe(NamespacedKey id) {
-        return new CraftSmithingTrimRecipe(id, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition));
+        return new CraftSmithingTrimRecipe(id, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyNbt); // Paper - Option to prevent NBT copy
     }
     // CraftBukkit end
 
