@@ -306,6 +306,7 @@ public final class CraftServer implements Server {
     private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
     public static Exception excessiveVelEx; // Paper - Velocity warnings
     private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
+    private final CraftPotionBrewer potionBrewer = new CraftPotionBrewer(); // Paper - Custom Potion Mixes
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
@@ -332,7 +333,7 @@ public final class CraftServer implements Server {
 
         CraftRegistry.setMinecraftRegistry(console.registryAccess());
 
-        Potion.setPotionBrewer(new CraftPotionBrewer());
+        Potion.setPotionBrewer(potionBrewer); // Paper - Custom Potion Mixes
         // Ugly hack :(
 
         if (!Main.useConsole) {
@@ -3077,6 +3078,11 @@ public final class CraftServer implements Server {
     @Override
     public io.papermc.paper.datapack.PaperDatapackManager getDatapackManager() {
         return datapackManager;
+    }
+
+    @Override
+    public CraftPotionBrewer getPotionBrewer() {
+        return this.potionBrewer;
     }
 
     // Paper end

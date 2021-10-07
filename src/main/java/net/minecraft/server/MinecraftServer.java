@@ -2081,6 +2081,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
             this.worldData.setDataConfiguration(worlddataconfiguration);
             this.resources.managers.updateRegistryTags(this.registryAccess());
+            net.minecraft.world.item.alchemy.PotionBrewing.reload(); // Paper - Custom Potion Mixes
             this.getPlayerList().saveAll();
             this.getPlayerList().reloadResources();
             this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
