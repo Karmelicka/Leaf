@@ -257,8 +257,17 @@ public class DamageSources {
         return this.source(DamageTypes.SONIC_BOOM, attacker);
     }
 
+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - add exploded state
     public DamageSource badRespawnPointExplosion(Vec3 position) {
-        return new DamageSource(this.damageTypes.getHolderOrThrow(DamageTypes.BAD_RESPAWN_POINT), position);
+        // Paper start - add exploded state
+        return this.badRespawnPointExplosion(position, null);
+    }
+
+    public DamageSource badRespawnPointExplosion(Vec3 position, @Nullable org.bukkit.block.BlockState explodedBlockState) {
+        DamageSource source = new DamageSource(this.damageTypes.getHolderOrThrow(DamageTypes.BAD_RESPAWN_POINT), position);
+        source.explodedBlockState = explodedBlockState;
+        return source;
+        // Paper end - add exploded state
     }
 
     public DamageSource outOfBorder() {

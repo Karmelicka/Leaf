@@ -20,6 +20,7 @@ public class DamageSource {
     private final Entity directEntity;
     @Nullable
     private final Vec3 damageSourcePosition;
+    public org.bukkit.block.BlockState explodedBlockState; // Paper - add exploded state
     // CraftBukkit start
     @Nullable
     private org.bukkit.block.Block directBlock; // The block that caused the damage. damageSourcePosition is not used for all block damages
@@ -88,6 +89,7 @@ public class DamageSource {
 
     private DamageSource cloneInstance() {
         DamageSource damageSource = new DamageSource(this.type, this.directEntity, this.causingEntity, this.damageSourcePosition);
+        damageSource.explodedBlockState = this.explodedBlockState; // Paper - Include explodedBlockState when clone this instance of DamageSource
         damageSource.directBlock = this.getDirectBlock();
         damageSource.withSweep = this.isSweep();
         damageSource.poison = this.isPoison();

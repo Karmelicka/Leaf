@@ -96,6 +96,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock 
 
             // CraftBukkit - moved world and biome check into EntityHuman
             if (false && !BedBlock.canSetSpawn(world)) {
+                final org.bukkit.block.BlockState explodedBlockState = org.bukkit.craftbukkit.block.CraftBlockStates.getUnplacedBlockState(world, pos, state); // Paper - add exploded state (this won't be called due to the false, but it's good for reference)
                 world.removeBlock(pos, false);
                 BlockPos blockposition1 = pos.relative(((Direction) state.getValue(BedBlock.FACING)).getOpposite());
 
@@ -105,7 +106,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock 
 
                 Vec3 vec3d = pos.getCenter();
 
-                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // Paper - add exploded state
                 return InteractionResult.SUCCESS;
             } else if ((Boolean) state.getValue(BedBlock.OCCUPIED)) {
                 if (!this.kickVillagerOutOfBed(world, pos)) {
@@ -147,6 +148,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock 
     private InteractionResult explodeBed(BlockState iblockdata, Level world, BlockPos blockposition) {
         {
             {
+                final org.bukkit.block.BlockState explodedBlockState = org.bukkit.craftbukkit.block.CraftBlockStates.getUnplacedBlockState(world, blockposition, iblockdata); // Paper - add exploded state
                 world.removeBlock(blockposition, false);
                 BlockPos blockposition1 = blockposition.relative(((Direction) iblockdata.getValue(BedBlock.FACING)).getOpposite());
 
@@ -156,7 +158,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock 
 
                 Vec3 vec3d = blockposition.getCenter();
 
-                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // Paper - add exploded state
                 return InteractionResult.SUCCESS;
             }
         }

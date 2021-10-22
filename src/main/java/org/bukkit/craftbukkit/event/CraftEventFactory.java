@@ -1070,7 +1070,7 @@ public class CraftEventFactory {
         Entity damager = source.getCausingEntity();
         if (source.is(DamageTypeTags.IS_EXPLOSION)) {
             if (damager == null) {
-                return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
+                return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.explodedBlockState); // Paper - Include BlockState for damage
             }
             DamageCause damageCause = (damager.getBukkitEntity() instanceof org.bukkit.entity.TNTPrimed) ? DamageCause.BLOCK_EXPLOSION : DamageCause.ENTITY_EXPLOSION;
             return CraftEventFactory.callEntityDamageEvent(damager, entity, damageCause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.isCritical()); // Paper - add critical damage API
@@ -1121,7 +1121,7 @@ public class CraftEventFactory {
             } else {
                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, source.getDirectBlock(), source.getMsgId()));
             }
-            return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
+            return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.explodedBlockState); // Paper - Include BlockState for damage
         }
 
         DamageCause cause;
@@ -1174,8 +1174,13 @@ public class CraftEventFactory {
         return CraftEventFactory.callEntityDamageEvent(event, damagee, cancelled);
     }
 
-    private static EntityDamageEvent callEntityDamageEvent(Block damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
-        EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions);
+    // Paper start
+    private static EntityDamageEvent callEntityDamageEvent(Block damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) { // Paper
+        return callEntityDamageEvent(damager, damagee, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, null);
+    }
+    private static EntityDamageEvent callEntityDamageEvent(Block damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled, @Nullable org.bukkit.block.BlockState explodedBlockState) {
+        EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions, explodedBlockState);
+        // Paper end
         return CraftEventFactory.callEntityDamageEvent(event, damagee, cancelled);
     }
 
