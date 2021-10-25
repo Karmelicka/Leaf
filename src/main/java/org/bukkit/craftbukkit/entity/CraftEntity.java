@@ -1087,5 +1087,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         this.entity.setRot(location.getYaw(), location.getPitch());
         return !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
     }
+
+    @Override
+    public boolean isInPowderedSnow() {
+        return getHandle().isInPowderSnow || getHandle().wasInPowderSnow; // depending on the location in the entity "tick" either could be needed.
+    }
     // Paper end
 }
