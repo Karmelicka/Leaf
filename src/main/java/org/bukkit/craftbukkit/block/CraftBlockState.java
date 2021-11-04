@@ -331,4 +331,11 @@ public class CraftBlockState implements BlockState {
     public CraftBlockState copy() {
         return new CraftBlockState(this);
     }
+
+    // Paper start
+    @Override
+    public boolean isCollidable() {
+        return this.data.getBlock().hasCollision;
+    }
+    // Paper end
 }
