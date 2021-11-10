@@ -297,6 +297,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     public volatile boolean abnormalExit = false; // Paper
     public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
 
+    public gg.pufferfish.pufferfish.util.AsyncExecutor mobSpawnExecutor = new gg.pufferfish.pufferfish.util.AsyncExecutor("MobSpawning"); // Pufferfish - optimize mob spawning
+
     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
         AtomicReference<S> atomicreference = new AtomicReference();
         Thread thread = new io.papermc.paper.util.TickThread(() -> { // Paper - rewrite chunk system

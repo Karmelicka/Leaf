@@ -350,6 +350,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
                 DedicatedServer.LOGGER.info("JMX monitoring enabled");
             }
 
+            if (org.dreeam.leaf.config.modules.async.AsyncMobSpawning.enabled) mobSpawnExecutor.start(); // Pufferfish
             return true;
         }
     }

@@ -76,6 +76,9 @@ public class ServerChunkCache extends ChunkSource {
     private final LevelChunk[] lastLoadedChunks = new LevelChunk[4 * 4];
     // Paper end
 
+    public boolean firstRunSpawnCounts = true; // Pufferfish
+    public final java.util.concurrent.atomic.AtomicBoolean _pufferfish_spawnCountsReady = new java.util.concurrent.atomic.AtomicBoolean(false); // Pufferfish - optimize countmobs
+
     public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
         this.level = world;
         this.mainThreadProcessor = new ServerChunkCache.MainThreadExecutor(world);
@@ -510,6 +513,7 @@ public class ServerChunkCache extends ChunkSource {
                 // Paper start - Optional per player mob spawns
                 int naturalSpawnChunkCount = k;
                 if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
+                    if (!org.dreeam.leaf.config.modules.async.AsyncMobSpawning.enabled) { // Pufferfish - moved down when async processing
                     // re-set mob counts
                     for (ServerPlayer player : this.level.players) {
                         // Paper start - per player mob spawning backoff
@@ -524,17 +528,21 @@ public class ServerChunkCache extends ChunkSource {
                         }
                         // Paper end - per player mob spawning backoff
                     }
-                    spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
+                    lastSpawnState = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true); // Pufferfish - async mob spawning
+                    } // Pufferfish - (endif) moved down when async processing
                 } else {
-                    spawnercreature_d = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
+                    // Pufferfish start - async mob spawning
+                    lastSpawnState = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
+                    _pufferfish_spawnCountsReady.set(true);
+                    // Pufferfish end
                 }
                 // Paper end - Optional per player mob spawns
                 this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
 
-                this.lastSpawnState = spawnercreature_d;
+                //this.lastSpawnState = spawnercreature_d; // Pufferfish - this is managed asynchronously
                 // Gale start - MultiPaper - skip unnecessary mob spawning computations
                 } else {
-                    spawnercreature_d = null;
+                    lastSpawnState = null; // Leaf - Pufferfish - Optimize mob spawning
                 }
                 // Gale end - MultiPaper - skip unnecessary mob spawning computations
 
@@ -624,8 +632,8 @@ public class ServerChunkCache extends ChunkSource {
                     if (tick && chunk1.chunkStatus.isOrAfter(net.minecraft.server.level.FullChunkStatus.ENTITY_TICKING)) {
                         // Paper end - optimise chunk tick iteration
                         chunk1.incrementInhabitedTime(j);
-                        if (spawn && flagAndHasNaturalSpawn && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair)) { // Spigot // Paper - optimise chunk tick iteration // Gale - MultiPaper - skip unnecessary mob spawning computations
-                            NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
+                        if (spawn && flagAndHasNaturalSpawn && (!org.dreeam.leaf.config.modules.async.AsyncMobSpawning.enabled || _pufferfish_spawnCountsReady.get()) && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair)) { // Spigot // Paper - optimise chunk tick iteration // Gale - MultiPaper - skip unnecessary mob spawning computations // Pufferfish
+                            NaturalSpawner.spawnForChunk(this.level, chunk1, lastSpawnState, this.spawnFriendlies, this.spawnEnemies, flag1); // Pufferfish
                         }
 
                         if (true || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) { // Paper - optimise chunk tick iteration
@@ -668,6 +676,40 @@ public class ServerChunkCache extends ChunkSource {
                 this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
             // Paper - optimise chunk tick iteration
         }
+
+        // Pufferfish start - optimize mob spawning
+        if (org.dreeam.leaf.config.modules.async.AsyncMobSpawning.enabled) {
+            for (ServerPlayer player : this.level.players) {
+                // Paper start - per player mob spawning backoff
+                for (int ii = 0; ii < ServerPlayer.MOBCATEGORY_TOTAL_ENUMS; ii++) {
+                    player.mobCounts[ii] = 0;
+
+                    int newBackoff = player.mobBackoffCounts[ii] - 1; // TODO make configurable bleed // TODO use nonlinear algorithm?
+                    if (newBackoff < 0) {
+                        newBackoff = 0;
+                    }
+                    player.mobBackoffCounts[ii] = newBackoff;
+                }
+                // Paper end - per player mob spawning backoff
+            }
+            if (firstRunSpawnCounts) {
+                firstRunSpawnCounts = false;
+                _pufferfish_spawnCountsReady.set(true);
+            }
+            if (_pufferfish_spawnCountsReady.getAndSet(false)) {
+                net.minecraft.server.MinecraftServer.getServer().mobSpawnExecutor.submit(() -> {
+                    int mapped = distanceManager.getNaturalSpawnChunkCount();
+                    io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator<Entity> objectiterator =
+                            level.entityTickList.entities.iterator(io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS);
+                    gg.pufferfish.pufferfish.util.IterableWrapper<Entity> wrappedIterator =
+                            new gg.pufferfish.pufferfish.util.IterableWrapper<>(objectiterator);
+                    lastSpawnState = NaturalSpawner.createState(mapped, wrappedIterator, this::getFullChunk, null, true);
+                    objectiterator.finishedIterating();
+                    _pufferfish_spawnCountsReady.set(true);
+                });
+            }
+        }
+        // Pufferfish end
     }
 
     // Gale start - MultiPaper - skip unnecessary mob spawning computations
