@@ -3,6 +3,7 @@ package net.minecraft.world.entity.decoration;
 import com.mojang.logging.LogUtils;
 import java.util.OptionalInt;
 import javax.annotation.Nullable;
+import io.papermc.paper.event.player.PlayerItemFrameChangeEvent; // Paper - Add PlayerItemFrameChangeEvent
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -185,6 +186,13 @@ public class ItemFrame extends HangingEntity {
                     return true;
                 }
                 // CraftBukkit end
+                // Paper start - Add PlayerItemFrameChangeEvent
+                if (source.getEntity() instanceof Player player) {
+                    var event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
+                    if (!event.callEvent()) return true; // return true here because you aren't cancelling the damage, just the change
+                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
+                }
+                // Paper end - Add PlayerItemFrameChangeEvent
                 this.dropItem(source.getEntity(), false);
                 this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
                 this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
@@ -451,13 +459,26 @@ public class ItemFrame extends HangingEntity {
                         }
                     }
 
-                    this.setItem(itemstack);
+                    // Paper start - Add PlayerItemFrameChangeEvent
+                    PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemstack.asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
+                    if (!event.callEvent()) {
+                        return InteractionResult.FAIL;
+                    }
+                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
+                    // Paper end - Add PlayerItemFrameChangeEvent
                     this.gameEvent(GameEvent.BLOCK_CHANGE, player);
                     if (!player.getAbilities().instabuild) {
                         itemstack.shrink(1);
                     }
                 }
             } else {
+                // Paper start - Add PlayerItemFrameChangeEvent
+                PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE);
+                if (!event.callEvent()) {
+                    return InteractionResult.FAIL;
+                }
+                setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false, false);
+                // Paper end - Add PlayerItemFrameChangeEvent
                 this.playSound(this.getRotateItemSound(), 1.0F, 1.0F);
                 this.setRotation(this.getRotation() + 1);
                 this.gameEvent(GameEvent.BLOCK_CHANGE, player);
