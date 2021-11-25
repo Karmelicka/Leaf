@@ -2622,7 +2622,7 @@ public final class CraftServer implements Server {
     public ChunkGenerator.ChunkData createChunkData(World world) {
         Preconditions.checkArgument(world != null, "World cannot be null");
         ServerLevel handle = ((CraftWorld) world).getHandle();
-        return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().registryOrThrow(Registries.BIOME));
+        return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().registryOrThrow(Registries.BIOME), world); // Paper - Anti-Xray - Add parameters
     }
 
     // Paper start - Allow delegation to vanilla chunk gen

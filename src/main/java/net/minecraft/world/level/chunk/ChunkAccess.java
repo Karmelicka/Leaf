@@ -152,17 +152,17 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
             }
         }
 
-        ChunkAccess.replaceMissingSections(biomeRegistry, this.sections);
+        this.replaceMissingSections(biomeRegistry, this.sections); // Paper - Anti-Xray - make it a non-static method
         // CraftBukkit start
         this.biomeRegistry = biomeRegistry;
     }
     public final Registry<Biome> biomeRegistry;
     // CraftBukkit end
 
-    private static void replaceMissingSections(Registry<Biome> biomeRegistry, LevelChunkSection[] sectionArray) {
+    private void replaceMissingSections(Registry<Biome> biomeRegistry, LevelChunkSection[] sectionArray) { // Paper - Anti-Xray - static -> non-static
         for (int i = 0; i < sectionArray.length; ++i) {
             if (sectionArray[i] == null) {
-                sectionArray[i] = new LevelChunkSection(biomeRegistry);
+                sectionArray[i] = new LevelChunkSection(biomeRegistry, this.levelHeightAccessor instanceof net.minecraft.world.level.Level ? (net.minecraft.world.level.Level) this.levelHeightAccessor : null, this.chunkPos, this.levelHeightAccessor.getSectionYFromSectionIndex(i)); // Paper start - Anti-Xray - Add parameters
             }
         }
 
