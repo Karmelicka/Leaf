@@ -67,6 +67,7 @@ public class FallingBlockEntity extends Entity {
     @Nullable
     public CompoundTag blockData;
     protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
+    public boolean autoExpire = true; // Paper - Expand FallingBlock API
 
     public FallingBlockEntity(EntityType<? extends FallingBlockEntity> type, Level world) {
         super(type, world);
@@ -169,7 +170,7 @@ public class FallingBlockEntity extends Entity {
                 }
 
                 if (!this.onGround() && !flag1) {
-                    if (!this.level().isClientSide && (this.time > 100 && (blockposition.getY() <= this.level().getMinBuildHeight() || blockposition.getY() > this.level().getMaxBuildHeight()) || this.time > 600)) {
+                    if (!this.level().isClientSide && ((this.time > 100 && autoExpire) && (blockposition.getY() <= this.level().getMinBuildHeight() || blockposition.getY() > this.level().getMaxBuildHeight()) || (this.time > 600 && autoExpire))) { // Paper - Expand FallingBlock API
                         if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                             this.spawnAtLocation((ItemLike) block);
                         }
@@ -315,6 +316,7 @@ public class FallingBlockEntity extends Entity {
         }
 
         nbt.putBoolean("CancelDrop", this.cancelDrop);
+        if (!autoExpire) {nbt.putBoolean("Paper.AutoExpire", false);} // Paper - Expand FallingBlock API
     }
 
     @Override
@@ -342,6 +344,11 @@ public class FallingBlockEntity extends Entity {
             this.blockState = Blocks.SAND.defaultBlockState();
         }
 
+        // Paper start - Expand FallingBlock API
+         if (nbt.contains("Paper.AutoExpire")) {
+            this.autoExpire = nbt.getBoolean("Paper.AutoExpire");
+         }
+        // Paper end - Expand FallingBlock API
     }
 
     public void setHurtsEntities(float fallHurtAmount, int fallHurtMax) {
