@@ -3263,6 +3263,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     public void restoreFrom(Entity original) {
+        // Paper start - Forward CraftEntity in teleport command
+        CraftEntity bukkitEntity = original.bukkitEntity;
+        if (bukkitEntity != null) {
+            bukkitEntity.setHandle(this);
+            this.bukkitEntity = bukkitEntity;
+        }
+        // Paper end - Forward CraftEntity in teleport command
         CompoundTag nbttagcompound = original.saveWithoutId(new CompoundTag());
 
         nbttagcompound.remove("Dimension");
@@ -3353,10 +3360,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                         }
                     }
                     // CraftBukkit end
-                    // CraftBukkit start - Forward the CraftEntity to the new entity
-                    this.getBukkitEntity().setHandle(entity);
-                    entity.bukkitEntity = this.getBukkitEntity();
-                    // CraftBukkit end
+                    // // CraftBukkit start - Forward the CraftEntity to the new entity // Paper - Forward CraftEntity in teleport command; moved to Entity#restoreFrom
+                    // this.getBukkitEntity().setHandle(entity);
+                    // entity.bukkitEntity = this.getBukkitEntity();
+                    // // CraftBukkit end
                 }
 
                 this.removeAfterChangingDimensions();
