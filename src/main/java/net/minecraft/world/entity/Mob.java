@@ -224,11 +224,13 @@ public abstract class Mob extends LivingEntity implements Targeting {
         return this.lookControl;
     }
 
+    int _pufferfish_inactiveTickDisableCounter = 0; // Pufferfish - throttle inactive goal selector ticking
     // Paper start
     @Override
     public void inactiveTick() {
         super.inactiveTick();
-        if (this.goalSelector.inactiveTick(this.activatedPriority, true)) { // Pufferfish - pass activated priroity
+        boolean isThrottled = org.dreeam.leaf.config.modules.opt.ThrottleInactiveGoalSelectorTick.enabled && _pufferfish_inactiveTickDisableCounter++ % 20 != 0; // Pufferfish - throttle inactive goal selector ticking
+        if (this.goalSelector.inactiveTick(this.activatedPriority, true) && !isThrottled) { // Pufferfish - pass activated priroity // Pufferfish - throttle inactive goal selector ticking
             this.goalSelector.tick();
         }
         if (this.targetSelector.inactiveTick(this.activatedPriority, true)) { // Pufferfish - pass activated priority
