@@ -91,7 +91,7 @@ public class TripWireBlock extends Block {
     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
         if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent adjacent tripwires from updating
         if (!moved && !state.is(newState.getBlock())) {
-            this.updateSource(world, pos, (BlockState) state.setValue(TripWireBlock.POWERED, true));
+            this.updateSource(world, pos, (BlockState) state.setValue(TripWireBlock.POWERED, true), true); // Paper - fix tripwire state inconsistency
         }
     }
 
@@ -108,6 +108,12 @@ public class TripWireBlock extends Block {
 
     private void updateSource(Level world, BlockPos pos, BlockState state) {
         if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent adjacent tripwires from updating
+        // Paper start - fix tripwire state inconsistency
+        this.updateSource(world, pos, state, false);
+    }
+
+    private void updateSource(Level world, BlockPos pos, BlockState state, boolean beingRemoved) {
+        // Paper end - fix tripwire state inconsistency
         Direction[] aenumdirection = new Direction[]{Direction.SOUTH, Direction.WEST};
         int i = aenumdirection.length;
         int j = 0;
@@ -123,7 +129,7 @@ public class TripWireBlock extends Block {
 
                     if (iblockdata1.is(this.hook)) {
                         if (iblockdata1.getValue(TripWireHookBlock.FACING) == enumdirection.getOpposite()) {
-                            TripWireHookBlock.calculateState(world, blockposition1, iblockdata1, false, true, k, state);
+                            TripWireHookBlock.calculateState(world, blockposition1, iblockdata1, false, true, k, state, beingRemoved); // Paper - fix tripwire state inconsistency
                         }
                     } else if (iblockdata1.is((Block) this)) {
                         ++k;

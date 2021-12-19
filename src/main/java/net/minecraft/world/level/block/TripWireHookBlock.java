@@ -118,7 +118,13 @@ public class TripWireHookBlock extends Block {
         TripWireHookBlock.calculateState(world, pos, state, false, false, -1, (BlockState) null);
     }
 
-    public static void calculateState(Level world, BlockPos pos, BlockState state, boolean flag, boolean flag1, int i, @Nullable BlockState iblockdata1) {
+    public static void calculateState(Level world, BlockPos pos, BlockState state, boolean beingRemoved, boolean flag1, int i, @Nullable BlockState iblockdata1) {
+        // Paper start - fix tripwire state inconsistency
+        calculateState(world, pos, state, beingRemoved, flag1, i, iblockdata1, false);
+    }
+
+    public static void calculateState(Level world, BlockPos pos, BlockState state, boolean beingRemoved, boolean flag1, int i, @Nullable BlockState iblockdata1, boolean tripWireBeingRemoved) {
+        // Paper end - fix tripwire state inconsistency
         Optional<Direction> optional = state.getOptionalValue(TripWireHookBlock.FACING);
 
         if (optional.isPresent()) {
@@ -126,7 +132,7 @@ public class TripWireHookBlock extends Block {
             boolean flag2 = (Boolean) state.getOptionalValue(TripWireHookBlock.ATTACHED).orElse(false);
             boolean flag3 = (Boolean) state.getOptionalValue(TripWireHookBlock.POWERED).orElse(false);
             Block block = state.getBlock();
-            boolean flag4 = !flag;
+            boolean flag4 = !beingRemoved; // Paper - fix tripwire state inconsistency
             boolean flag5 = false;
             int j = 0;
             BlockState[] aiblockdata = new BlockState[42];
@@ -156,6 +162,7 @@ public class TripWireHookBlock extends Block {
                     boolean flag7 = (Boolean) iblockdata2.getValue(TripWireBlock.POWERED);
 
                     flag5 |= flag6 && flag7;
+                    if (k != i || !tripWireBeingRemoved || !flag6) // Paper - fix tripwire state inconsistency; don't update the tripwire again if being removed and not disarmed
                     aiblockdata[k] = iblockdata2;
                     if (k == i) {
                         world.scheduleTick(pos, block, 10);
@@ -187,7 +194,7 @@ public class TripWireHookBlock extends Block {
             // CraftBukkit end
 
             TripWireHookBlock.emitState(world, pos, flag4, flag5, flag2, flag3);
-            if (!flag) {
+            if (!beingRemoved) { // Paper - fix tripwire state inconsistency
                 if (world.getBlockState(pos).getBlock() == Blocks.TRIPWIRE_HOOK) // Paper - Validate tripwire hook placement before update
                 world.setBlock(pos, (BlockState) iblockdata3.setValue(TripWireHookBlock.FACING, enumdirection), 3);
                 if (flag1) {
