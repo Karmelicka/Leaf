@@ -145,10 +145,17 @@ public class RegionFileStorage implements AutoCloseable {
 
             try {
                 NbtIo.write(nbt, (DataOutput) dataoutputstream);
+                // Paper start - don't write garbage data to disk if writing serialization fails
+                dataoutputstream.close(); // Only write if successful
+            } catch (final RegionFileSizeException e) {
+                attempts = 5; // Don't retry
+                regionfile.clear(pos);
+                throw e;
+                // Paper end - don't write garbage data to disk if writing serialization fails
             } catch (Throwable throwable) {
                 if (dataoutputstream != null) {
                     try {
-                        dataoutputstream.close();
+                        //dataoutputstream.close(); // Paper - don't write garbage data to disk if writing serialization fails
                     } catch (Throwable throwable1) {
                         throwable.addSuppressed(throwable1);
                     }
@@ -156,10 +163,7 @@ public class RegionFileStorage implements AutoCloseable {
 
                 throw throwable;
             }
-
-            if (dataoutputstream != null) {
-                dataoutputstream.close();
-            }
+            // Paper - don't write garbage data to disk if writing serialization fails; move into try block to only write if successfully serialized
         }
         // Paper start - Chunk save reattempt
                 return;
@@ -202,4 +206,13 @@ public class RegionFileStorage implements AutoCloseable {
         }
 
     }
+
+    // Paper start - don't write garbage data to disk if writing serialization fails
+    public static final class RegionFileSizeException extends RuntimeException {
+
+        public RegionFileSizeException(String message) {
+            super(message);
+        }
+    }
+    // Paper end - don't write garbage data to disk if writing serialization fails
 }
