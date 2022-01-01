@@ -63,6 +63,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
     public GameProfile authenticatedProfile; // Paper - public
     private final String serverId;
     private ServerPlayer player; // CraftBukkit
+    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
 
     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection) {
         this.state = ServerLoginPacketListenerImpl.State.HELLO;
@@ -137,7 +138,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
     @Override
     public void handleHello(ServerboundHelloPacket packet) {
         Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
-        Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]); // Paper - config username validation
         this.requestedUsername = packet.name();
         GameProfile gameprofile = this.server.getSingleplayerProfile();
 

@@ -2341,9 +2341,23 @@ public abstract class Player extends LivingEntity {
     }
 
     public static boolean isValidUsername(String name) {
-        return name.length() > 16 ? false : name.chars().filter((i) -> {
-            return i <= 32 || i >= 127;
-        }).findAny().isEmpty();
+        // Paper start - username validation overriding
+        if (name == null || name.isEmpty() || name.length() > 16) {
+            return false;
+        }
+
+        for (int i = 0, len = name.length(); i < len; ++i) {
+            char c = name.charAt(i);
+
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_' || c == '.')) {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+        // Paper end - username validation overriding
     }
 
     public static float getPickRange(boolean creative) {
