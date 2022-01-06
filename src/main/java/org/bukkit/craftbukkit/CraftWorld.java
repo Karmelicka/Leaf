@@ -211,6 +211,29 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public int getPlayerCount() {
         return world.players().size();
     }
+
+    @Override
+    public BiomeProvider vanillaBiomeProvider() {
+        net.minecraft.server.level.ServerChunkCache serverCache = this.getHandle().chunkSource;
+
+        final net.minecraft.world.level.biome.BiomeSource biomeSource = serverCache.getGenerator().getBiomeSource();
+        final net.minecraft.world.level.biome.Climate.Sampler sampler = serverCache.randomState().sampler();
+
+        final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
+            .map(biome -> org.bukkit.craftbukkit.block.CraftBiome.minecraftHolderToBukkit(biome))
+            .toList();
+        return new BiomeProvider() {
+            @Override
+            public Biome getBiome(final org.bukkit.generator.WorldInfo worldInfo, final int x, final int y, final int z) {
+                return org.bukkit.craftbukkit.block.CraftBiome.minecraftHolderToBukkit(biomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
+            }
+
+            @Override
+            public List<Biome> getBiomes(final org.bukkit.generator.WorldInfo worldInfo) {
+                return possibleBiomes;
+            }
+        };
+    }
     // Paper end
 
     private static final Random rand = new Random();
