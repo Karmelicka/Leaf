@@ -2235,6 +2235,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
         }
 
         public void onTickingStart(Entity entity) {
+            if (entity instanceof net.minecraft.world.entity.Marker && !paperConfig().entities.markers.tick) return; // Paper - Configurable marker ticking
             ServerLevel.this.entityTickList.add(entity);
         }
 
