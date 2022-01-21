@@ -1757,11 +1757,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             orb.setPosRaw(handle.getX(), handle.getY(), handle.getZ());
 
             int i = Math.min(orb.xpToDurability(amount), itemstack.getDamageValue());
-            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.getKey(), i);
+            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.getKey(), i, orb::durabilityToXp); // Paper - Expand PlayerItemMendEvent
             i = event.getRepairAmount();
             orb.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
             if (!event.isCancelled()) {
-                amount -= orb.durabilityToXp(i);
+                amount -= event.getDurabilityToXpOperation().applyAsInt(i); // Paper - Expand PlayerItemMendEvent
                 itemstack.setDamageValue(itemstack.getDamageValue() - i);
             }
         }

@@ -338,7 +338,7 @@ public class ExperienceOrb extends Entity {
             ItemStack itemstack = (ItemStack) entry.getValue();
             int j = Math.min(this.xpToDurability(amount), itemstack.getDamageValue());
             // CraftBukkit start
-            org.bukkit.event.player.PlayerItemMendEvent event = CraftEventFactory.callPlayerItemMendEvent(player, this, itemstack, entry.getKey(), j);
+            org.bukkit.event.player.PlayerItemMendEvent event = CraftEventFactory.callPlayerItemMendEvent(player, this, itemstack, entry.getKey(), j, this::durabilityToXp); // Paper - Expand PlayerItemMendEvent
             j = event.getRepairAmount();
             if (event.isCancelled()) {
                 return amount;
@@ -346,8 +346,13 @@ public class ExperienceOrb extends Entity {
             // CraftBukkit end
 
             itemstack.setDamageValue(itemstack.getDamageValue() - j);
-            int k = amount - this.durabilityToXp(j);
+            int k = amount - event.getDurabilityToXpOperation().applyAsInt(j); // Paper - Expand PlayerItemMendEvent
             this.value = k; // CraftBukkit - update exp value of orb for PlayerItemMendEvent calls
+            // Paper start - Expand PlayerItemMendEvent
+            if (j == 0 && amount == k) { // if repair amount is 0 and no xp was removed, don't do recursion; treat as cancelled
+                return k;
+            }
+            // Paper end - Expand PlayerItemMendEvent
 
             return k > 0 ? this.repairPlayerItems(player, k) : 0;
         } else {
