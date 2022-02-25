@@ -2466,7 +2466,11 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
 
         LootDataManager registry = this.getServer().getLootData();
-        return new CraftLootTable(key, registry.getLootTable(CraftNamespacedKey.toMinecraft(key)));
+        // Paper start - honor method contract
+        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
+        final Optional<net.minecraft.world.level.storage.loot.LootTable> table = registry.getElementOptional(net.minecraft.world.level.storage.loot.LootDataType.TABLE, lootTableKey);
+        return table.map(lootTable -> new CraftLootTable(key, lootTable)).orElse(null);
+        // Paper end
     }
 
     @Override

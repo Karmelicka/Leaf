@@ -122,6 +122,7 @@ public class Main {
 
                 this.acceptsAll(Main.asList("forceUpgrade"), "Whether to force a world upgrade");
                 this.acceptsAll(Main.asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                this.accepts("safeMode", "Loads level with vanilla datapack only"); // Paper
                 this.acceptsAll(Main.asList("nogui"), "Disables the graphical console");
 
                 this.acceptsAll(Main.asList("nojline"), "Disables jline and emulates the vanilla console");

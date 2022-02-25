@@ -462,15 +462,9 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
     }
 
     @Override
-    // CraftBukkit start - void -> boolean
-    protected boolean actuallyHurt(DamageSource damagesource, float f) {
-        boolean hurt = super.actuallyHurt(damagesource, f);
-        if (!hurt) {
-            return hurt;
-        }
-        // CraftBukkit end
+    protected boolean actuallyHurt(DamageSource damagesource, float f) { // Paper - change return type to boolean
         this.standUpInstantly();
-        return hurt; // CraftBukkit
+        return super.actuallyHurt(damagesource, f); // Paper - change return type to boolean
     }
 
     @Override
