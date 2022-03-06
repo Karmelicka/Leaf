@@ -727,6 +727,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
 
     public void baseTick() {
         this.level().getProfiler().push("entityBaseTick");
+        if (firstTick && this instanceof net.minecraft.world.entity.NeutralMob neutralMob) neutralMob.tickInitialPersistentAnger(level); // Paper - Prevent entity loading causing async lookups
         this.feetBlockState = null;
         if (this.isPassenger() && this.getVehicle().isRemoved()) {
             this.stopRiding();
