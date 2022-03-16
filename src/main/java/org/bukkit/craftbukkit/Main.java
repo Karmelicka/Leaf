@@ -201,22 +201,26 @@ public class Main {
                 return;
             }
 
+            // Paper start - Improve java version check
+            boolean skip = Boolean.getBoolean("Paper.IgnoreJavaVersion");
             float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
-            if (javaVersion < 61.0) {
-                System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 17. Check your Java version with the command 'java -version'.");
-                return;
-            }
-            if (javaVersion > 65.0) {
-                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 21 is supported.");
+            boolean isOldVersion = javaVersion < 61.0;
+            if (!skip && isOldVersion) {
+                System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 17. Check your Java version with the command 'java -version'. For more info see https://docs.papermc.io/misc/java-install");
                 return;
             }
             String javaVersionName = System.getProperty("java.version");
             // J2SE SDK/JRE Version String Naming Convention
             boolean isPreRelease = javaVersionName.contains("-");
-            if (isPreRelease && javaVersion == 61.0) {
-                System.err.println("Unsupported Java detected (" + javaVersionName + "). You are running an outdated, pre-release version. Only general availability versions of Java are supported. Please update your Java version.");
+            if (!skip && isPreRelease) {
+                System.err.println("Unsupported Java detected (" + javaVersionName + "). You are running an unsupported, non official, version. Only general availability versions of Java are supported. Please update your Java version. See https://docs.papermc.io/paper/faq#unsupported-java-detected-what-do-i-do for more information.");
                 return;
             }
+
+            if (skip && (isOldVersion || isPreRelease)) {
+                System.err.println("Unsupported Java detected ("+ javaVersionName + "), but the check was skipped. Proceed with caution! ");
+            }
+            // Paper end - Improve java version check
 
             try {
                 // Paper start - Handled by TerminalConsoleAppender
