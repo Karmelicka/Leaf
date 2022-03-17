@@ -579,4 +579,20 @@ public final class CraftItemFactory implements ItemFactory {
         return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();
     }
     // Paper end - old getSpawnEgg API
+    // Paper start - enchantWithLevels API
+    @Override
+    public ItemStack enchantWithLevels(ItemStack itemStack, int levels, boolean allowTreasure, java.util.Random random) {
+        Preconditions.checkArgument(itemStack != null, "Argument 'itemStack' must not be null");
+        Preconditions.checkArgument(itemStack.getType() != Material.AIR, "Argument 'itemStack' must not be of type AIR");
+        Preconditions.checkArgument(itemStack.getAmount() > 0, "Argument 'itemStack' amount must be greater than 0");
+        Preconditions.checkArgument(levels > 0 && levels <= 30, "Argument 'levels' must be in range [1, 30] (attempted " + levels + ")");
+        Preconditions.checkArgument(random != null, "Argument 'random' must not be null");
+        final net.minecraft.world.item.ItemStack internalStack = CraftItemStack.asNMSCopy(itemStack);
+        if (internalStack.getTag() != null) {
+            internalStack.getTag().remove(net.minecraft.world.item.ItemStack.TAG_ENCH);
+        }
+        final net.minecraft.world.item.ItemStack enchanted = net.minecraft.world.item.enchantment.EnchantmentHelper.enchantItem(new org.bukkit.craftbukkit.util.RandomSourceWrapper(random), internalStack, levels, allowTreasure);
+        return CraftItemStack.asCraftMirror(enchanted);
+    }
+    // Paper end - enchantWithLevels API
 }
