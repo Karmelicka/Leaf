@@ -875,12 +875,14 @@ public class ServerPlayer extends Player {
                 }
             }
         }
+        if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
         // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
         this.dropFromLootTable(damageSource, this.lastHurtByPlayerTime > 0);
         for (org.bukkit.inventory.ItemStack item : this.drops) {
             loot.add(item);
         }
         this.drops.clear(); // SPIGOT-5188: make sure to clear
+        } // Paper - fix player loottables running when mob loot gamerule is false
 
         Component defaultMessage = this.getCombatTracker().getDeathMessage();
 
