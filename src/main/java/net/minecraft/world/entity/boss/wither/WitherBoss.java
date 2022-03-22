@@ -535,10 +535,10 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
         super.dropCustomDeathLoot(source, lootingMultiplier, allowDrops);
-        ItemEntity entityitem = this.spawnAtLocation((ItemLike) Items.NETHER_STAR);
+        ItemEntity entityitem = this.spawnAtLocation(new net.minecraft.world.item.ItemStack(Items.NETHER_STAR), 0, ItemEntity::setExtendedLifetime); // Paper - Restore vanilla drops behavior; spawnAtLocation returns null so modify the item entity with a consumer
 
         if (entityitem != null) {
-            entityitem.setExtendedLifetime();
+            entityitem.setExtendedLifetime(); // Paper - diff on change
         }
 
     }

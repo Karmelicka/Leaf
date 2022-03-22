@@ -891,22 +891,20 @@ public class ServerPlayer extends Player {
         if (this.isRemoved()) {
             return;
         }
-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>(this.getInventory().getContainerSize());
+        List<DefaultDrop> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize()); // Paper - Restore vanilla drops behavior
         boolean keepInventory = this.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || this.isSpectator();
 
         if (!keepInventory) {
             for (ItemStack item : this.getInventory().getContents()) {
                 if (!item.isEmpty() && !EnchantmentHelper.hasVanishingCurse(item)) {
-                    loot.add(CraftItemStack.asCraftMirror(item));
+                    loot.add(new DefaultDrop(item, stack -> this.drop(stack, true, false, false))); // Paper - Restore vanilla drops behavior; drop function taken from Inventory#dropAll (don't fire drop event)
                 }
             }
         }
         if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
         // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
         this.dropFromLootTable(damageSource, this.lastHurtByPlayerTime > 0);
-        for (org.bukkit.inventory.ItemStack item : this.drops) {
-            loot.add(item);
-        }
+        loot.addAll(this.drops); // Paper
         this.drops.clear(); // SPIGOT-5188: make sure to clear
         } // Paper - fix player loottables running when mob loot gamerule is false
 
@@ -2389,8 +2387,8 @@ public class ServerPlayer extends Player {
     }
 
     @Override
-    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
-        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership);
+    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership, boolean callDropEvent) { // Paper - Restore vanilla drops behavior; override method with most params
+        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership, callDropEvent); // Paper - Restore vanilla drops behavior; override method with most params
 
         if (entityitem == null) {
             return null;

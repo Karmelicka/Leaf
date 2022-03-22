@@ -611,7 +611,7 @@ public class ArmorStand extends LivingEntity {
             itemstack.setHoverName(this.getCustomName());
         }
 
-        this.drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
+        this.drops.add(new DefaultDrop(itemstack, stack -> Block.popResource(this.level(), this.blockPosition(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior
         return this.brokenByAnything(damageSource); // Paper
     }
 
@@ -625,7 +625,7 @@ public class ArmorStand extends LivingEntity {
         for (i = 0; i < this.handItems.size(); ++i) {
             itemstack = (ItemStack) this.handItems.get(i);
             if (!itemstack.isEmpty()) {
-                this.drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
+                this.drops.add(new DefaultDrop(itemstack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly
                 this.handItems.set(i, ItemStack.EMPTY);
             }
         }
@@ -633,7 +633,7 @@ public class ArmorStand extends LivingEntity {
         for (i = 0; i < this.armorItems.size(); ++i) {
             itemstack = (ItemStack) this.armorItems.get(i);
             if (!itemstack.isEmpty()) {
-                this.drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
+                this.drops.add(new DefaultDrop(itemstack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly
                 this.armorItems.set(i, ItemStack.EMPTY);
             }
         }
