@@ -2580,7 +2580,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     public boolean startRiding(Entity entity, boolean force) {
-        if (entity == this.vehicle) {
+        if (entity == this.vehicle || entity.level != this.level) { // Paper - Ensure entity passenger world matches ridden entity (bad plugins)
             return false;
         } else if (!entity.couldAcceptPassenger()) {
             return false;
