@@ -640,10 +640,11 @@ public final class ItemStack {
                     }
                 }
 
+                int originalDamage = amount; // Paper - Expand PlayerItemDamageEvent
                 amount -= k;
                 // CraftBukkit start
                 if (player instanceof ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
-                    PlayerItemDamageEvent event = new PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), amount); // Paper - Add EntityDamageItemEvent
+                    PlayerItemDamageEvent event = new PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), amount, originalDamage); // Paper - Add EntityDamageItemEvent & Expand PlayerItemDamageEvent
                     event.getPlayer().getServer().getPluginManager().callEvent(event);
 
                     if (amount != event.getDamage() || event.isCancelled()) {
