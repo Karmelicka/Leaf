@@ -305,7 +305,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 
     private CompoundTag internalTag;
-    final Map<String, Tag> unhandledTags = new TreeMap<String, Tag>(); // Visible for testing only // Paper
+    Map<String, Tag> unhandledTags = new TreeMap<String, Tag>(); // Visible for testing only // Paper - Deep clone unhandled nbt tags; remove final
     private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftMetaItem.DATA_TYPE_REGISTRY);
 
     private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
@@ -346,8 +346,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             this.destroyableKeys = new java.util.HashSet<>(meta.destroyableKeys);
         }
         // Paper end - Add API for CanPlaceOn and CanDestroy NBT values
-        this.unhandledTags.putAll(meta.unhandledTags);
-        this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
+        // Paper start - Deep clone unhandled nbt tags
+        meta.unhandledTags.forEach((key, tag) -> this.unhandledTags.put(key, tag.copy()));
+        this.persistentDataContainer.putAll(meta.persistentDataContainer.getTagsCloned());
+        // Paper end - Deep clone unhandled nbt tags
 
         this.internalTag = meta.internalTag;
         if (this.internalTag != null) {
@@ -1393,7 +1395,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             if (this.hasAttributeModifiers()) {
                 clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
             }
-            clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getRaw(), CraftMetaItem.DATA_TYPE_REGISTRY);
+            // Paper start - Deep clone unhandled nbt tags
+            clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getTagsCloned(), CraftMetaItem.DATA_TYPE_REGISTRY);
+            clone.unhandledTags = new TreeMap<>(this.unhandledTags);
+            clone.unhandledTags.replaceAll((key, tag) -> tag.copy());
+            // Paper end - Deep clone unhandled nbt tags
             clone.hideFlag = this.hideFlag;
             clone.unbreakable = this.unbreakable;
             clone.damage = this.damage;
