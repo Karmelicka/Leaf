@@ -827,6 +827,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     public void tick() {
+        // Pufferfish start - entity TTL
+        if (type != EntityType.PLAYER && type.ttl >= 0 && this.tickCount >= type.ttl) {
+            discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Purpur
+            return;
+        }
+        // Pufferfish end - entity TTL
         this.baseTick();
     }
 
