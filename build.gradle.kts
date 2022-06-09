@@ -11,6 +11,7 @@ dependencies {
     implementation("jline:jline:2.12.1")
     implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
     implementation("org.ow2.asm:asm-commons:9.5")
+    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
     implementation("commons-lang:commons-lang:2.6")
     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
     runtimeOnly("com.mysql:mysql-connector-j:8.2.0")
