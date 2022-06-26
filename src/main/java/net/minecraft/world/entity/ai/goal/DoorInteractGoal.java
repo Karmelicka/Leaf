@@ -57,7 +57,7 @@ public abstract class DoorInteractGoal extends Goal {
         } else {
             GroundPathNavigation groundPathNavigation = (GroundPathNavigation)this.mob.getNavigation();
             Path path = groundPathNavigation.getPath();
-            if (path != null && !path.isDone() && groundPathNavigation.canOpenDoors()) {
+            if (path != null && path.isProcessed() && !path.isDone() && groundPathNavigation.canOpenDoors()) { // Kaiiju - async pathfinding - ensure path is processed
                 for(int i = 0; i < Math.min(path.getNextNodeIndex() + 2, path.getNodeCount()); ++i) {
                     Node node = path.getNode(i);
                     this.doorPos = new BlockPos(node.x, node.y + 1, node.z);

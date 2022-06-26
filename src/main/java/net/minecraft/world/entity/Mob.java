@@ -295,6 +295,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
     @Nullable
     @Override
     public LivingEntity getTarget() {
+        //if (Thread.currentThread().getName().contains("petal-path-processor")) return this.target; // Kaiiju - Don't reset target when async pathfinding! // Leaf - Don't need this
         return this.target;
     }
 

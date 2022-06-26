@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -23,6 +22,7 @@ import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.level.pathfinder.Path;
 import org.apache.commons.lang3.mutable.MutableLong;
+import org.dreeam.leaf.async.path.AsyncPathProcessor;
 
 public class AcquirePoi {
     public static final int SCAN_RANGE = 48;
@@ -77,6 +77,40 @@ public class AcquirePoi {
                         io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, poiPredicate, predicate2, entity.blockPosition(), 48, 48*48, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
                         Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes);
                         // Paper end - optimise POI access
+                        // Kaiiju start - petal - Async path processing
+                        if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled) {
+                            // await on path async
+                            Path possiblePath = findPathToPois(entity, set);
+
+                            // wait on the path to be processed
+                            AsyncPathProcessor.awaitProcessing(entity, possiblePath, path -> {
+                                // read canReach check
+                                if (path == null || !path.canReach()) {
+                                    for(Pair<Holder<PoiType>, BlockPos> pair : set) {
+                                        long2ObjectMap.computeIfAbsent(
+                                            pair.getSecond().asLong(),
+                                            (m) -> new JitteredLinearRetry(entity.level().random, time)
+                                        );
+                                    }
+                                    return;
+                                }
+                                BlockPos blockPos = path.getTarget();
+                                poiManager.getType(blockPos).ifPresent((poiType) -> {
+                                    poiManager.take(poiPredicate,
+                                        (holder, blockPos2) -> blockPos2.equals(blockPos),
+                                        blockPos,
+                                        1
+                                    );
+                                    queryResult.set(GlobalPos.of(world.dimension(), blockPos));
+                                    entityStatus.ifPresent((status) -> {
+                                        world.broadcastEntityEvent(entity, status);
+                                    });
+                                    long2ObjectMap.clear();
+                                    DebugPackets.sendPoiTicketCountPacket(world, blockPos);
+                                });
+                            });
+                        } else {
+                        // Kaiiju end
                         Path path = findPathToPois(entity, set);
                         if (path != null && path.canReach()) {
                             BlockPos blockPos = path.getTarget();
@@ -98,6 +132,7 @@ public class AcquirePoi {
                                 });
                             }
                         }
+                        } // Kaiiju - Async path processing
 
                         return true;
                     }

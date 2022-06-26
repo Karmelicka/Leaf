@@ -41,7 +41,6 @@ import net.minecraft.world.entity.VariantHolder;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.ai.control.SmoothSwimmingMoveControl;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.navigation.AmphibiousPathNavigation;
@@ -66,6 +65,8 @@ import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
+import org.dreeam.leaf.async.path.NodeEvaluatorFeatures;
+import org.dreeam.leaf.async.path.NodeEvaluatorGenerator;
 
 public class Frog extends Animal implements VariantHolder<FrogVariant> {
     public static final Ingredient TEMPTATION_ITEM = Ingredient.of(Items.SLIME_BALL);
@@ -434,6 +435,17 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
             super(frog, world);
         }
 
+        // Kaiiju start - petal - async path processing
+        private static final NodeEvaluatorGenerator nodeEvaluatorGenerator = (NodeEvaluatorFeatures nodeEvaluatorFeatures) -> {
+            Frog.FrogNodeEvaluator nodeEvaluator = new Frog.FrogNodeEvaluator(true);
+            nodeEvaluator.setCanPassDoors(nodeEvaluatorFeatures.canPassDoors());
+            nodeEvaluator.setCanFloat(nodeEvaluatorFeatures.canFloat());
+            nodeEvaluator.setCanWalkOverFences(nodeEvaluatorFeatures.canWalkOverFences());
+            nodeEvaluator.setCanOpenDoors(nodeEvaluatorFeatures.canOpenDoors());
+            return nodeEvaluator;
+        };
+        // Kaiiju end
+
         @Override
         public boolean canCutCorner(BlockPathTypes nodeType) {
             return nodeType != BlockPathTypes.WATER_BORDER && super.canCutCorner(nodeType);
@@ -443,6 +455,11 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
         protected PathFinder createPathFinder(int range) {
             this.nodeEvaluator = new Frog.FrogNodeEvaluator(true);
             this.nodeEvaluator.setCanPassDoors(true);
+            // Kaiiju start - petal - async path processing
+            if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled)
+                return new PathFinder(this.nodeEvaluator, range, nodeEvaluatorGenerator);
+            else
+            // Kaiiju end
             return new PathFinder(this.nodeEvaluator, range);
         }
     }

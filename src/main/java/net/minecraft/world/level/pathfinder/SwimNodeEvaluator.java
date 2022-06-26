@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 
 public class SwimNodeEvaluator extends NodeEvaluator {
-    private final boolean allowBreaching;
+    public final boolean allowBreaching; // Kaiiju - make this public
     private final Long2ObjectMap<BlockPathTypes> pathTypesByPosCache = new Long2ObjectOpenHashMap<>();
 
     public SwimNodeEvaluator(boolean canJumpOutOfWater) {

@@ -10,16 +10,34 @@ import net.minecraft.world.level.pathfinder.FlyNodeEvaluator;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.phys.Vec3;
+import org.dreeam.leaf.async.path.NodeEvaluatorFeatures;
+import org.dreeam.leaf.async.path.NodeEvaluatorGenerator;
 
 public class FlyingPathNavigation extends PathNavigation {
     public FlyingPathNavigation(Mob entity, Level world) {
         super(entity, world);
     }
 
+    // Kaiiju start - petal - async path processing
+    private static final NodeEvaluatorGenerator nodeEvaluatorGenerator = (NodeEvaluatorFeatures nodeEvaluatorFeatures) -> {
+        FlyNodeEvaluator nodeEvaluator = new FlyNodeEvaluator();
+        nodeEvaluator.setCanPassDoors(nodeEvaluatorFeatures.canPassDoors());
+        nodeEvaluator.setCanFloat(nodeEvaluatorFeatures.canFloat());
+        nodeEvaluator.setCanWalkOverFences(nodeEvaluatorFeatures.canWalkOverFences());
+        nodeEvaluator.setCanOpenDoors(nodeEvaluatorFeatures.canOpenDoors());
+        return nodeEvaluator;
+    };
+    // Kaiiju end
+
     @Override
     protected PathFinder createPathFinder(int range) {
         this.nodeEvaluator = new FlyNodeEvaluator();
         this.nodeEvaluator.setCanPassDoors(true);
+        // Kaiiju start - petal - async path processing
+        if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled)
+            return new PathFinder(this.nodeEvaluator, range, nodeEvaluatorGenerator);
+        else
+        // Kaiiju end
         return new PathFinder(this.nodeEvaluator, range);
     }
 
@@ -49,6 +67,7 @@ public class FlyingPathNavigation extends PathNavigation {
         if (this.hasDelayedRecomputation) {
             this.recomputePath();
         }
+        if (this.path != null && !this.path.isProcessed()) return; // Kaiiju - petal - async path processing
 
         if (!this.isDone()) {
             if (this.canUpdatePath()) {

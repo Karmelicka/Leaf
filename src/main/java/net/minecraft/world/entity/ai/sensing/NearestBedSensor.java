@@ -7,7 +7,7 @@ import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
@@ -18,6 +18,7 @@ import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.level.pathfinder.Path;
+import org.dreeam.leaf.async.path.AsyncPathProcessor;
 
 public class NearestBedSensor extends Sensor<Mob> {
     private static final int CACHE_TIMEOUT = 40;
@@ -57,6 +58,25 @@ public class NearestBedSensor extends Sensor<Mob> {
             java.util.List<Pair<Holder<PoiType>, BlockPos>> poiposes = new java.util.ArrayList<>();
             // don't ask me why it's unbounded. ask mojang.
             io.papermc.paper.util.PoiAccess.findAnyPoiPositions(poiManager, type -> type.is(PoiTypes.HOME), predicate, entity.blockPosition(), 48, PoiManager.Occupancy.ANY, false, Integer.MAX_VALUE, poiposes);
+            // Kaiiju start - await on async path processing
+            if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled) {
+                Path possiblePath = AcquirePoi.findPathToPois(entity, new java.util.HashSet<>(poiposes));
+                AsyncPathProcessor.awaitProcessing(entity, possiblePath, path -> {
+                    // read canReach check
+                    if ((path == null || !path.canReach()) && this.triedCount < 5) {
+                        this.batchCache.long2LongEntrySet().removeIf((entry) -> entry.getLongValue() < this.lastUpdate);
+                        return;
+                    }
+                    if (path == null) return;
+
+                    BlockPos blockPos = path.getTarget();
+                    Optional<Holder<PoiType>> optional = poiManager.getType(blockPos);
+                    if (optional.isPresent()) {
+                        entity.getBrain().setMemory(MemoryModuleType.NEAREST_BED, blockPos);
+                    }
+                });
+            } else {
+            // Kaiiju end
             Path path = AcquirePoi.findPathToPois(entity, new java.util.HashSet<>(poiposes));
             // Paper end - optimise POI access
             if (path != null && path.canReach()) {
@@ -70,6 +90,7 @@ public class NearestBedSensor extends Sensor<Mob> {
                     return entry.getLongValue() < this.lastUpdate;
                 });
             }
+            } // Kaiiju - async path processing
 
         }
     }

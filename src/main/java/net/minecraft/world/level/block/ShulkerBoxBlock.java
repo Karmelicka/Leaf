@@ -254,8 +254,13 @@ public class ShulkerBoxBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        //if (Thread.currentThread().getName().contains("petal-path-processor")) return Shapes.block(); // Kaiiju - async pathfinding - we cannot get block entities // Leaf - Don't need this
         BlockEntity blockEntity = world.getBlockEntity(pos);
         return blockEntity instanceof ShulkerBoxBlockEntity ? Shapes.create(((ShulkerBoxBlockEntity)blockEntity).getBoundingBox(state)) : Shapes.block();
+        // Kaiiju start - async pathfinding - workaround // Leaf - Don't need this
+        //} catch (NullPointerException e) {
+        //    return Shapes.block();
+        //}
     }
 
     @Override

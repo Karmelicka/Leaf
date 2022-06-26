@@ -21,6 +21,7 @@ public class MoveToTargetSink extends Behavior<Mob> {
     private int remainingCooldown;
     @Nullable
     private Path path;
+    private boolean finishedProcessing; // Kaiiju - petal - track when path is processed
     @Nullable
     private BlockPos lastTargetPos;
     private float speedModifier;
@@ -42,9 +43,10 @@ public class MoveToTargetSink extends Behavior<Mob> {
             Brain<?> brain = entity.getBrain();
             WalkTarget walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET).get();
             boolean bl = this.reachedTarget(entity, walkTarget);
-            if (!bl && this.tryComputePath(entity, walkTarget, world.getGameTime())) {
+            if (!org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled && !bl && this.tryComputePath(entity, walkTarget, world.getGameTime())) { // Kaiiju - petal - async path processing means we can't know if the path is reachable here
                 this.lastTargetPos = walkTarget.getTarget().currentBlockPosition();
                 return true;
+            } else if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled && !bl) { return true; // Kaiiju - async pathfinding
             } else {
                 brain.eraseMemory(MemoryModuleType.WALK_TARGET);
                 if (bl) {
@@ -58,6 +60,7 @@ public class MoveToTargetSink extends Behavior<Mob> {
 
     @Override
     protected boolean canStillUse(ServerLevel world, Mob entity, long time) {
+        if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled && !this.finishedProcessing) return true; // Kaiiju - petal - wait for processing
         if (this.path != null && this.lastTargetPos != null) {
             Optional<WalkTarget> optional = entity.getBrain().getMemory(MemoryModuleType.WALK_TARGET);
             boolean bl = optional.map(MoveToTargetSink::isWalkTargetSpectator).orElse(false);
@@ -82,12 +85,68 @@ public class MoveToTargetSink extends Behavior<Mob> {
 
     @Override
     protected void start(ServerLevel serverLevel, Mob mob, long l) {
+        // Kaiiju start - petal - start processing
+        if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled) {
+            Brain<?> brain = mob.getBrain();
+            WalkTarget walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET).get();
+
+            this.finishedProcessing = false;
+            this.lastTargetPos = walkTarget.getTarget().currentBlockPosition();
+            this.path = this.computePath(mob, walkTarget);
+            return;
+        }
+        // Kaiiju end
         mob.getBrain().setMemory(MemoryModuleType.PATH, this.path);
         mob.getNavigation().moveTo(this.path, (double)this.speedModifier);
     }
 
     @Override
     protected void tick(ServerLevel serverLevel, Mob mob, long l) {
+        // Kaiiju start - petal - Async path processing
+        if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled) {
+            if (this.path != null && !this.path.isProcessed()) return; // wait for processing
+
+            if (!this.finishedProcessing) {
+                this.finishedProcessing = true;
+
+                Brain<?> brain = mob.getBrain();
+                boolean canReach = this.path != null && this.path.canReach();
+                if (canReach) {
+                    brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
+                } else if (!brain.hasMemoryValue(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE)) {
+                    brain.setMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, l);
+                }
+
+                if (!canReach) {
+                    Optional<WalkTarget> walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET);
+
+                    if (!walkTarget.isPresent()) return;
+
+                    BlockPos blockPos = walkTarget.get().getTarget().currentBlockPosition();
+                    Vec3 vec3 = DefaultRandomPos.getPosTowards((PathfinderMob) mob, 10, 7, Vec3.atBottomCenterOf(blockPos), (float) Math.PI / 2F);
+                    if (vec3 != null) {
+                        // try recalculating the path using a random position
+                        this.path = mob.getNavigation().createPath(vec3.x, vec3.y, vec3.z, 0);
+                        this.finishedProcessing = false;
+                        return;
+                    }
+                }
+
+                mob.getBrain().setMemory(MemoryModuleType.PATH, this.path);
+                mob.getNavigation().moveTo(this.path, this.speedModifier);
+            }
+
+            Path path = mob.getNavigation().getPath();
+            Brain<?> brain = mob.getBrain();
+
+            if (path != null && this.lastTargetPos != null && brain.hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
+                WalkTarget walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET).get(); // we know isPresent = true
+                if (walkTarget.getTarget().currentBlockPosition().distSqr(this.lastTargetPos) > 4.0D) {
+                    this.start(serverLevel, mob, l);
+                }
+            }
+        } else {
+        // Kaiiju end
         Path path = mob.getNavigation().getPath();
         Brain<?> brain = mob.getBrain();
         if (this.path != path) {
@@ -103,7 +162,23 @@ public class MoveToTargetSink extends Behavior<Mob> {
             }
 
         }
+        } // Kaiiju - async path processing
     }
+
+    // Kaiiju start - petal - Async path processing
+    @Nullable
+    private Path computePath(Mob entity, WalkTarget walkTarget) {
+        BlockPos blockPos = walkTarget.getTarget().currentBlockPosition();
+        // don't pathfind outside region
+        //if (!io.papermc.paper.util.TickThread.isTickThreadFor((ServerLevel) entity.level(), blockPos)) return null; // Leaf - Don't need this
+        this.speedModifier = walkTarget.getSpeedModifier();
+        Brain<?> brain = entity.getBrain();
+        if (this.reachedTarget(entity, walkTarget)) {
+            brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
+        }
+        return entity.getNavigation().createPath(blockPos, 0);
+    }
+    // Kaiiju end
 
     private boolean tryComputePath(Mob entity, WalkTarget walkTarget, long time) {
         BlockPos blockPos = walkTarget.getTarget().currentBlockPosition();

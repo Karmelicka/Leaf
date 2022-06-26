@@ -20,6 +20,7 @@ import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.level.pathfinder.Path;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableLong;
+import org.dreeam.leaf.async.path.AsyncPathProcessor;
 
 public class SetClosestHomeAsWalkTarget {
     private static final int CACHE_TIMEOUT = 40;
@@ -57,6 +58,26 @@ public class SetClosestHomeAsWalkTarget {
                             Set<Pair<Holder<PoiType>, BlockPos>> set = poiManager.findAllWithType((poiType) -> {
                                 return poiType.is(PoiTypes.HOME);
                             }, predicate, entity.blockPosition(), 48, PoiManager.Occupancy.ANY).collect(Collectors.toSet());
+                            // Kaiiju start - petal - Async path processing
+                            if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled) {
+                                // await on path async
+                                Path possiblePath = AcquirePoi.findPathToPois(entity, set);
+
+                                // wait on the path to be processed
+                                AsyncPathProcessor.awaitProcessing(entity, possiblePath, path -> {
+                                        if (path == null || !path.canReach() || mutableInt.getValue() < 5) { // read canReach check
+                                            long2LongMap.long2LongEntrySet().removeIf((entry) -> entry.getLongValue() < mutableLong.getValue());
+                                            return;
+                                        }
+                                        BlockPos blockPos = path.getTarget();
+                                        Optional<Holder<PoiType>> optional2 = poiManager.getType(blockPos);
+                                        if (optional2.isPresent()) {
+                                            walkTarget.set(new WalkTarget(blockPos, speed, 1));
+                                            DebugPackets.sendPoiTicketCountPacket(world, blockPos);
+                                        }
+                                    });
+                            } else {
+                            // Kaiiju end
                             Path path = AcquirePoi.findPathToPois(entity, set);
                             if (path != null && path.canReach()) {
                                 BlockPos blockPos = path.getTarget();
@@ -70,6 +91,7 @@ public class SetClosestHomeAsWalkTarget {
                                     return entry.getLongValue() < mutableLong.getValue();
                                 });
                             }
+                            } // Kaiiju - async path processing
 
                             return true;
                         } else {

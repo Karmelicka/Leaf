@@ -623,6 +623,16 @@ public class Warden extends Monster implements VibrationSystem {
             protected PathFinder createPathFinder(int range) {
                 this.nodeEvaluator = new WalkNodeEvaluator();
                 this.nodeEvaluator.setCanPassDoors(true);
+                // Kaiiju start - petal - async path processing
+                if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled)
+                    return new PathFinder(this.nodeEvaluator, range, GroundPathNavigation.nodeEvaluatorGenerator) {
+                        @Override
+                        protected float distance(Node a, Node b) {
+                            return a.distanceToXZ(b);
+                        }
+                    };
+                else
+                // Kaiiju end
                 return new PathFinder(this.nodeEvaluator, range) {
                     @Override
                     protected float distance(Node a, Node b) {

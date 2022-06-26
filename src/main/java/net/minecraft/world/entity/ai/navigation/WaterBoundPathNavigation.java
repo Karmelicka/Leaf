@@ -7,6 +7,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.level.pathfinder.SwimNodeEvaluator;
 import net.minecraft.world.phys.Vec3;
+import org.dreeam.leaf.async.path.NodeEvaluatorFeatures;
+import org.dreeam.leaf.async.path.NodeEvaluatorGenerator;
 
 public class WaterBoundPathNavigation extends PathNavigation {
     private boolean allowBreaching;
@@ -15,10 +17,26 @@ public class WaterBoundPathNavigation extends PathNavigation {
         super(entity, world);
     }
 
+    // Kaiiju start - petal - async path processing
+    private static final NodeEvaluatorGenerator nodeEvaluatorGenerator = (NodeEvaluatorFeatures nodeEvaluatorFeatures) -> {
+        SwimNodeEvaluator nodeEvaluator = new SwimNodeEvaluator(nodeEvaluatorFeatures.allowBreaching());
+        nodeEvaluator.setCanPassDoors(nodeEvaluatorFeatures.canPassDoors());
+        nodeEvaluator.setCanFloat(nodeEvaluatorFeatures.canFloat());
+        nodeEvaluator.setCanWalkOverFences(nodeEvaluatorFeatures.canWalkOverFences());
+        nodeEvaluator.setCanOpenDoors(nodeEvaluatorFeatures.canOpenDoors());
+        return nodeEvaluator;
+    };
+    // Kaiiju end
+
     @Override
     protected PathFinder createPathFinder(int range) {
         this.allowBreaching = this.mob.getType() == EntityType.DOLPHIN;
         this.nodeEvaluator = new SwimNodeEvaluator(this.allowBreaching);
+        // Kaiiju start - async path processing
+        if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled)
+            return new PathFinder(this.nodeEvaluator, range, nodeEvaluatorGenerator);
+        else
+        // Kaiiju end
         return new PathFinder(this.nodeEvaluator, range);
     }
 

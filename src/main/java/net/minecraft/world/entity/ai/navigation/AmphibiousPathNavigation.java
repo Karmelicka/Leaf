@@ -6,16 +6,34 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.AmphibiousNodeEvaluator;
 import net.minecraft.world.level.pathfinder.PathFinder;
 import net.minecraft.world.phys.Vec3;
+import org.dreeam.leaf.async.path.NodeEvaluatorFeatures;
+import org.dreeam.leaf.async.path.NodeEvaluatorGenerator;
 
 public class AmphibiousPathNavigation extends PathNavigation {
     public AmphibiousPathNavigation(Mob mob, Level world) {
         super(mob, world);
     }
 
+    // Kaiiju start - petal - async path processing
+    private static final NodeEvaluatorGenerator nodeEvaluatorGenerator = (NodeEvaluatorFeatures nodeEvaluatorFeatures) -> {
+        AmphibiousNodeEvaluator nodeEvaluator = new AmphibiousNodeEvaluator(false);
+        nodeEvaluator.setCanPassDoors(nodeEvaluatorFeatures.canPassDoors());
+        nodeEvaluator.setCanFloat(nodeEvaluatorFeatures.canFloat());
+        nodeEvaluator.setCanWalkOverFences(nodeEvaluatorFeatures.canWalkOverFences());
+        nodeEvaluator.setCanOpenDoors(nodeEvaluatorFeatures.canOpenDoors());
+        return nodeEvaluator;
+    };
+    // Kaiiju end
+
     @Override
     protected PathFinder createPathFinder(int range) {
         this.nodeEvaluator = new AmphibiousNodeEvaluator(false);
         this.nodeEvaluator.setCanPassDoors(true);
+        // Kaiiju start - petal - async path processing
+        if (org.dreeam.leaf.config.modules.async.AsyncPathfinding.enabled)
+            return new PathFinder(this.nodeEvaluator, range, nodeEvaluatorGenerator);
+        else
+        // Kaiiju end
         return new PathFinder(this.nodeEvaluator, range);
     }
 
