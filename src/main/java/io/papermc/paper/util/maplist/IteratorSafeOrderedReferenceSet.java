@@ -15,7 +15,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
 
     /* list impl */
     protected E[] listElements;
-    protected int listSize;
+    protected int listSize; public int getListSize() { return this.listSize; } // Leaf - petal - expose listSize
 
     protected final double maxFragFactor;
 

@@ -1128,8 +1128,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         entity.tracker = null; // Paper - We're no longer tracked
     }
 
+    // Leaf start - petal - multithreaded tracker
+    private @Nullable org.dreeam.leaf.async.tracker.MultithreadedTracker multithreadedTracker;
+    private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> trackerMainThreadTasks = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private boolean tracking = false;
+
+    public void runOnTrackerMainThread(final Runnable runnable) {
+        if (this.tracking) {
+            this.trackerMainThreadTasks.add(runnable);
+        } else {
+            runnable.run();
+        }
+    }
+
     // Paper start - optimised tracker
     private final void processTrackQueue() {
+            if (org.dreeam.leaf.config.modules.async.MultithreadedTracker.enabled) {
+                if (this.multithreadedTracker == null) {
+                    this.multithreadedTracker = new org.dreeam.leaf.async.tracker.MultithreadedTracker(this.level.chunkSource.entityTickingChunks, this.trackerMainThreadTasks);
+                }
+
+                this.tracking = true;
+                try {
+                    this.multithreadedTracker.processTrackQueue();
+                } finally {
+                    this.tracking = false;
+                }
+                return;
+            }
+            // Leaf end - petal
             for (TrackedEntity tracker : this.entityMap.values()) {
                 // update tracker entry
                 tracker.updatePlayers(tracker.entity.getPlayersInTrackRange());
@@ -1281,10 +1308,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     public class TrackedEntity {
 
         public final ServerEntity serverEntity;
-        final Entity entity;
+        public final Entity entity; // Leaf - petal - public
         private final int range;
         SectionPos lastSectionPos;
-        public final Set<ServerPlayerConnection> seenBy = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(); // Paper - Perf: optimise map impl
+        public final Set<ServerPlayerConnection> seenBy = Sets.newConcurrentHashSet(); // Paper - Perf: optimise map impl // Leaf - Fix tracker NPE
 
         public TrackedEntity(Entity entity, int i, int j, boolean flag) {
             this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, j, flag, this::broadcast, this.seenBy); // CraftBukkit
@@ -1296,7 +1323,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         // Paper start - use distance map to optimise tracker
         com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> lastTrackerCandidates;
 
-        final void updatePlayers(com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> newTrackerCandidates) {
+        public final void updatePlayers(com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> newTrackerCandidates) { // Leaf - petal - public
             com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> oldTrackerCandidates = this.lastTrackerCandidates;
             this.lastTrackerCandidates = newTrackerCandidates;
 
@@ -1338,14 +1365,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         }
 
         public void broadcast(Packet<?> packet) {
-            Iterator iterator = this.seenBy.iterator();
-
-            while (iterator.hasNext()) {
-                ServerPlayerConnection serverplayerconnection = (ServerPlayerConnection) iterator.next();
-
+            // Leaf start - petal - avoid NPE
+            for (ServerPlayerConnection serverplayerconnection : this.seenBy.toArray(new ServerPlayerConnection[0])) {
                 serverplayerconnection.send(packet);
             }
-
+            // Leaf end - petal
         }
 
         public void broadcastAndSend(Packet<?> packet) {
@@ -1357,18 +1381,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         }
 
         public void broadcastRemoved() {
-            Iterator iterator = this.seenBy.iterator();
-
-            while (iterator.hasNext()) {
-                ServerPlayerConnection serverplayerconnection = (ServerPlayerConnection) iterator.next();
-
+            // Leaf start - petal - avoid NPE
+            for (ServerPlayerConnection serverplayerconnection : this.seenBy.toArray(new ServerPlayerConnection[0])) {
                 this.serverEntity.removePairing(serverplayerconnection.getPlayer());
             }
-
+            // Leaf end - petal
         }
 
         public void removePlayer(ServerPlayer player) {
-            org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot
+            //org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot // Leaf - petal - We can remove async too
             if (this.seenBy.remove(player.connection)) {
                 this.serverEntity.removePairing(player);
             }
@@ -1376,7 +1397,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         }
 
         public void updatePlayer(ServerPlayer player) {
-            org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
+            //org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot // Leaf - petal - We can update async
             if (player != this.entity) {
                 // Paper start - remove allocation of Vec3D here
                 // Vec3 vec3d = player.position().subtract(this.entity.position());

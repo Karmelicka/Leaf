@@ -37,7 +37,7 @@ public final class ChunkEntitySlices {
     protected final EntityCollectionBySection allEntities;
     protected final EntityCollectionBySection hardCollidingEntities;
     protected final Reference2ObjectOpenHashMap<Class<? extends Entity>, EntityCollectionBySection> entitiesByClass;
-    protected final EntityList entities = new EntityList();
+    public final EntityList entities = new EntityList(); // Leaf - petal - protected -> public
 
     public FullChunkStatus status;
 

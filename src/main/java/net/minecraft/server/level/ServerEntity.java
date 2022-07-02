@@ -280,7 +280,11 @@ public class ServerEntity {
 
     public void removePairing(ServerPlayer player) {
         this.entity.stopSeenByPlayer(player);
-        player.connection.send(new ClientboundRemoveEntitiesPacket(new int[]{this.entity.getId()}));
+        // Leaf start - petal - ensure main thread
+        ((ServerLevel) this.entity.level()).chunkSource.chunkMap.runOnTrackerMainThread(() ->
+            player.connection.send(new ClientboundRemoveEntitiesPacket(this.entity.getId()))
+        );
+        // Leaf end - petal
     }
 
     public void addPairing(ServerPlayer player) {
@@ -288,7 +292,7 @@ public class ServerEntity {
 
         Objects.requireNonNull(list);
         this.sendPairingData(player, list::add);
-        player.connection.send(new ClientboundBundlePacket(list));
+        ((ServerLevel) this.entity.level()).chunkSource.chunkMap.runOnTrackerMainThread(() -> player.connection.send(new ClientboundBundlePacket(list))); // Leaf - petal - Main thread
         this.entity.startSeenByPlayer(player);
     }
 
@@ -382,19 +386,29 @@ public class ServerEntity {
 
         if (list != null) {
             this.trackedDataValues = datawatcher.getNonDefaultValues();
-            this.broadcastAndSend(new ClientboundSetEntityDataPacket(this.entity.getId(), list));
+            // Leaf start - petal - sync
+            ((ServerLevel) this.entity.level()).chunkSource.chunkMap.runOnTrackerMainThread(() ->
+                this.broadcastAndSend(new ClientboundSetEntityDataPacket(this.entity.getId(), list))
+            );
+            // Leaf end - petal
         }
 
         if (this.entity instanceof LivingEntity) {
             Set<AttributeInstance> set = ((LivingEntity) this.entity).getAttributes().getDirtyAttributes();
 
             if (!set.isEmpty()) {
+                // Leaf start - petal - sync
+                final var copy = Lists.newArrayList(set);
+                ((ServerLevel) this.entity.level()).chunkSource.chunkMap.runOnTrackerMainThread(() -> {
                 // CraftBukkit start - Send scaled max health
                 if (this.entity instanceof ServerPlayer) {
-                    ((ServerPlayer) this.entity).getBukkitEntity().injectScaledMaxHealth(set, false);
+                    ((ServerPlayer) this.entity).getBukkitEntity().injectScaledMaxHealth(copy, false);
                 }
                 // CraftBukkit end
-                this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
+                    this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), copy));
+
+                });
+                // Leaf end - petal
             }
 
             set.clear();

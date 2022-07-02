@@ -13,7 +13,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.BossEvent;
 
 public class ServerBossEvent extends BossEvent {
-    private final Set<ServerPlayer> players = Sets.newHashSet();
+    private final Set<ServerPlayer> players = Sets.newConcurrentHashSet(); // Leaf - petal - players can be removed in async tracking
     private final Set<ServerPlayer> unmodifiablePlayers = Collections.unmodifiableSet(this.players);
     public boolean visible = true;
 

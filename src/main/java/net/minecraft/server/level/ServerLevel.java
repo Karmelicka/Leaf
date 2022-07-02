@@ -2633,7 +2633,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
     @Override
     public LevelEntityGetter<Entity> getEntities() {
-        org.spigotmc.AsyncCatcher.catchOp("Chunk getEntities call"); // Spigot
+        //org.spigotmc.AsyncCatcher.catchOp("Chunk getEntities call"); // Spigot // Leaf - petal
         return this.entityLookup; // Paper - rewrite chunk system
     }
 

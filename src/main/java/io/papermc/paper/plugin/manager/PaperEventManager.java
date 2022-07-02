@@ -3,6 +3,7 @@ package io.papermc.paper.plugin.manager;
 import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 import com.destroystokyo.paper.exception.ServerEventException;
 import com.google.common.collect.Sets;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.Server;
 import org.bukkit.Warning;
 import org.bukkit.event.Event;
@@ -42,7 +43,14 @@ class PaperEventManager {
         if (isAsync && onPrimaryThread) {
             throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
         } else if (!isAsync && !onPrimaryThread && !this.server.isStopping()) {
-            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+            // Leaf start - petal
+            if (org.dreeam.leaf.config.modules.async.MultithreadedTracker.enabled) {
+                MinecraftServer.getServer().scheduleOnMain(event::callEvent);
+                return;
+            } else {
+                throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+            }
+            // Leaf end - petal
         }
         // KTP stop - Optimise spigot event bus
         }
