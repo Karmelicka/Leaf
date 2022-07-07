@@ -338,7 +338,13 @@ public class BuiltInRegistries {
     }
 
     public static void bootStrap() {
+        // Paper start
+        bootStrap(() -> {});
+    }
+    public static void bootStrap(Runnable runnable) {
+        // Paper end
         createContents();
+        runnable.run(); // Paper
         freeze();
         validate(REGISTRY);
     }

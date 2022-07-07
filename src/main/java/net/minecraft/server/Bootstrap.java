@@ -76,7 +76,11 @@ public class Bootstrap {
                     EntitySelectorOptions.bootStrap();
                     DispenseItemBehavior.bootStrap();
                     CauldronInteraction.bootStrap();
-                    BuiltInRegistries.bootStrap();
+                    // Paper start
+                    BuiltInRegistries.bootStrap(() -> {
+                        io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
+                    });
+                    // Paper end
                     CreativeModeTabs.validate();
                     Bootstrap.wrapStreams();
                     Bootstrap.bootstrapDuration.set(Duration.between(instant, Instant.now()).toMillis());
