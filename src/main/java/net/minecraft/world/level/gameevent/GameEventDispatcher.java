@@ -44,6 +44,7 @@ public class GameEventDispatcher {
         int k1 = SectionPos.blockToSectionCoord(blockposition.getZ() + i);
         List<GameEvent.ListenerInfo> list = new ArrayList();
         GameEventListenerRegistry.ListenerVisitor gameeventlistenerregistry_a = (gameeventlistener, vec3d1) -> {
+            if (!gameeventlistener.listensToEvent(event, emitter)) return; // Leaf - petal - If they don't listen, ignore
             if (gameeventlistener.getDeliveryMode() == GameEventListener.DeliveryMode.BY_DISTANCE) {
                 list.add(new GameEvent.ListenerInfo(event, emitterPos, emitter, gameeventlistener, vec3d1));
             } else {

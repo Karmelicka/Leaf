@@ -65,7 +65,7 @@ public class SculkCatalystBlockEntity extends BlockEntity implements GameEventLi
         return this.catalystListener;
     }
 
-    public static class CatalystListener implements GameEventListener {
+    public class CatalystListener implements GameEventListener { // Leaf - petal
 
         public static final int PULSE_TICKS = 8;
         final SculkSpreader sculkSpreader;
@@ -134,6 +134,13 @@ public class SculkCatalystBlockEntity extends BlockEntity implements GameEventLi
             world.sendParticles(ParticleTypes.SCULK_SOUL, (double) pos.getX() + 0.5D, (double) pos.getY() + 1.15D, (double) pos.getZ() + 0.5D, 2, 0.2D, 0.0D, 0.2D, 0.0D);
             world.playSound((Player) null, pos, SoundEvents.SCULK_CATALYST_BLOOM, SoundSource.BLOCKS, 2.0F, 0.6F + random.nextFloat() * 0.4F);
         }
+
+    // Leaf start - petal
+    @Override
+    public boolean listensToEvent(GameEvent gameEvent, GameEvent.Context context) {
+        return !SculkCatalystBlockEntity.this.isRemoved() && gameEvent == GameEvent.ENTITY_DIE && context.sourceEntity() instanceof LivingEntity;
+    }
+    // Leaf end - petal
 
         private void tryAwardItSpreadsAdvancement(Level world, LivingEntity deadEntity) {
             LivingEntity entityliving1 = deadEntity.getLastHurtByMob();

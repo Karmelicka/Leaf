@@ -80,7 +80,18 @@ public class LevelChunk extends ChunkAccess {
     private Supplier<FullChunkStatus> fullStatus;
     @Nullable
     private LevelChunk.PostLoadProcessor postLoad;
-    private final Int2ObjectMap<GameEventListenerRegistry> gameEventListenerRegistrySections;
+    // Leaf start - petal
+    private final GameEventListenerRegistry[] gameEventListenerRegistrySections;
+    private static final int GAME_EVENT_DISPATCHER_RADIUS = 2;
+
+    private static int getGameEventSectionIndex(int sectionIndex) {
+        return sectionIndex + GAME_EVENT_DISPATCHER_RADIUS;
+    }
+
+    private static int getGameEventSectionLength(int sectionCount) {
+        return sectionCount + (GAME_EVENT_DISPATCHER_RADIUS * 2);
+    }
+    // Leaf end - petal
     private final LevelChunkTicks<Block> blockTicks;
     private final LevelChunkTicks<Fluid> fluidTicks;
     public volatile FullChunkStatus chunkStatus = FullChunkStatus.INACCESSIBLE; // Paper - rewrite chunk system
@@ -105,7 +116,7 @@ public class LevelChunk extends ChunkAccess {
         super(pos, upgradeData, world, net.minecraft.server.MinecraftServer.getServer().registryAccess().registryOrThrow(Registries.BIOME), inhabitedTime, sectionArrayInitializer, blendingData); // Paper - Anti-Xray - The world isn't ready yet, use server singleton for registry
         this.tickersInLevel = Maps.newHashMap();
         this.level = (ServerLevel) world; // CraftBukkit - type
-        this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap();
+        this.gameEventListenerRegistrySections = new GameEventListenerRegistry[getGameEventSectionLength(this.getSectionsCount())]; // Leaf - petal
         Heightmap.Types[] aheightmap_type = Heightmap.Types.values();
         int j = aheightmap_type.length;
 
@@ -303,9 +314,23 @@ public class LevelChunk extends ChunkAccess {
         if (world instanceof ServerLevel) {
             ServerLevel worldserver = (ServerLevel) world;
 
-            return (GameEventListenerRegistry) this.gameEventListenerRegistrySections.computeIfAbsent(ySectionCoord, (j) -> {
-                return new EuclideanGameEventListenerRegistry(worldserver, ySectionCoord, this::removeGameEventListenerRegistry);
-            });
+            // Leaf start - petal
+            int sectionIndex = getGameEventSectionIndex(this.getSectionIndexFromSectionY(ySectionCoord));
+
+            // drop game events that are too far away (32 blocks) from loaded sections
+            // this matches the highest radius of game events in the game
+            if (sectionIndex < 0 || sectionIndex >= this.gameEventListenerRegistrySections.length) {
+                return GameEventListenerRegistry.NOOP;
+            }
+
+            var dispatcher = this.gameEventListenerRegistrySections[sectionIndex];
+
+            if (dispatcher == null) {
+                dispatcher = this.gameEventListenerRegistrySections[sectionIndex] = new EuclideanGameEventListenerRegistry(worldserver, ySectionCoord, this::removeGameEventListenerRegistry);
+            }
+
+            return dispatcher;
+            // Leaf end - petal
         } else {
             return super.getListenerRegistry(ySectionCoord);
         }
@@ -678,7 +703,7 @@ public class LevelChunk extends ChunkAccess {
     }
 
     private void removeGameEventListenerRegistry(int ySectionCoord) {
-        this.gameEventListenerRegistrySections.remove(ySectionCoord);
+        this.gameEventListenerRegistrySections[getGameEventSectionIndex(this.getSectionIndexFromSectionY(ySectionCoord))] = null; // Leaf - petal
     }
 
     private void removeBlockEntityTicker(BlockPos pos) {

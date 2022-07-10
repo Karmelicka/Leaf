@@ -22,4 +22,10 @@ public interface GameEventListener {
     public interface Holder<T extends GameEventListener> {
         T getListener();
     }
+
+    // Leaf start - petal - Add check for seeing if this listener cares about an event
+    default boolean listensToEvent(GameEvent gameEvent, GameEvent.Context context) {
+        return true;
+    }
+    // Leaf end - petal
 }

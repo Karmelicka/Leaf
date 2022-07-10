@@ -13,8 +13,8 @@ import net.minecraft.world.phys.Vec3;
 
 public class EuclideanGameEventListenerRegistry implements GameEventListenerRegistry {
     private final List<GameEventListener> listeners = Lists.newArrayList();
-    private final Set<GameEventListener> listenersToRemove = Sets.newHashSet();
-    private final List<GameEventListener> listenersToAdd = Lists.newArrayList();
+    //private final Set<GameEventListener> listenersToRemove = Sets.newHashSet(); // Leaf - petal - Not necessary
+    //private final List<GameEventListener> listenersToAdd = Lists.newArrayList(); // Leaf - petal
     private boolean processing;
     private final ServerLevel level;
     private final int sectionY;
@@ -34,7 +34,7 @@ public class EuclideanGameEventListenerRegistry implements GameEventListenerRegi
     @Override
     public void register(GameEventListener listener) {
         if (this.processing) {
-            this.listenersToAdd.add(listener);
+            throw new java.util.ConcurrentModificationException(); // Leaf - petal - Disallow concurrent modification
         } else {
             this.listeners.add(listener);
         }
@@ -45,7 +45,7 @@ public class EuclideanGameEventListenerRegistry implements GameEventListenerRegi
     @Override
     public void unregister(GameEventListener listener) {
         if (this.processing) {
-            this.listenersToRemove.add(listener);
+            throw new java.util.ConcurrentModificationException(); // Leaf - petal - Disallow concurrent modification
         } else {
             this.listeners.remove(listener);
         }
@@ -66,7 +66,7 @@ public class EuclideanGameEventListenerRegistry implements GameEventListenerRegi
 
             while(iterator.hasNext()) {
                 GameEventListener gameEventListener = iterator.next();
-                if (this.listenersToRemove.remove(gameEventListener)) {
+                if (false) { // Leaf - petal - Disallow concurrent modification
                     iterator.remove();
                 } else {
                     Optional<Vec3> optional = getPostableListenerPosition(this.level, pos, gameEventListener);
@@ -80,6 +80,8 @@ public class EuclideanGameEventListenerRegistry implements GameEventListenerRegi
             this.processing = false;
         }
 
+        // Leaf start - petal
+        /*
         if (!this.listenersToAdd.isEmpty()) {
             this.listeners.addAll(this.listenersToAdd);
             this.listenersToAdd.clear();
@@ -89,6 +91,8 @@ public class EuclideanGameEventListenerRegistry implements GameEventListenerRegi
             this.listeners.removeAll(this.listenersToRemove);
             this.listenersToRemove.clear();
         }
+         */
+        // Leaf end - petal
 
         return bl;
     }
