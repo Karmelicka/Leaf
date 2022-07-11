@@ -252,7 +252,13 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
 
     @Override
     public void equipSaddle(@Nullable SoundSource sound) {
-        this.inventory.setItem(0, new ItemStack(Items.SADDLE));
+        // Paper start - Fix saddles losing nbt data - MC-191591
+        this.equipSaddle(sound, null);
+    }
+    @Override
+    public void equipSaddle(@Nullable SoundSource sound, @Nullable ItemStack stack) {
+        this.inventory.setItem(0, stack != null ? stack : new ItemStack(Items.SADDLE));
+        // Paper end
     }
 
     public void equipArmor(Player player, ItemStack stack) {

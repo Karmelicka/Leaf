@@ -419,14 +419,14 @@ public class ServerPlayer extends Player {
                 BlockPos blockposition1 = PlayerRespawnLogic.getOverworldRespawnPos(world, blockposition.getX() + j2 - i, blockposition.getZ() + k2 - i);
 
                 if (blockposition1 != null) {
-                    this.moveTo(blockposition1, 0.0F, 0.0F);
+                    this.moveTo(blockposition1, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
                     if (world.noCollision((Entity) this)) {
                         break;
                     }
                 }
             }
         } else {
-            this.moveTo(blockposition, 0.0F, 0.0F);
+            this.moveTo(blockposition, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
 
             while (!world.noCollision((Entity) this) && this.getY() < (double) (world.getMaxBuildHeight() - 1)) {
                 this.setPos(this.getX(), this.getY() + 1.0D, this.getZ());

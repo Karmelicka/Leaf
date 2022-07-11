@@ -710,8 +710,10 @@ public abstract class PlayerList {
         Player player = entity.getBukkitEntity();
         PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.connection.channel.remoteAddress()).getAddress());
 
-        if (this.bans.isBanned(gameprofile)) {
-            UserBanListEntry gameprofilebanentry = (UserBanListEntry) this.bans.get(gameprofile);
+        // Paper start - Fix MC-158900
+        UserBanListEntry gameprofilebanentry;
+        if (this.bans.isBanned(gameprofile) && (gameprofilebanentry = this.bans.get(gameprofile)) != null) {
+            // Paper end - Fix MC-158900
 
             ichatmutablecomponent = Component.translatable("multiplayer.disconnect.banned.reason", gameprofilebanentry.getReason());
             if (gameprofilebanentry.getExpires() != null) {

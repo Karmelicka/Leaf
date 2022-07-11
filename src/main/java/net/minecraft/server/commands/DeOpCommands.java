@@ -34,7 +34,7 @@ public class DeOpCommands {
                 playerList.deop(gameProfile);
                 ++i;
                 source.sendSuccess(() -> {
-                    return Component.translatable("commands.deop.success", targets.iterator().next().getName());
+                    return Component.translatable("commands.deop.success", gameProfile.getName()); // Paper - fixes MC-253721
                 }, true);
             }
         }

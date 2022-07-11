@@ -282,6 +282,14 @@ public class ItemFrame extends HangingEntity {
         }
     }
 
+    // Paper start - Fix MC-123848 (spawn item frame drops above block)
+    @Nullable
+    @Override
+    public net.minecraft.world.entity.item.ItemEntity spawnAtLocation(ItemStack stack) {
+        return this.spawnAtLocation(stack, getDirection().equals(Direction.DOWN) ? -0.6F : 0.0F);
+    }
+    // Paper end
+
     private void removeFramedMap(ItemStack itemstack) {
         this.getFramedMapId().ifPresent((i) -> {
             MapItemSavedData worldmap = MapItem.getSavedData(i, this.level());
