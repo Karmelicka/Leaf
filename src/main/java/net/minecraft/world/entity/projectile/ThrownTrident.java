@@ -37,10 +37,12 @@ public class ThrownTrident extends AbstractArrow {
 
     public ThrownTrident(EntityType<? extends ThrownTrident> type, Level world) {
         super(type, world, ThrownTrident.DEFAULT_ARROW_STACK);
+        this.setBaseDamage(net.minecraft.world.item.TridentItem.BASE_DAMAGE); // Paper - Allow trident custom damage
     }
 
     public ThrownTrident(Level world, LivingEntity owner, ItemStack stack) {
         super(EntityType.TRIDENT, owner, world, stack);
+        this.setBaseDamage(net.minecraft.world.item.TridentItem.BASE_DAMAGE); // Paper - Allow trident custom damage
         this.entityData.set(ThrownTrident.ID_LOYALTY, (byte) EnchantmentHelper.getLoyalty(stack));
         this.entityData.set(ThrownTrident.ID_FOIL, stack.hasFoil());
     }
@@ -124,7 +126,7 @@ public class ThrownTrident extends AbstractArrow {
     @Override
     protected void onHitEntity(EntityHitResult entityHitResult) {
         Entity entity = entityHitResult.getEntity();
-        float f = 8.0F;
+        float f = (float) this.getBaseDamage(); // Paper - Allow trident custom damage
 
         if (entity instanceof LivingEntity) {
             LivingEntity entityliving = (LivingEntity) entity;
