@@ -970,10 +970,10 @@ public abstract class PlayerList {
         ServerLevel worldserver2 = entityplayer1.serverLevel();
         LevelData worlddata = worldserver2.getLevelData();
 
-        entityplayer1.connection.send(new ClientboundRespawnPacket(entityplayer1.createCommonSpawnInfo(worldserver2), (byte) i));
+        if (!entityplayer.smoothWorldTeleport) entityplayer1.connection.send(new ClientboundRespawnPacket(entityplayer1.createCommonSpawnInfo(worldserver2), (byte) i)); // Slice
         entityplayer1.connection.send(new ClientboundSetChunkCacheRadiusPacket(worldserver1.getWorld().getSendViewDistance())); // Spigot // Paper - replace old player chunk management
         entityplayer1.connection.send(new ClientboundSetSimulationDistancePacket(worldserver1.getWorld().getSimulationDistance())); // Spigot // Paper - replace old player chunk management
-        entityplayer1.connection.teleport(CraftLocation.toBukkit(entityplayer1.position(), worldserver2.getWorld(), entityplayer1.getYRot(), entityplayer1.getXRot())); // CraftBukkit
+        if (!entityplayer.smoothWorldTeleport) entityplayer1.connection.teleport(CraftLocation.toBukkit(entityplayer1.position(), worldserver2.getWorld(), entityplayer1.getYRot(), entityplayer1.getXRot())); // CraftBukkit // Slice
         entityplayer1.connection.send(new ClientboundSetDefaultSpawnPositionPacket(worldserver1.getSharedSpawnPos(), worldserver1.getSharedSpawnAngle()));
         entityplayer1.connection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
         entityplayer1.connection.send(new ClientboundSetExperiencePacket(entityplayer1.experienceProgress, entityplayer1.totalExperience, entityplayer1.experienceLevel));

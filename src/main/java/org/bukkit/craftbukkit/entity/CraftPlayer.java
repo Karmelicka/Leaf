@@ -1266,6 +1266,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         // Paper end
     }
 
+    // Slice start
+    public void teleportWithoutRespawn(Location location) {
+        ServerPlayer serverPlayer = getHandle();
+        serverPlayer.smoothWorldTeleport = true;
+        teleport(location);
+        serverPlayer.smoothWorldTeleport = false;
+    }
+    // Slice end
+
     @Override
     public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
         // Paper start - Teleport API

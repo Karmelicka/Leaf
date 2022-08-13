@@ -286,6 +286,7 @@ public class ServerPlayer extends Player {
     private boolean tpsBar = false; // Purpur
     private boolean compassBar = false; // Purpur
     private boolean ramBar = false; // Purpur
+    public boolean smoothWorldTeleport; // Slice
 
     // Paper start - replace player chunk loader
     private final java.util.concurrent.atomic.AtomicReference<io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances> viewDistances = new java.util.concurrent.atomic.AtomicReference<>(new io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances(-1, -1, -1));
