@@ -24,6 +24,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
 import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
+import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 
 @DefaultQualifier(NonNull.class)
 public final class FixLightCommand implements PaperSubcommand {
@@ -93,17 +94,20 @@ public final class FixLightCommand implements PaperSubcommand {
         lightengine.relight(chunks,
             (final ChunkPos chunkPos) -> {
                 ++relitChunks[0];
-                sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
-                    text("Relit chunk ", BLUE), text(chunkPos.toString()),
-                    text(", progress: ", BLUE), text((int) (Math.round(100.0 * (double) (relitChunks[0]) / (double) pending[0])) + "%")
+                sender.getBukkitEntity().sendActionBar(text().color(DARK_AQUA).append(
+                    text("Relighting Chunks: ", DARK_AQUA), text(chunkPos.toString()),
+                    text(" " + relitChunks[0], YELLOW),
+                    text("/", DARK_AQUA),
+                    text(pending[0] + " ", YELLOW),
+                    text("(" + (int) (Math.round(100.0 * (double) (relitChunks[0]) / (double) pending[0])) + "%)", YELLOW)
                 ));
             },
             (final int totalRelit) -> {
                 final long end = System.nanoTime();
                 final long diff = Math.round(1.0e-6 * (end - start));
                 sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
-                    text("Relit ", BLUE), text(totalRelit),
-                    text(" chunks. Took ", BLUE), text(diff + "ms")
+                    text("Relit ", DARK_AQUA), text(totalRelit, YELLOW),
+                    text(" chunks. Took ", DARK_AQUA), text(diff + "ms", YELLOW)
                 ));
                 if (done != null) {
                     done.run();
