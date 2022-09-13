@@ -425,6 +425,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     private UUID originWorld;
     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
     public boolean fixedPose = false; // Paper - Expand Pose API
+    private CompoundTag leavesData = new CompoundTag(); // Leaves - Leaves ex data
 
     public void setOrigin(@javax.annotation.Nonnull Location location) {
         this.origin = location.toVector();
@@ -2548,6 +2549,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 nbttagcompound.putBoolean("Paper.FreezeLock", true);
             }
             // Paper end
+            nbttagcompound.put("Leaves.Data", leavesData); // Leaves - leaves ex data
             return nbttagcompound;
         } catch (Throwable throwable) {
             CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
@@ -2695,6 +2697,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 freezeLocked = nbt.getBoolean("Paper.FreezeLock");
             }
             // Paper end
+            // Leaves start - leaves ex data
+            if (nbt.contains("Leaves.Data")) {
+                leavesData = nbt.getCompound("Leaves.Data");
+            }
+            // Leaves end - leaves ex data
 
         } catch (Throwable throwable) {
             CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
@@ -5134,4 +5141,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         return false;
     }
     // Purpur end
+
+    // Leaves start - leaves ex data
+    public CompoundTag getLeavesData() {
+        return leavesData;
+    }
+    // Leaves end - leaves ex data
 }
