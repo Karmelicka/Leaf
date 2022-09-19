@@ -546,8 +546,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
+        // Paper start - launchProjectile consumer
+        return this.launchProjectile(projectile, velocity, null);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, java.util.function.Consumer<? super T> function) {
+        // Paper end - launchProjectile consumer
         Preconditions.checkState(!this.getHandle().generation, "Cannot launch projectile during world generation");
 
         net.minecraft.world.level.Level world = ((CraftWorld) this.getWorld()).getHandle();
@@ -634,6 +641,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (velocity != null) {
             ((T) launch.getBukkitEntity()).setVelocity(velocity);
         }
+        // Paper start - launchProjectile consumer
+        if (function != null) {
+            function.accept((T) launch.getBukkitEntity());
+        }
+        // Paper end - launchProjectile consumer
 
         world.addFreshEntity(launch);
         return (T) launch.getBukkitEntity();
