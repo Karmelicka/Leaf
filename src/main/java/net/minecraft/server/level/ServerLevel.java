@@ -2263,7 +2263,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
             if (entity instanceof Mob) {
                 Mob entityinsentient = (Mob) entity;
 
-                if (ServerLevel.this.isUpdatingNavigations) {
+                if (false && ServerLevel.this.isUpdatingNavigations) { // Paper - Remove unnecessary onTrackingStart during navigation warning
                     String s = "onTrackingStart called during navigation iteration";
 
                     Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
@@ -2348,7 +2348,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
             if (entity instanceof Mob) {
                 Mob entityinsentient = (Mob) entity;
 
-                if (ServerLevel.this.isUpdatingNavigations) {
+                if (false && ServerLevel.this.isUpdatingNavigations) { // Paper - Remove unnecessary onTrackingStart during navigation warning
                     String s = "onTrackingStart called during navigation iteration";
 
                     Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
