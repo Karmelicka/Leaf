@@ -957,6 +957,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     public void move(MoverType movementType, Vec3 movement) {
+        final Vec3 originalMovement = movement; // Paper - Expose pre-collision velocity
         if (this.noPhysics) {
             this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
         } else {
@@ -1041,7 +1042,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                     }
 
                     if (!bl.getType().isAir()) {
-                        VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, bl);
+                        VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, bl, org.bukkit.craftbukkit.util.CraftVector.toBukkit(originalMovement)); // Paper - Expose pre-collision velocity
                         this.level.getCraftServer().getPluginManager().callEvent(event);
                     }
                 }
