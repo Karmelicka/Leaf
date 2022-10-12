@@ -147,7 +147,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
                         {
                             this.connection.spoofedProfile = ServerHandshakePacketListenerImpl.gson.fromJson(split[3], com.mojang.authlib.properties.Property[].class);
                         }
-                    } else if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) {
+                    } else if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) && !(org.dreeam.leaf.config.modules.misc.RemoveSpigotCheckBungee.enabled)) { // Leaf - Remove Spigot check for broken BungeeCord configurations
                         Component chatmessage = Component.literal("Unknown data in login hostname, did you forget to enable BungeeCord in spigot.yml?");
                         this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
                         this.connection.disconnect(chatmessage);
