@@ -21,6 +21,9 @@ dependencies {
         exclude("io.papermc.paper", "paper-api")
     }
     // Gale end - project setup
+
+    implementation("com.electronwill.night-config:toml:3.6.7") // Leaf - Night config
+
     // Paper start
     implementation("org.jline:jline-terminal-jansi:3.21.0")
     implementation("net.minecrell:terminalconsoleappender:1.3.0")

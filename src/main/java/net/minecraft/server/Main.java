@@ -142,6 +142,7 @@ public class Main {
             org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("bukkit-settings"));
             org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("spigot-settings"));
             // Paper end - load config files early for access below if needed
+            org.dreeam.leaf.config.LeafConfig.loadConfig(); // Leaf
 
             if (optionset.has("initSettings")) { // CraftBukkit
                 // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
