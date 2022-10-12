@@ -153,7 +153,11 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
     public void handleHello(ServerboundHelloPacket packet) {
         // Gale start - JettPack - reduce array allocations
         Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", ArrayConstants.emptyObjectArray);
-        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", ArrayConstants.emptyObjectArray); // Paper - config username validation
+        // Leaf start - Remove Vanilla username check
+        if (!org.dreeam.leaf.config.modules.misc.RemoveVanillaUsernameCheck.enabled) {
+            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", ArrayConstants.emptyObjectArray); // Paper - config username validation
+        }
+        // Leaf end
         // Gale end - JettPack - reduce array allocations
         this.requestedUsername = packet.name();
         GameProfile gameprofile = this.server.getSingleplayerProfile();
