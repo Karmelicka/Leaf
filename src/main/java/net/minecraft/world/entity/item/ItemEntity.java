@@ -350,7 +350,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
         ItemStack itemstack1 = other.getItem();
 
         if (Objects.equals(this.target, other.target) && ItemEntity.areMergable(itemstack, itemstack1)) {
-            if (true || itemstack1.getCount() < itemstack.getCount()) { // Spigot
+            if (org.dreeam.leaf.config.modules.gameplay.UseSpigotItemMergingMech.enabled || itemstack1.getCount() < itemstack.getCount()) { // Spigot // Leaf - KeYi - Configurable spigot item merging mechanism
                 ItemEntity.merge(this, itemstack, other, itemstack1);
             } else {
                 ItemEntity.merge(other, itemstack1, this, itemstack);
