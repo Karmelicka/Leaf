@@ -11,8 +11,8 @@ import com.google.gson.JsonParseException;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.JsonOps;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -137,7 +137,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
     }
 
     public <C extends Container, T extends Recipe<C>> List<RecipeHolder<T>> getAllRecipesFor(RecipeType<T> type) {
-        return List.copyOf(this.byType(type).values());
+        return new ArrayList<>(this.byType(type).values()); // Leaf - Carpet-Fixes
     }
 
     public <C extends Container, T extends Recipe<C>> List<RecipeHolder<T>> getRecipesFor(RecipeType<T> type, C inventory, Level world) {
