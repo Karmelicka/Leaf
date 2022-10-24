@@ -138,7 +138,7 @@ public class GaleWorldConfiguration extends ConfigurationPart {
             public boolean loadPortalDestinationChunkBeforeEntityTeleport = false; // Gale - MultiPaper - load portal destination chunk before entity teleport
         }
 
-        public boolean arrowMovementResetsDespawnCounter = true; // Gale - Purpur - make arrow movement resetting despawn counter configurable
+        public boolean arrowMovementResetsDespawnCounter = false; // Gale - Purpur - make arrow movement resetting despawn counter configurable // Leaf - KeYi - disable arrow despawn counter by default
         public boolean entitiesCanRandomStrollIntoNonTickingChunks = true; // Gale - MultiPaper - prevent entities random strolling into non-ticking chunks
         public double entityWakeUpDurationRatioStandardDeviation = 0.2; // Gale - variable entity wake-up duration
         public boolean hideFlamesOnEntitiesWithFireResistance = false; // Gale - Slice - hide flames on entities with fire resistance
