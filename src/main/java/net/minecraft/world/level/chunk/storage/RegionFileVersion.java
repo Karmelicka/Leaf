@@ -30,6 +30,17 @@ public class RegionFileVersion {
     }, (stream) -> {
         return stream;
     }));
+
+    // Paper start - Configurable region compression format
+    public static RegionFileVersion getCompressionFormat() {
+        return switch (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.compressionFormat) {
+            case GZIP -> VERSION_GZIP;
+            case ZLIB -> VERSION_DEFLATE;
+            case NONE -> VERSION_NONE;
+        };
+    }
+    // Paper end - Configurable region compression format
+
     private final int id;
     private final RegionFileVersion.StreamWrapper<InputStream> inputWrapper;
     private final RegionFileVersion.StreamWrapper<OutputStream> outputWrapper;

@@ -46,7 +46,7 @@ public class RegionFile implements AutoCloseable {
     protected final RegionBitmap usedSectors;
 
     public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
-        this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync);
+        this(file, directory, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
     }
 
     public RegionFile(Path file, Path directory, RegionFileVersion outputChunkStreamVersion, boolean dsync) throws IOException {
