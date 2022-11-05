@@ -26,7 +26,7 @@ public class PacketUtils {
 
     public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
         if (!engine.isSameThread()) {
-            engine.executeIfPossible(() -> {
+            engine.execute(() -> { // Paper - Fix preemptive player kick on a server shutdown
                 if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerCommonPacketListenerImpl && ((ServerCommonPacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
                 if (listener.shouldHandleMessage(packet)) {
                     co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
