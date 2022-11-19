@@ -2007,7 +2007,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                 Vec3 vec3d2 = vec3d.subtract(vec3d1);
                 double d0 = 1.0000001D;
 
-                if (Math.abs(vec3d2.x()) < 1.0000001D && Math.abs(vec3d2.y()) < 1.0000001D && Math.abs(vec3d2.z()) < 1.0000001D) {
+                if ((Math.abs(vec3d2.x()) < org.dreeam.leaf.config.modules.gameplay.ConfigurableMaxUseItemDistance.maxUseItemDistance && Math.abs(vec3d2.y()) < org.dreeam.leaf.config.modules.gameplay.ConfigurableMaxUseItemDistance.maxUseItemDistance && Math.abs(vec3d2.z()) < org.dreeam.leaf.config.modules.gameplay.ConfigurableMaxUseItemDistance.maxUseItemDistance) || org.dreeam.leaf.config.modules.gameplay.ConfigurableMaxUseItemDistance.removeUseItemOnPacketTooFarCheck) { // Leaf - Remove UseItemOnPacket Too Far Check and make it configurable
                     Direction enumdirection = movingobjectpositionblock.getDirection();
 
                     this.player.resetLastActionTime();
