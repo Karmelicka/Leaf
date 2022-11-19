@@ -29,6 +29,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
+// Leaf start - KeYi - Player Skull API
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+// Leaf end - KeYi
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -167,6 +172,7 @@ import org.bukkit.event.player.PlayerUnregisterChannelEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta; // Leaf - KeYi - Player Skull API
 import org.bukkit.map.MapCursor;
 import org.bukkit.map.MapView;
 import org.bukkit.metadata.MetadataValue;
@@ -3524,4 +3530,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundPlayerCombatKillPacket(getEntityId(), io.papermc.paper.adventure.PaperAdventure.asVanilla(message)));
     }
     // Purpur end
+
+    // Leaf start - KeYi - Player Skull API
+    @Override
+    public ItemStack getSkull() {
+        ItemStack skull = new ItemStack(Material.PLAYER_HEAD, 1);
+        SkullMeta meta = (SkullMeta) skull.getItemMeta();
+
+        meta.setOwningPlayer(this);
+        skull.setItemMeta(meta);
+
+        return skull;
+    }
+
+    @Override
+    public CompletableFuture<ItemStack> getSkullAsynchronously() {
+        ExecutorService executorService = Executors.newCachedThreadPool();
+
+        CompletableFuture<ItemStack> future = (CompletableFuture<ItemStack>) executorService.submit(this::getSkull);
+        executorService.shutdown();
+
+        return future;
+    }
+    // Leaf end - KeYi
 }
