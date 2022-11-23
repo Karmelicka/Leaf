@@ -333,11 +333,17 @@ public class EnderMan extends Monster implements NeutralMob {
     private boolean teleport(double x, double y, double z) {
         BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos(x, y, z);
 
-        while (blockposition_mutableblockposition.getY() > this.level().getMinBuildHeight() && !this.level().getBlockState(blockposition_mutableblockposition).blocksMotion()) {
+        // Gale start - Airplane - single chunk lookup
+        net.minecraft.world.level.chunk.LevelChunk chunk = this.level().getChunkIfLoaded(blockposition_mutableblockposition);
+        if (chunk == null) {
+            return false;
+        }
+        while (blockposition_mutableblockposition.getY() > this.level().getMinBuildHeight() && !chunk.getBlockState(blockposition_mutableblockposition).blocksMotion()) {
+            // Gale end - Airplane - single chunk lookup
             blockposition_mutableblockposition.move(Direction.DOWN);
         }
 
-        BlockState iblockdata = this.level().getBlockState(blockposition_mutableblockposition);
+        BlockState iblockdata = chunk.getBlockState(blockposition_mutableblockposition); // Gale - Airplane - single chunk lookup
         boolean flag = iblockdata.blocksMotion();
         boolean flag1 = iblockdata.getFluidState().is(FluidTags.WATER);
 
