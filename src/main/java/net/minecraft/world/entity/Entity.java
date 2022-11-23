@@ -502,6 +502,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         return chunkMap.playerEntityTrackerTrackMaps[type.ordinal()].getObjectsInRange(MCUtil.getCoordinateKey(this));
     }
     // Paper end - optimise entity tracking
+
     public float getBukkitYaw() {
         return this.yRot;
     }

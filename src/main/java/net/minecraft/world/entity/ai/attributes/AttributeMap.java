@@ -23,9 +23,11 @@ public class AttributeMap {
     private final Map<Attribute, AttributeInstance> attributes = Maps.newHashMap();
     private final Set<AttributeInstance> dirtyAttributes = Sets.newHashSet();
     private final AttributeSupplier supplier;
+    private final java.util.function.Function<Attribute, AttributeInstance> createInstance; // Gale - Airplane - reduce entity allocations
 
     public AttributeMap(AttributeSupplier defaultAttributes) {
         this.supplier = defaultAttributes;
+        this.createInstance = attribute -> this.supplier.createInstance(this::onAttributeModified, attribute); // Gale - Airplane - reduce entity allocations
     }
 
     private void onAttributeModified(AttributeInstance instance) {
@@ -45,11 +47,10 @@ public class AttributeMap {
         }).collect(Collectors.toList());
     }
 
+
     @Nullable
     public AttributeInstance getInstance(Attribute attribute) {
-        return this.attributes.computeIfAbsent(attribute, (attributex) -> {
-            return this.supplier.createInstance(this::onAttributeModified, attributex);
-        });
+        return this.attributes.computeIfAbsent(attribute, this.createInstance); // Gale - Airplane - reduce entity allocations - cache lambda, as for some reason java allocates it anyways
     }
 
     @Nullable
