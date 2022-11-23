@@ -49,6 +49,13 @@ public class GaleWorldConfiguration extends ConfigurationPart {
         }
         // Gale end - Airplane - reduce projectile chunk loading
 
+        public ReducedIntervals reducedIntervals;
+        public class ReducedIntervals extends ConfigurationPart {
+
+            public int acquirePoiForStuckEntity = 60; // Gale - Airplane - reduce acquire POI for stuck entities
+
+        }
+
     }
 
 }
