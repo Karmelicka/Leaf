@@ -1054,6 +1054,7 @@ public final class CraftServer implements Server {
 
         org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
         this.console.paperConfigurations.reloadConfigs(this.console);
+        this.console.galeConfigurations.reloadConfigs(this.console); // Gale - Gale configuration
         for (ServerLevel world : this.console.getAllLevels()) {
             // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
             world.setSpawnSettings(world.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && config.spawnMonsters, config.spawnAnimals); // Paper - per level difficulty (from MinecraftServer#setDifficulty(ServerLevel, Difficulty, boolean))
@@ -3027,6 +3028,14 @@ public final class CraftServer implements Server {
         {
             return CraftServer.this.console.paperConfigurations.createLegacyObject(CraftServer.this.console);
         }
+
+        // Gale start - Gale configuration - API
+        @Override
+        public YamlConfiguration getGaleConfig()
+        {
+            return CraftServer.this.console.galeConfigurations.createLegacyObject(CraftServer.this.console);
+        }
+        // Gale end - Gale configuration - API
 
         @Override
         public void restart() {

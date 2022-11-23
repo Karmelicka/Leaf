@@ -12,7 +12,6 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import net.minecraft.CrashReport;
 import net.minecraft.CrashReportCategory;
-import net.minecraft.ReportedException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -42,8 +41,6 @@ import net.minecraft.world.TickRateManager;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.boss.EnderDragonPart;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -89,17 +86,15 @@ import net.minecraft.network.protocol.game.ClientboundSetBorderSizePacket;
 import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDelayPacket;
 import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CapturedBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.block.BlockPhysicsEvent;
-import org.bukkit.event.world.GenericGameEvent;
+import org.galemc.gale.configuration.GaleWorldConfiguration;
 // CraftBukkit end
 
 public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -171,6 +166,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         return this.paperConfig;
     }
     // Paper end - add paper world config
+    // Gale start - Gale configuration
+    private final GaleWorldConfiguration galeConfig;
+    public GaleWorldConfiguration galeConfig() {
+        return this.galeConfig;
+    }
+    // Gale end - Gale configuration
 
     public final com.destroystokyo.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
     public final co.aikar.timings.WorldTimingsHandler timings; // Paper
@@ -216,9 +217,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
 
     public abstract ResourceKey<LevelStem> getTypeKey();
 
-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor
+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, GaleWorldConfiguration> galeWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Gale - Gale configuration
         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
+        this.galeConfig = galeWorldConfigCreator.apply(this.spigotConfig); // Gale - Gale configuration
         this.generator = gen;
         this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
 

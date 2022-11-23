@@ -3,9 +3,6 @@ package net.minecraft.server;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import co.aikar.timings.Timings;
-import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -85,7 +82,6 @@ import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerPlayerGameMode;
-import net.minecraft.server.level.TicketType;
 import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.server.level.progress.ChunkProgressListenerFactory;
 import net.minecraft.server.network.ServerConnectionListener;
@@ -109,7 +105,6 @@ import net.minecraft.util.ProgressListener;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.SignatureValidator;
 import net.minecraft.util.TimeUtil;
-import net.minecraft.util.Unit;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.profiling.EmptyProfileResults;
 import net.minecraft.util.profiling.ProfileResults;
@@ -152,6 +147,9 @@ import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.level.storage.loot.LootDataManager;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
+import org.galemc.gale.configuration.GaleConfigurations;
 import org.slf4j.Logger;
 
 // CraftBukkit start
@@ -306,6 +304,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     public final double[] recentTps = new double[ 3 ];
     // Spigot end
     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
+    public final GaleConfigurations galeConfigurations; // Gale - Gale configuration
     public static long currentTickLong = 0L; // Paper - track current tick as a long
     public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
 
@@ -412,6 +411,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
         // CraftBukkit end
         this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
+        this.galeConfigurations = services.galeConfigurations(); // Gale - Gale configuration
     }
 
     private void readScoreboard(DimensionDataStorage persistentStateManager) {

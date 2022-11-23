@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.galemc.gale.configuration.GaleWorldConfiguration;
 import org.spongepowered.configurate.objectmapping.FieldDiscoverer;
 import org.spongepowered.configurate.serialize.SerializationException;
 
@@ -48,7 +49,19 @@ public final class InnerClassFieldDiscoverer implements FieldDiscoverer<Map<Fiel
         return new InnerClassFieldDiscoverer(overrides);
     }
 
-    public static FieldDiscoverer<?> globalConfig() {
+    // Gale start - Gale configuration
+    public static FieldDiscoverer<?> galeWorldConfig(Configurations.ContextMap contextMap) {
+        final Map<Class<?>, Object> overrides = Map.of(
+            GaleWorldConfiguration.class, new GaleWorldConfiguration(
+                contextMap.require(PaperConfigurations.SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(),
+                contextMap.require(Configurations.WORLD_KEY)
+            )
+        );
+        return new InnerClassFieldDiscoverer(overrides);
+    }
+    // Gale end - Gale configuration
+
+    public static FieldDiscoverer<?> globalConfig() { // Gale - Gale configuration
         return new InnerClassFieldDiscoverer(Collections.emptyMap());
     }
 }

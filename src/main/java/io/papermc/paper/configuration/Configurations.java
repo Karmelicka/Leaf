@@ -6,7 +6,10 @@ import io.papermc.paper.configuration.constraint.Constraint;
 import io.papermc.paper.configuration.constraint.Constraints;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.slf4j.Logger;
@@ -93,7 +96,7 @@ public abstract class Configurations<G, W> {
         };
     }
 
-    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) {
+    public static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) { // Gale - Gale configuration
         return node -> {
             ObjectMapper.Factory factory = (ObjectMapper.Factory) Objects.requireNonNull(node.options().serializers().get(type));
             ObjectMapper.Mutable<T> mutable = (ObjectMapper.Mutable<T>) factory.get(type);
@@ -166,7 +169,7 @@ public abstract class Configurations<G, W> {
         final YamlConfigurationLoader loader = result.loader();
         final ConfigurationNode node = loader.load();
         if (result.isNewFile()) { // add version to new files
-            node.node(Configuration.VERSION_FIELD).raw(this.worldConfigVersion());
+            node.node(Configuration.VERSION_FIELD).raw(getWorldConfigurationCurrentVersion()); // Gale - Gale configuration
         } else {
             this.verifyWorldConfigVersion(contextMap, node);
         }
@@ -227,7 +230,7 @@ public abstract class Configurations<G, W> {
             .build();
         final ConfigurationNode worldNode = worldLoader.load();
         if (newFile) { // set the version field if new file
-            worldNode.node(Configuration.VERSION_FIELD).set(this.worldConfigVersion());
+            worldNode.node(Configuration.VERSION_FIELD).set(getWorldConfigurationCurrentVersion()); // Gale - Gale configuration
         } else {
             this.verifyWorldConfigVersion(contextMap, worldNode);
         }
@@ -352,4 +355,25 @@ public abstract class Configurations<G, W> {
             return "ContextKey{" + this.name + "}";
         }
     }
+
+    // Gale start - Gale configuration
+
+    public static final String legacyWorldsSectionKey = "__________WORLDS__________";
+    public static final String legacyWorldDefaultsSectionKey = "__defaults__";
+
+    @Deprecated
+    public YamlConfiguration createLegacyObject(final MinecraftServer server) {
+        YamlConfiguration global = YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.globalConfigFileName).toFile());
+        ConfigurationSection worlds = global.createSection(legacyWorldsSectionKey);
+        worlds.set(legacyWorldDefaultsSectionKey, YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.defaultWorldConfigFileName).toFile()));
+        for (ServerLevel level : server.getAllLevels()) {
+            worlds.set(level.getWorld().getName(), YamlConfiguration.loadConfiguration(getWorldConfigFile(level).toFile()));
+        }
+        return global;
+    }
+
+    public abstract int getWorldConfigurationCurrentVersion();
+
+    // Gale end - Gale configuration
+
 }

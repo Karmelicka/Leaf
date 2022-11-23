@@ -240,7 +240,10 @@ public class TimingsExport extends Thread {
         parent.put("config", createObject(
             pair("spigot", mapAsJSON(Bukkit.spigot().getSpigotConfig(), null)),
             pair("bukkit", mapAsJSON(Bukkit.spigot().getBukkitConfig(), null)),
-            pair("paper", mapAsJSON(Bukkit.spigot().getPaperConfig(), null))
+            // Gale start - Gale configuration - include in timings
+            pair("paper", mapAsJSON(Bukkit.spigot().getPaperConfig(), null)),
+            pair("gale", mapAsJSON(Bukkit.spigot().getGaleConfig(), null))
+            // Gale end - Gale configuration - include in timings
         ));
 
         new TimingsExport(listeners, parent, history).start();
@@ -281,7 +284,7 @@ public class TimingsExport extends Thread {
         return timingsCost;
     }
 
-    private static JSONObject mapAsJSON(ConfigurationSection config, String parentKey) {
+    public static JSONObject mapAsJSON(ConfigurationSection config, String parentKey) { // Gale - Gale configuration
 
         JSONObject object = new JSONObject();
         for (String key : config.getKeys(false)) {

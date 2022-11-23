@@ -9,12 +9,13 @@ import java.io.File;
 import javax.annotation.Nullable;
 import net.minecraft.server.players.GameProfileCache;
 import net.minecraft.util.SignatureValidator;
+import org.galemc.gale.configuration.GaleConfigurations;
 
 // Paper start - add paper configuration files
-public record Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations) {
+public record Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations, @javax.annotation.Nullable GaleConfigurations galeConfigurations) { // Gale - Gale configuration
 
     public Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache) {
-        this(sessionService, servicesKeySet, profileRepository, profileCache, null);
+        this(sessionService, servicesKeySet, profileRepository, profileCache, null, null); // Gale - Gale configuration
     }
 
     @Override
@@ -22,6 +23,11 @@ public record Services(MinecraftSessionService sessionService, ServicesKeySet se
         return java.util.Objects.requireNonNull(this.paperConfigurations);
     }
     // Paper end - add paper configuration files
+    // Gale start - Gale configuration
+    public GaleConfigurations galeConfigurations() {
+        return java.util.Objects.requireNonNull(this.galeConfigurations);
+    }
+    // Gale end - Gale configuration
     public static final String USERID_CACHE_FILE = "usercache.json"; // Paper - private -> public
 
     public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory, File userCacheFile, joptsimple.OptionSet optionSet) throws Exception { // Paper - add optionset to load paper config files; add userCacheFile parameter
@@ -32,7 +38,10 @@ public record Services(MinecraftSessionService sessionService, ServicesKeySet se
         final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
         final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
         io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
-        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache, paperConfigurations);
+        // Gale start - Gale configuration
+        GaleConfigurations galeConfigurations = GaleConfigurations.setup(configDirPath);
+        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache, paperConfigurations, galeConfigurations);
+        // Gale end - Gale configuration
         // Paper end - load paper config files from cli options
     }
 

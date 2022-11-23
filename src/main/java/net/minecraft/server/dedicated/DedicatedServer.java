@@ -1,20 +1,15 @@
 package net.minecraft.server.dedicated;
 
-import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.logging.LogUtils;
-import java.io.BufferedReader;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Proxy;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -209,6 +204,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
         this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
         this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
         // Paper end - initialize global and world-defaults configuration
+        // Gale start - Gale configuration
+        galeConfigurations.initializeGlobalConfiguration(this.registryAccess());
+        galeConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
+        // Gale end - Gale configuration
         // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
         if (this.convertOldUsers()) {
             this.getProfileCache().save(false); // Paper

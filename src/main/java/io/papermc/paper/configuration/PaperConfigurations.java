@@ -322,7 +322,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         }
     }
 
-    private static ContextMap createWorldContextMap(ServerLevel level) {
+    public static ContextMap createWorldContextMap(ServerLevel level) { // Gale - Gale configuration
         return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess());
     }
 
@@ -425,17 +425,6 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     @Deprecated
-    public YamlConfiguration createLegacyObject(final MinecraftServer server) {
-        YamlConfiguration global = YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.globalConfigFileName).toFile());
-        ConfigurationSection worlds = global.createSection("__________WORLDS__________");
-        worlds.set("__defaults__", YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.defaultWorldConfigFileName).toFile()));
-        for (ServerLevel level : server.getAllLevels()) {
-            worlds.set(level.getWorld().getName(), YamlConfiguration.loadConfiguration(getWorldConfigFile(level).toFile()));
-        }
-        return global;
-    }
-
-    @Deprecated
     public static YamlConfiguration loadLegacyConfigFile(File configFile) throws Exception {
         YamlConfiguration config = new YamlConfiguration();
         if (configFile.exists()) {
@@ -457,9 +446,16 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     // Symlinks are not correctly checked in createDirectories
-    static void createDirectoriesSymlinkAware(Path path) throws IOException {
+    public static void createDirectoriesSymlinkAware(Path path) throws IOException { // Gale - Gale configuration
         if (!Files.isDirectory(path)) {
             Files.createDirectories(path);
         }
     }
+
+    // Gale start - Gale configuration
+    @Override
+    public int getWorldConfigurationCurrentVersion() {
+        return WorldConfiguration.CURRENT_VERSION;
+    }
+    // Gale end - Gale configuration
 }
