@@ -213,7 +213,7 @@ public final class MCUtil {
     }
 
     public static long getCoordinateKey(final Entity entity) {
-        return ((long)(MCUtil.fastFloor(entity.getZ()) >> 4) << 32) | ((MCUtil.fastFloor(entity.getX()) >> 4) & 0xFFFFFFFFL);
+        return ((long)(entity.blockPosition.getZ() >> 4) << 32) | ((entity.blockPosition.getX() >> 4) & 0xFFFFFFFFL); // Gale - Pufferfish - optimize entity coordinate key - eliminate double->long cast in hotpath
     }
 
     public static long getCoordinateKey(final ChunkPos pair) {
