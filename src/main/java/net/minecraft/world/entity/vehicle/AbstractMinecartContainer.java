@@ -28,7 +28,10 @@ import org.bukkit.inventory.InventoryHolder;
 
 public abstract class AbstractMinecartContainer extends AbstractMinecart implements ContainerEntity {
 
+    // Gale start - Airplane - improve container checking with a bitset
     private NonNullList<ItemStack> itemStacks;
+    private gg.airplane.structs.ItemListWithBitset itemStacksOptimized;
+    // Gale end - Airplane - improve container checking with a bitset
     @Nullable
     public ResourceLocation lootTable;
     public long lootTableSeed;
@@ -90,12 +93,18 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
 
     protected AbstractMinecartContainer(EntityType<?> type, Level world) {
         super(type, world);
-        this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY); // CraftBukkit - SPIGOT-3513
+        // Gale start - Airplane - improve container checking with a bitset
+        this.itemStacksOptimized = new gg.airplane.structs.ItemListWithBitset(this.getContainerSize()); // CraftBukkit - SPIGOT-3513
+        this.itemStacks = this.itemStacksOptimized.nonNullList;
+        // Gale end - Airplane - improve container checking with a bitset
     }
 
     protected AbstractMinecartContainer(EntityType<?> type, double x, double y, double z, Level world) {
         super(type, world, x, y, z);
-        this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY); // CraftBukkit - SPIGOT-3513
+        // Gale start - Airplane - improve container checking with a bitset
+        this.itemStacksOptimized = new gg.airplane.structs.ItemListWithBitset(this.getContainerSize()); // CraftBukkit - SPIGOT-3513
+        this.itemStacks = this.itemStacksOptimized.nonNullList;
+        // Gale end - Airplane - improve container checking with a bitset
     }
 
     @Override
@@ -164,6 +173,10 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
     protected void readAdditionalSaveData(CompoundTag nbt) {
         super.readAdditionalSaveData(nbt);
         this.lootableData.loadNbt(nbt); // Paper
+        // Gale start - Airplane - improve container checking with a bitset
+        this.itemStacksOptimized = new gg.airplane.structs.ItemListWithBitset(this.getContainerSize());
+        this.itemStacks = this.itemStacksOptimized.nonNullList;
+        // Gale end - Airplane - improve container checking with a bitset
         this.readChestVehicleSaveData(nbt);
     }
 

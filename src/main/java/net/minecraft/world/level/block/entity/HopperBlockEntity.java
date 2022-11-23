@@ -48,7 +48,10 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
 
     public static final int MOVE_ITEM_SPEED = 8;
     public static final int HOPPER_CONTAINER_SIZE = 5;
+    // Gale start - Airplane - improve container checking with a bitset
     private NonNullList<ItemStack> items;
+    private gg.airplane.structs.ItemListWithBitset optimizedItems;
+    // Gale end - Airplane - improve container checking with a bitset
     private int cooldownTime;
     private long tickedGameTime;
 
@@ -84,14 +87,37 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
 
     public HopperBlockEntity(BlockPos pos, BlockState state) {
         super(BlockEntityType.HOPPER, pos, state);
-        this.items = NonNullList.withSize(5, ItemStack.EMPTY);
+        // Gale start - Airplane - improve container checking with a bitset
+        this.optimizedItems = new gg.airplane.structs.ItemListWithBitset(5);
+        this.items = this.optimizedItems.nonNullList;
+        // Gale end - Airplane - improve container checking with a bitset
         this.cooldownTime = -1;
     }
+
+    // Gale start - Airplane - improve container checking with a bitset
+    @Override
+    public boolean hasEmptySlot(Direction enumdirection) {
+        return !this.optimizedItems.hasFullStacks();
+    }
+
+    @Override
+    public boolean isCompletelyFull(Direction enumdirection) {
+        return this.optimizedItems.hasFullStacks() && super.isCompletelyFull(enumdirection);
+    }
+
+    @Override
+    public boolean isCompletelyEmpty(Direction enumdirection) {
+        return this.optimizedItems.isCompletelyEmpty() || super.isCompletelyEmpty(enumdirection);
+    }
+    // Gale end - Airplane - improve container checking with a bitset
 
     @Override
     public void load(CompoundTag nbt) {
         super.load(nbt);
-        this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
+        // Gale start - Airplane - improve container checking with a bitset
+        this.optimizedItems = new gg.airplane.structs.ItemListWithBitset(this.getContainerSize());
+        this.items = this.optimizedItems.nonNullList;
+        // Gale end - Airplane - improve container checking with a bitset
         if (!this.tryLoadLootTable(nbt)) {
             ContainerHelper.loadAllItems(nbt, this.items);
         }
@@ -202,7 +228,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
                     flag = HopperBlockEntity.ejectItems(world, pos, state, (Container) blockEntity, blockEntity); // CraftBukkit
                 }
 
-                if (fullState != HOPPER_IS_FULL || flag) { // Paper - Perf: Optimize Hoppers
+                if (!blockEntity.optimizedItems.hasFullStacks() || fullState != HOPPER_IS_FULL || flag) { // Paper - Perf: Optimize Hoppers // Gale - Airplane - improve container checking with a bitset - use bitset first
                     flag |= booleansupplier.getAsBoolean();
                 }
 
@@ -242,7 +268,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
         skipPushModeEventFire = skipHopperEvents;
         boolean foundItem = false;
         for (int i = 0; i < hopper.getContainerSize(); ++i) {
-            final ItemStack item = hopper.getItem(i);
+            final ItemStack item = hopper.getItem(i); // Gale - Airplane - improve container checking with a bitset
             if (!item.isEmpty()) {
                 foundItem = true;
                 ItemStack origItemStack = item;
@@ -514,7 +540,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
     }
 
     private static boolean isEmptyContainer(Container inv, Direction facing) {
-        return allMatch(inv, facing, IS_EMPTY_TEST); // Paper - Perf: Optimize Hoppers
+        return inv.isCompletelyEmpty(facing); // Paper - Perf: Optimize Hoppers // Gale - Airplane - improve container checking with a bitset - use bitsets
     }
 
     public static boolean suckInItems(Level world, Hopper hopper) {
@@ -714,7 +740,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
 
         if (HopperBlockEntity.canPlaceItemInContainer(to, stack, slot, side)) {
             boolean flag = false;
-            boolean flag1 = to.isEmpty();
+            boolean flag1 = to.isCompletelyEmpty(side); // Gale - Airplane - improve container checking with a bitset
 
             if (itemstack1.isEmpty()) {
                 // Spigot start - SPIGOT-6693, InventorySubcontainer#setItem
@@ -909,7 +935,10 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
 
     @Override
     protected void setItems(NonNullList<ItemStack> list) {
-        this.items = list;
+        // Gale start - Airplane - improve container checking with a bitset
+        this.optimizedItems = gg.airplane.structs.ItemListWithBitset.fromList(list);
+        this.items = this.optimizedItems.nonNullList;
+        // Gale end - Airplane - improve container checking with a bitset
     }
 
     public static void entityInside(Level world, BlockPos pos, BlockState state, Entity entity, HopperBlockEntity blockEntity) {

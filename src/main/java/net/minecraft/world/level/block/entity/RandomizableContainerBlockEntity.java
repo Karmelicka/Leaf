@@ -94,12 +94,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
     public boolean isEmpty() {
         this.unpackLootTable((Player)null);
         // Paper start - Perf: Optimize Hoppers
-        for (final ItemStack itemStack : this.getItems()) {
-            if (!itemStack.isEmpty()) {
-                return false;
-            }
-        }
-        return true;
+        return this.isCompletelyEmpty(null); // Gale - Airplane - improve container checking with a bitset - use super
         // Paper end - Perf: Optimize Hoppers
     }
 

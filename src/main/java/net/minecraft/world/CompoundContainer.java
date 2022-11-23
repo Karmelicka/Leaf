@@ -1,5 +1,6 @@
 package net.minecraft.world;
 
+import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -63,6 +64,23 @@ public class CompoundContainer implements Container {
         this.container1 = first;
         this.container2 = second;
     }
+
+    // Gale start - Airplane - improve container checking with a bitset
+    @Override
+   public boolean hasEmptySlot(Direction enumdirection) {
+        return this.container1.hasEmptySlot(null) || this.container2.hasEmptySlot(null);
+    }
+
+    @Override
+   public boolean isCompletelyFull(Direction enumdirection) {
+        return this.container1.isCompletelyFull(null) && this.container2.isCompletelyFull(null);
+    }
+
+    @Override
+    public boolean isCompletelyEmpty(Direction enumdirection) {
+        return this.container1.isCompletelyEmpty(null) && this.container2.isCompletelyEmpty(null);
+    }
+    // Gale end - Airplane - improve container checking with a bitset
 
     @Override
     public int getContainerSize() {
