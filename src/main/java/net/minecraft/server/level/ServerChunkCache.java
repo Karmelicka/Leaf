@@ -497,6 +497,7 @@ public class ServerChunkCache extends ChunkSource {
 
             // Paper - optimise chunk tick iteration
 
+            this.level.resetIceAndSnowTick(); // Gale - Airplane - optimize random calls in chunk ticking - reset ice & snow tick random
             if (this.level.getServer().tickRateManager().runsNormally()) {
                 this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
                 int k = this.distanceManager.getNaturalSpawnChunkCount();

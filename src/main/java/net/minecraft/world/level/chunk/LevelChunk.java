@@ -85,6 +85,18 @@ public class LevelChunk extends ChunkAccess {
     private final LevelChunkTicks<Fluid> fluidTicks;
     public volatile FullChunkStatus chunkStatus = FullChunkStatus.INACCESSIBLE; // Paper - rewrite chunk system
 
+    // Gale start - Airplane - optimize random calls in chunk ticking - instead of using a random every time the chunk is ticked, define when lightning strikes preemptively
+    private int lightningTick;
+    // shouldDoLightning compiles down to 29 bytes, which with the default of 35 byte inlining should guarantee an inline
+    public final boolean shouldDoLightning(net.minecraft.util.RandomSource random) {
+        if (this.lightningTick-- <= 0) {
+            this.lightningTick = random.nextInt(this.level.spigotConfig.thunderChance) << 1;
+            return true;
+        }
+        return false;
+    }
+    // Gale end - Airplane - optimize random calls in chunk ticking - instead of using a random every time the chunk is ticked, define when lightning strikes preemptively
+
     public LevelChunk(Level world, ChunkPos pos) {
         this(world, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, (LevelChunkSection[]) null, (LevelChunk.PostLoadProcessor) null, (BlendingData) null);
     }
@@ -108,6 +120,7 @@ public class LevelChunk extends ChunkAccess {
         this.postLoad = entityLoader;
         this.blockTicks = blockTickScheduler;
         this.fluidTicks = fluidTickScheduler;
+        this.lightningTick = this.level.randomTickRandom.nextInt(100000) << 1; // Gale - Airplane - optimize random calls in chunk ticking - initialize lightning tick
     }
 
     // CraftBukkit start

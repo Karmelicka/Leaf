@@ -957,6 +957,8 @@ public class ServerLevel extends Level implements WorldGenLevel {
     private final BlockPos.MutableBlockPos chunkTickMutablePosition = new BlockPos.MutableBlockPos();
     // Paper end
 
+    private int currentIceAndSnowTick = 0; protected void resetIceAndSnowTick() { this.currentIceAndSnowTick = this.randomTickRandom.nextInt(16); } // Gale - Airplane - optimize random calls in chunk ticking
+
     public void tickChunk(LevelChunk chunk, int randomTickSpeed) {
         ChunkPos chunkcoordintpair = chunk.getPos();
         boolean flag = this.isRaining();
@@ -964,7 +966,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
         int k = chunkcoordintpair.getMinBlockZ();
         final BlockPos.MutableBlockPos blockposition = this.chunkTickMutablePosition; // Paper - use mutable to reduce allocation rate, final to force compile fail on change
 
-        if (!this.paperConfig().environment.disableThunder && flag && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
+        if (!this.paperConfig().environment.disableThunder && flag && this.isThundering() && this.spigotConfig.thunderChance > 0 && /*this.random.nextInt(this.spigotConfig.thunderChance) == 0 &&*/ chunk.shouldDoLightning(this.random)) { // Spigot // Paper - Option to disable thunder // Gale - Airplane - optimize random calls in chunk ticking - replace random with shouldDoLightning
             blockposition.set(this.findLightningTargetAround(this.getBlockRandomPos(j, 0, k, 15))); // Paper
 
             if (this.isRainingAt(blockposition)) {
@@ -992,7 +994,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
             }
         }
 
-        if (!this.paperConfig().environment.disableIceAndSnow) { // Paper - Option to disable ice and snow
+        if (!this.paperConfig().environment.disableIceAndSnow && (this.currentIceAndSnowTick++ & 15) == 0) { // Paper - Option to disable ice and snow // Gale - Airplane - optimize random calls in chunk ticking - optimize further random ticking
         for (int l = 0; l < randomTickSpeed; ++l) {
             if (this.random.nextInt(48) == 0) {
                 // Paper start
