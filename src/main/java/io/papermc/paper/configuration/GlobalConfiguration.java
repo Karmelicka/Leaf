@@ -95,7 +95,10 @@ public class GlobalConfiguration extends ConfigurationPart {
 
     @Deprecated(forRemoval = true)
     public class Timings extends ConfigurationPart {
-        public boolean enabled = true;
+        // Gale start - recommend disabling timings on startup
+        public boolean enabled = false; // Gale - set default value to false
+        public boolean warnIfEnabled = true;
+        // Gale end - recommend disabling timings on startup
         public boolean verbose = true;
         public String url = "https://timin.gs/"; // Gale - use timin.gs by default
         public boolean serverNamePrivacy = false;
@@ -109,6 +112,13 @@ public class GlobalConfiguration extends ConfigurationPart {
 
         @PostProcess
         private void postProcess() {
+            // Gale start - recommend disabling timings on startup
+            if (enabled && warnIfEnabled) {
+                net.minecraft.server.MinecraftServer.LOGGER.warn("To improve performance, we recommend setting timings.enabled to false in paper-global.yml");
+                net.minecraft.server.MinecraftServer.LOGGER.warn("(If you do this, timings will not start on server startup, but you can still start timings later by using /timings on)");
+                net.minecraft.server.MinecraftServer.LOGGER.warn("If you would like to disable this message, set timings.warn-if-enabled to false in paper-global.yml.");
+            }
+            // Gale end - recommend disabling timings on startup
             MinecraftTimings.processConfig(this);
         }
     }
