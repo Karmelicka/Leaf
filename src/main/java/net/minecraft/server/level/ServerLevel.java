@@ -894,7 +894,20 @@ public class ServerLevel extends Level implements WorldGenLevel {
                                 entity.stopRiding();
                             }
 
-                            this.guardEntityTick(this::tickNonPassenger, entity);
+                        // Gale start - Airplane - remove lambda from ticking guard - copied from guardEntityTick
+                        try {
+                            this.tickNonPassenger(entity); // Gale - Airplane - remove lambda from ticking guard - changed
+                            MinecraftServer.getServer().executeMidTickTasks(); // Tuinity - execute chunk tasks mid tick
+                        } catch (Throwable throwable) {
+                            if (throwable instanceof ThreadDeath) throw throwable; // Paper
+                            // Paper start - Prevent tile entity and entity crashes
+                            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
+                            MinecraftServer.LOGGER.error(msg, throwable);
+                            getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable)));
+                            entity.discard();
+                            // Paper end
+                        }
+                        // Gale end - Airplane - remove lambda from ticking guard - copied from guardEntityTick
                         }
                     }
                 }

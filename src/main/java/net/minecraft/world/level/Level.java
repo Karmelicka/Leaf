@@ -1331,13 +1331,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         try {
             tickConsumer.accept(entity);
             MinecraftServer.getServer().executeMidTickTasks(); // Paper - execute chunk tasks mid tick
-        } catch (Throwable throwable) {
+        } catch (Throwable throwable) { // Gale - Airplane - remove lambda from ticking guard - diff on change ServerLevel#tick
             if (throwable instanceof ThreadDeath) throw throwable; // Paper
             // Paper start - Prevent block entity and entity crashes
             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
             MinecraftServer.LOGGER.error(msg, throwable);
             getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
-            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
+            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Gale - Airplane - remove lambda from ticking guard - diff on change ServerLevel#tick
             // Paper end - Prevent block entity and entity crashes
         }
     }
