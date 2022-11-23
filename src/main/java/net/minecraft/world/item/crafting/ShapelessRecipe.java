@@ -26,8 +26,15 @@ public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBoo
     final CraftingBookCategory category;
     final ItemStack result;
     final NonNullList<Ingredient> ingredients;
+    private final boolean isBukkit; // Gale - Airplane - simpler ShapelessRecipe comparison for vanilla
 
     public ShapelessRecipe(String group, CraftingBookCategory category, ItemStack result, NonNullList<Ingredient> ingredients) {
+        // Gale start - Airplane - simpler ShapelessRecipe comparison for vanilla
+        this(group, category, result, ingredients, false);
+    }
+    public ShapelessRecipe(String group, CraftingBookCategory category, ItemStack result, NonNullList<Ingredient> ingredients, boolean isBukkit) {
+        this.isBukkit = isBukkit;
+        // Gale end - Airplane - simpler ShapelessRecipe comparison for vanilla
         this.group = group;
         this.category = category;
         this.result = result;
@@ -77,6 +84,28 @@ public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBoo
     }
 
     public boolean matches(CraftingContainer inventory, Level world) {
+        // Gale start - Airplane - simpler ShapelessRecipe comparison for vanilla
+        if (!this.isBukkit) {
+            java.util.List<Ingredient> ingredients = com.google.common.collect.Lists.newArrayList(this.ingredients.toArray(new Ingredient[0]));
+
+            inventory: for (int index = 0; index < inventory.getContainerSize(); index++) {
+                ItemStack itemStack = inventory.getItem(index);
+
+                if (!itemStack.isEmpty()) {
+                    for (int i = 0; i < ingredients.size(); i++) {
+                        if (ingredients.get(i).test(itemStack)) {
+                            ingredients.remove(i);
+                            continue inventory;
+                        }
+                    }
+                    return false;
+                }
+            }
+
+            return ingredients.isEmpty();
+        }
+        // Gale end - Airplane - simpler ShapelessRecipe comparison for vanilla
+
         StackedContents autorecipestackmanager = new StackedContents();
         autorecipestackmanager.initialize(this); // Paper - better exact choice recipes
         int i = 0;
