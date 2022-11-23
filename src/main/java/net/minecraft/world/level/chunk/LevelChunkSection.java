@@ -25,6 +25,7 @@ public class LevelChunkSection {
     public final PalettedContainer<BlockState> states;
     // CraftBukkit start - read/write
     private PalettedContainer<Holder<Biome>> biomes;
+    public short fluidStateCount; // Gale - Airplane - reduce entity fluid lookups if no fluids
     public final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
     // Paper start - optimise collisions
     private int specialCollidingBlocks;
@@ -102,6 +103,7 @@ public class LevelChunkSection {
 
         if (!fluid.isEmpty()) {
             --this.tickingFluidCount;
+            --this.fluidStateCount; // Gale - Airplane - reduce entity fluid lookups if no fluids
         }
 
         if (!state.isAir()) {
@@ -116,6 +118,7 @@ public class LevelChunkSection {
 
         if (!fluid1.isEmpty()) {
             ++this.tickingFluidCount;
+            ++this.fluidStateCount; // Gale - Airplane - reduce entity fluid lookups if no fluids
         }
 
         this.updateBlockCallback(x, y, z, iblockdata1, state); // Paper - optimise collisions
@@ -162,6 +165,7 @@ public class LevelChunkSection {
                     if (fluid.isRandomlyTicking()) {
                         this.tickingFluidCount = (short) (this.tickingFluidCount + 1);
                     }
+                this.fluidStateCount++; // Gale - Airplane - reduce entity fluid lookups if no fluids
                 }
 
                 // Paper start - optimise collisions
