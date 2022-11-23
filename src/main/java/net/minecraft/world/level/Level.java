@@ -218,6 +218,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
 
     public abstract ResourceKey<LevelStem> getTypeKey();
 
+    // Gale start - Airplane - inline level height
+    private final int minBuildHeight, levelHeightAccessorMinSection, height, maxBuildHeight, levelHeightAccessorMaxSection;
+    @Override public final int getMaxBuildHeight() { return this.maxBuildHeight; }
+    @Override public final int getMinSection() { return this.levelHeightAccessorMinSection; }
+    @Override public final int getMaxSection() { return this.levelHeightAccessorMaxSection; }
+    @Override public final int getMinBuildHeight() { return this.minBuildHeight; }
+    @Override public final int getHeight() { return this.height; }
+    // Gale end - Airplane - inline level height
+
     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, GaleWorldConfiguration> galeWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Gale - Gale configuration // Gale - Purpur - remove vanilla profiler
         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
@@ -240,6 +249,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         });
         final DimensionType dimensionmanager = (DimensionType) holder.value();
 
+        // Gale start - Airplane - inline level height
+        this.minBuildHeight = LevelAccessor.super.getMinBuildHeight();
+        this.levelHeightAccessorMinSection = LevelAccessor.super.getMinSection();
+        this.height = LevelAccessor.super.getHeight();
+        this.maxBuildHeight = LevelAccessor.super.getMaxBuildHeight();
+        this.levelHeightAccessorMaxSection = LevelAccessor.super.getMaxSection();
+        // Gale end - Airplane - inline level height
         this.dimension = resourcekey;
         this.isClientSide = flag;
         if (dimensionmanager.coordinateScale() != 1.0D) {
