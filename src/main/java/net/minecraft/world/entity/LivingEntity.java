@@ -143,7 +143,6 @@ import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 // CraftBukkit end
 
-import co.aikar.timings.MinecraftTimings; // Paper
 
 public abstract class LivingEntity extends Entity implements Attackable {
 
@@ -2021,6 +2020,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
     public Optional<BlockPos> getLastClimbablePos() {
         return this.lastClimbablePos;
     }
+
+
+    // Gale start - Airplane - cache on climbable check
+    private boolean cachedOnClimbable = false;
+    private BlockPos lastClimbingPosition = null;
+
+    public boolean onClimbableCached() {
+        if (!this.blockPosition().equals(this.lastClimbingPosition)) {
+            this.cachedOnClimbable = this.onClimbable();
+            this.lastClimbingPosition = this.blockPosition();
+        }
+        return this.cachedOnClimbable;
+    }
+    // Gale end - Airplane - cache on climbable check
 
     public boolean onClimbable() {
         if (this.isSpectator()) {

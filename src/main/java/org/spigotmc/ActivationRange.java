@@ -296,7 +296,7 @@ public class ActivationRange
         if ( entity instanceof LivingEntity )
         {
             LivingEntity living = (LivingEntity) entity;
-            if ( living.onClimbable() || living.jumping || living.hurtTime > 0 || living.activeEffects.size() > 0 || living.isFreezing()) // Paper
+            if ( living.onClimbableCached() || living.jumping || living.hurtTime > 0 || living.activeEffects.size() > 0 || living.isFreezing()) // Paper // Gale - Airplane - cache on climbable check - use cached
             {
                 return 1; // Paper
             }
