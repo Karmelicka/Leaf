@@ -181,6 +181,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
     public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
 
+    public final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(this.random.nextLong()); // Gale - Pufferfish - move random tick random
+
     // Paper start - fix and optimise world upgrading
     // copied from below
     public static ResourceKey<DimensionType> getDimensionKey(DimensionType manager) {
