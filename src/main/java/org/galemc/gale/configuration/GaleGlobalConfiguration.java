@@ -89,6 +89,11 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
 
         public boolean invalidStatistics = true; // Gale - EMC - do not log invalid statistics
 
+        public Chat chat;
+        public class Chat extends ConfigurationPart {
+            public boolean emptyMessageWarning = false; // Gale - do not log empty message warnings
+        }
+
     }
 
 }

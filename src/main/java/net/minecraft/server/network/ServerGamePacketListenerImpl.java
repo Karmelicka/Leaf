@@ -187,6 +187,7 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.bukkit.craftbukkit.util.permissions.CraftDefaultPermissions;
+import org.apache.commons.lang3.StringUtils;
 import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
@@ -2443,7 +2444,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         // CraftBukkit start
         String s = message.signedContent();
         if (s.isEmpty()) {
-            ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send an empty message");
+            if (GaleGlobalConfiguration.get().logToConsole.chat.emptyMessageWarning) ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send an empty message"); // Gale - do not log empty message warnings
         } else if (this.getCraftPlayer().isConversing()) {
             final String conversationInput = s;
             this.server.processQueue.add(new Runnable() {
