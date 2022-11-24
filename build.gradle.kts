@@ -72,6 +72,7 @@ tasks.withType<JavaCompile> {
     compilerArgs.add("-Xlint:-module")
     compilerArgs.add("-Xlint:-removal")
     compilerArgs.add("-Xlint:-dep-ann")
+    compilerArgs.add("--add-modules=jdk.incubator.vector") // Gale - Pufferfish - SIMD support
 }
 // Gale end - hide irrelevant compilation warnings
 
@@ -196,6 +197,7 @@ fun TaskContainer.registerRunTask(
     minHeapSize = "${memoryGb}G"
     maxHeapSize = "${memoryGb}G"
     jvmArgs("--enable-preview") // Gale - enable preview features for development runs
+    jvmArgs("--add-modules=jdk.incubator.vector") // Gale - Pufferfish - SIMD support
 
     doFirst {
         workingDir.mkdirs()

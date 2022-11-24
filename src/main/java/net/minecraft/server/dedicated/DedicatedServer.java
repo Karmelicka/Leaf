@@ -14,6 +14,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import javax.annotation.Nullable;
+
+import gg.pufferfish.pufferfish.simd.SIMDDetection;
 import net.minecraft.DefaultUncaughtExceptionHandler;
 import net.minecraft.DefaultUncaughtExceptionHandlerWithName;
 import net.minecraft.SharedConstants;
@@ -46,6 +48,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.galemc.gale.command.GaleCommands;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
 // CraftBukkit start
@@ -222,6 +225,13 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
         io.papermc.paper.brigadier.PaperBrigadierProviderImpl.INSTANCE.getClass(); // Paper - init PaperBrigadierProvider
+
+        // Gale start - Pufferfish - SIMD support
+        // Initialize vectorization
+        try {
+            SIMDDetection.initialize();
+        } catch (Throwable ignored) {}
+        // Gale start - Pufferfish - SIMD support
 
         this.setPvpAllowed(dedicatedserverproperties.pvp);
         this.setFlightAllowed(dedicatedserverproperties.allowFlight);

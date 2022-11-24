@@ -933,6 +933,46 @@ public class Metrics {
                 metrics.addCustomChart(new Metrics.DrilldownPie("gale_semantic_version", () -> semanticVersionMap));
                 // Gale end - semantic version - include in metrics
 
+                // Gale start - SIMD support - include in metrics
+                Map<String, Map<String, Integer>> simdSupportMap = new HashMap<>(2); // Empty until initialized
+                metrics.addCustomChart(new Metrics.DrilldownPie("simd_support", () -> {
+                    if (!gg.pufferfish.pufferfish.simd.SIMDDetection.isInitialized()) {
+                        return null;
+                    }
+                    if (simdSupportMap.isEmpty()) {
+                        // Initialize
+                        boolean isEnabled = gg.pufferfish.pufferfish.simd.SIMDDetection.isEnabled();
+
+                        // use details as lower dimension
+                        Map<String, Integer> entry = new HashMap<>(2);
+                        String details;
+                        if (isEnabled) {
+                            details = "int " + gg.pufferfish.pufferfish.simd.SIMDDetection.intVectorBitSize() + "*" + gg.pufferfish.pufferfish.simd.SIMDDetection.intElementSize() + ", float " + gg.pufferfish.pufferfish.simd.SIMDDetection.floatVectorBitSize() + "*" + gg.pufferfish.pufferfish.simd.SIMDDetection.floatElementSize();
+                        } else {
+                            if (!gg.pufferfish.pufferfish.simd.SIMDDetection.supportingJavaVersion()) {
+                                details = "unsupported Java";
+                                try {
+                                    var javaVersion = gg.pufferfish.pufferfish.simd.SIMDDetection.getJavaVersion();
+                                    details += " (" + javaVersion + ")";
+                                } catch (Throwable ignored) {}
+                            } else if (!gg.pufferfish.pufferfish.simd.SIMDDetection.testRunCompleted()) {
+                                details = "test failed";
+                            } else if (gg.pufferfish.pufferfish.simd.SIMDDetection.unsupportingLaneSize()) {
+                                details = "no supporting lane size";
+                            } else {
+                                details = "other reason";
+                            }
+                        }
+                        entry.put(details, 1);
+
+                        // use enabled or not as higher dimension
+                        simdSupportMap.put(String.valueOf(isEnabled), entry);
+
+                    }
+                    return simdSupportMap;
+                }));
+                // Gale end - SIMD support - include in metrics
+
             }
 
         }

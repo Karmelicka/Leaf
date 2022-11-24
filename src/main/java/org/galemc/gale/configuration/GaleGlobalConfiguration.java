@@ -25,6 +25,14 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
 
         public int dummyValue = 0;
 
+        // Gale start - Pufferfish - SIMD support
+        public Simd simd;
+        public class Simd extends ConfigurationPart {
+            public boolean warnIfDisabled = true;
+            public boolean logVectorSizesToConsole = false;
+        }
+        // Gale end - Pufferfish - SIMD support
+
     }
 
     public Misc misc;
