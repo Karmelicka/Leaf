@@ -13,8 +13,14 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
 val alsoShade: Configuration by configurations.creating
 
 dependencies {
-    implementation(project(":paper-api"))
-    implementation(project(":paper-mojangapi"))
+    // Gale start - project setup
+    // Depend on own API
+    implementation(project(":gale-api"))
+    // Depend on Paper MojangAPI
+    implementation("io.papermc.paper:paper-mojangapi:${project.version}") {
+        exclude("io.papermc.paper", "paper-api")
+    }
+    // Gale end - project setup
     // Paper start
     implementation("org.jline:jline-terminal-jansi:3.21.0")
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
