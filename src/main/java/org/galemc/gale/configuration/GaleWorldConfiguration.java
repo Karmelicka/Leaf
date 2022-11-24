@@ -53,6 +53,7 @@ public class GaleWorldConfiguration extends ConfigurationPart {
         public class ReducedIntervals extends ConfigurationPart {
 
             public int acquirePoiForStuckEntity = 60; // Gale - Airplane - reduce acquire POI for stuck entities
+            public int checkStuckInWall = 10; // Gale - Pufferfish - reduce in wall checks
 
         }
 

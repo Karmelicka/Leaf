@@ -412,7 +412,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
             boolean flag = this instanceof net.minecraft.world.entity.player.Player;
 
             if (!this.level().isClientSide) {
-                if (this.isInWall()) {
+                // Gale start - Pufferfish - reduce in wall checks
+                long checkStuckInWallInterval = this.level().galeConfig().smallOptimizations.reducedIntervals.checkStuckInWall;
+                if ((checkStuckInWallInterval <= 1 || (tickCount % checkStuckInWallInterval == 0 && couldPossiblyBeHurt(1.0F))) && this.isInWall()) {
+                    // Gale end - Pufferfish - reduce in wall checks
                     this.hurt(this.damageSources().inWall(), 1.0F);
                 } else if (flag && !this.level().getWorldBorder().isWithinBounds(this.getBoundingBox())) {
                     double d0 = this.level().getWorldBorder().getDistanceToBorder(this) + this.level().getWorldBorder().getDamageSafeZone();
@@ -1414,6 +1417,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
     public boolean isDeadOrDying() {
         return this.getHealth() <= 0.0F;
     }
+
+    // Gale start - Pufferfish - reduce in wall checks
+    public boolean couldPossiblyBeHurt(float amount) {
+        if ((float) this.invulnerableTime > (float) this.invulnerableDuration / 2.0F && amount <= this.lastHurt) {
+            return false;
+        }
+        return true;
+    }
+    // Gale end - Pufferfish - reduce in wall checks
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
