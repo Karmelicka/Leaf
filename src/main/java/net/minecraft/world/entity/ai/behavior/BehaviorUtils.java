@@ -21,6 +21,7 @@ import net.minecraft.world.entity.ai.memory.NearestVisibleLivingEntities;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
@@ -101,7 +102,16 @@ public class BehaviorUtils {
 
         vec3d2 = vec3d2.normalize().multiply(velocityFactor.x, velocityFactor.y, velocityFactor.z);
         entityitem.setDeltaMovement(vec3d2);
-        entityitem.setDefaultPickUpDelay();
+        // Gale start - EMC - reduce villager item re-pickup
+        if (entity instanceof Villager) {
+            int repickupDelay = entity.level().galeConfig().smallOptimizations.reducedIntervals.villagerItemRepickup;
+            if (repickupDelay <= -1) {
+                entityitem.setDefaultPickUpDelay();
+            } else {
+                entityitem.pickupDelay = repickupDelay;
+            }
+        }
+        // Gale end - EMC - reduce villager item re-pickup
         // CraftBukkit start
         org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(entity.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
         entityitem.level().getCraftServer().getPluginManager().callEvent(event);
