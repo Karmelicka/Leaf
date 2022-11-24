@@ -36,6 +36,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.entity.player.Player;
 import org.apache.commons.io.FileUtils;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
 public class ServerStatsCounter extends StatsCounter {
@@ -137,15 +138,15 @@ public class ServerStatsCounter extends StatsCounter {
                                             Util.ifElse(this.getStat(statisticwrapper, s2), (statistic) -> {
                                                 this.stats.put(statistic, nbttagcompound2.getInt(s2));
                                             }, () -> {
-                                                ServerStatsCounter.LOGGER.warn("Invalid statistic in {}: Don't know what {} is", this.file, s2);
+                                                if (GaleGlobalConfiguration.get().logToConsole.invalidStatistics) ServerStatsCounter.LOGGER.warn("Invalid statistic in {}: Don't know what {} is", this.file, s2); // Gale - EMC - do not log invalid statistics
                                             });
                                         } else {
-                                            ServerStatsCounter.LOGGER.warn("Invalid statistic value in {}: Don't know what {} is for key {}", new Object[]{this.file, nbttagcompound2.get(s2), s2});
+                                            if (GaleGlobalConfiguration.get().logToConsole.invalidStatistics) ServerStatsCounter.LOGGER.warn("Invalid statistic value in {}: Don't know what {} is for key {}", new Object[]{this.file, nbttagcompound2.get(s2), s2}); // Gale - EMC - do not log invalid statistics
                                         }
                                     }
 
                                 }, () -> {
-                                    ServerStatsCounter.LOGGER.warn("Invalid statistic type in {}: Don't know what {} is", this.file, s1);
+                                    if (GaleGlobalConfiguration.get().logToConsole.invalidStatistics) ServerStatsCounter.LOGGER.warn("Invalid statistic type in {}: Don't know what {} is", this.file, s1); // Gale - EMC - do not log invalid statistics
                                 });
                             }
                         }

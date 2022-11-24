@@ -48,6 +48,7 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
         public boolean verifyChatOrder = true; // Gale - Pufferfish - make chat order verification configurable
 
         public IncludeInTimingsReport includeInTimingsReport;
+
         public class IncludeInTimingsReport extends ConfigurationPart {
 
             // Gale start - include server.properties in timings
@@ -80,6 +81,13 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
             // Gale end - include hardware specs in timings
 
         }
+
+    }
+
+    public LogToConsole logToConsole;
+    public class LogToConsole extends ConfigurationPart {
+
+        public boolean invalidStatistics = true; // Gale - EMC - do not log invalid statistics
 
     }
 
