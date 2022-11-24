@@ -14,11 +14,13 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.TraceableEntity;
+import net.minecraft.world.entity.vehicle.MinecartHopper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -228,10 +230,30 @@ public class ItemEntity extends Entity implements TraceableEntity {
                 }
                 // CraftBukkit end
                 this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                return; // Gale - EMC - reduce hopper item checks
             }
+            this.markNearbyHopperCartsAsImmune(); // Gale - EMC - reduce hopper item checks
 
         }
     }
+
+    // Gale start - EMC - reduce hopper item checks
+    private void markNearbyHopperCartsAsImmune() {
+        var config = level().galeConfig().smallOptimizations.reducedIntervals.checkNearbyItem.hopper.minecart;
+        // No need to mark hopper minecarts as immune if they can pull every tick anyway
+        if (config.interval <= 1) {
+            return;
+        }
+        if (config.temporaryImmunity.duration > 0 && this.isAlive() && this.onGround && !this.isRemoved() && (config.temporaryImmunity.nearbyItemMaxAge == -1 || this.age <= config.temporaryImmunity.nearbyItemMaxAge) && this.age % Math.max(1, config.temporaryImmunity.checkForMinecartNearItemInterval) == 0 && config.temporaryImmunity.maxItemHorizontalDistance >= 0 && config.temporaryImmunity.maxItemVerticalDistance >= 0) {
+            AABB aabb = this.getBoundingBox().inflate(config.temporaryImmunity.maxItemHorizontalDistance, config.temporaryImmunity.maxItemVerticalDistance, config.temporaryImmunity.maxItemHorizontalDistance);
+            for (Entity entity : this.level().getEntities(this, aabb)) {
+                if (entity instanceof MinecartHopper) {
+                    ((MinecartHopper) entity).pickupImmunity = MinecraftServer.currentTick + config.temporaryImmunity.duration;
+                }
+            }
+        }
+    }
+    // Gale end - EMC - reduce hopper item checks
 
     // Spigot start - copied from above
     @Override
@@ -252,7 +274,13 @@ public class ItemEntity extends Entity implements TraceableEntity {
             }
             // CraftBukkit end
             this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+            return; // Gale - EMC - reduce hopper item checks
         }
+        // Gale start - EMC - reduce hopper item checks
+        if (level().galeConfig().smallOptimizations.reducedIntervals.checkNearbyItem.hopper.minecart.temporaryImmunity.checkForMinecartNearItemWhileInactive) {
+            this.markNearbyHopperCartsAsImmune();
+        }
+        // Gale end - EMC - reduce hopper item checks
     }
     // Spigot end
 

@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class MinecartHopper extends AbstractMinecartContainer implements Hopper {
     private boolean enabled = true;
+    public int pickupImmunity = 0; // Gale - EMC - reduce hopper item checks
 
     public MinecartHopper(EntityType<? extends MinecartHopper> type, Level world) {
         super(type, world);
@@ -131,5 +132,13 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper 
         this.activatedImmunityTick = Math.max(this.activatedImmunityTick, net.minecraft.server.MinecraftServer.currentTick + 20);
     }
     // Paper end
+
+    // Gale start - EMC - reduce hopper item checks
+    private long tickAttempts = 0;
+    @Override
+    public long getAndIncrementAttemptCounter() {
+        return tickAttempts++;
+    }
+    // Gale end EMC - - reduce hopper item checks
 
 }

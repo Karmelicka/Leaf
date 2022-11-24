@@ -14,6 +14,8 @@ public interface Hopper extends Container {
         return SUCK;
     }
 
+    long getAndIncrementAttemptCounter(); // Gale - EMC - reduce hopper item checks
+
     double getLevelX();
 
     double getLevelY();

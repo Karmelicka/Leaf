@@ -11,6 +11,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.CompoundContainer;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.MinecartHopper;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.HopperMenu;
 import net.minecraft.world.item.ItemStack;
@@ -576,7 +578,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
                 return false;
             }
             // Paper end - Perf: Optimize Hoppers
-        } else {
+        } else if (shouldSuckIn(world, hopper)) { // Gale - EMC - reduce hopper item checks
             Iterator iterator = HopperBlockEntity.getItemsAtAndAbove(world, hopper).iterator();
 
             ItemEntity entityitem;
@@ -591,6 +593,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
 
             return true;
         }
+        return false; // Gale - EMC - reduce hopper item checks
     }
 
     @io.papermc.paper.annotation.DoNotUse // Paper - method unused as logic is inlined above
@@ -900,6 +903,31 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
     private static boolean canMergeItems(ItemStack first, ItemStack second) {
         return first.getCount() < first.getMaxStackSize() && first.is(second.getItem()) && first.getDamageValue() == second.getDamageValue() && ((first.isEmpty() && second.isEmpty()) || java.util.Objects.equals(first.getTag(), second.getTag())); // Paper - Perf: Optimize Hoppers; used to return true for full itemstacks?!
     }
+
+    // Gale start - EMC - reduce hopper item checks
+    private long tickAttempts = 0;
+    @Override
+    public long getAndIncrementAttemptCounter() {
+        return tickAttempts++;
+    }
+    private static boolean shouldSuckIn(Level world, Hopper hopper) {
+        int suckInterval;
+        if (hopper instanceof MinecartHopper minecartHopper) {
+            if (minecartHopper.pickupImmunity > MinecraftServer.currentTick) {
+                return true;
+            }
+            suckInterval = world.galeConfig().smallOptimizations.reducedIntervals.checkNearbyItem.hopper.minecart.interval;
+        } else {
+            suckInterval = world.galeConfig().smallOptimizations.reducedIntervals.checkNearbyItem.hopper.interval;
+        }
+        if (suckInterval <= 1) {
+            return true;
+        }
+
+        final int hopperId = (int) hopper.getLevelX() + (int) hopper.getLevelY() + (int) hopper.getLevelZ();
+        return (hopper.getAndIncrementAttemptCounter() + hopperId) % suckInterval == 0;
+    }
+    // Gale end - EMC - reduce hopper item checks
 
     @Override
     public double getLevelX() {
