@@ -68,6 +68,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
 
     @Override
     public void unpackLootTable(@org.jetbrains.annotations.Nullable final Player player) {
+        if (player == null) return; // Gale - EMC - don't trigger lootable refresh for non-player interaction
         // Copied from super with changes, always check the original method
         net.minecraft.world.level.Level level = this.getLevel();
         BlockPos blockPos = this.getBlockPos();
