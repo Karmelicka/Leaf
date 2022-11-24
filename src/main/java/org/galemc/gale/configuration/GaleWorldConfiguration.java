@@ -33,7 +33,21 @@ public class GaleWorldConfiguration extends ConfigurationPart {
     public SmallOptimizations smallOptimizations;
     public class SmallOptimizations extends ConfigurationPart {
 
-        public int dummyValue = 0;
+        // Gale start - Airplane - reduce projectile chunk loading
+        public MaxProjectileChunkLoads maxProjectileChunkLoads;
+        public class MaxProjectileChunkLoads extends ConfigurationPart {
+
+            public int perTick = 10;
+
+            public PerProjectile perProjectile;
+            public class PerProjectile extends ConfigurationPart {
+                public int max = 10;
+                public boolean resetMovementAfterReachLimit = false;
+                public boolean removeFromWorldAfterReachLimit = false;
+            }
+
+        }
+        // Gale end - Airplane - reduce projectile chunk loading
 
     }
 

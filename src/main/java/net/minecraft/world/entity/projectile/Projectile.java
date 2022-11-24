@@ -45,6 +45,45 @@ public abstract class Projectile extends Entity implements TraceableEntity {
         super(type, world);
     }
 
+    // Gale start - Airplane - reduce projectile chunk loading
+    private static int chunksLoadedThisTick = 0;
+    private static int chunksLoadedInTick;
+    private int chunksLoadedByProjectile = 0;
+
+    @Override
+    public void setPos(double x, double y, double z) {
+        int currentTick = net.minecraft.server.MinecraftServer.currentTick;
+        if (chunksLoadedInTick != currentTick) {
+            chunksLoadedInTick = currentTick;
+            chunksLoadedThisTick = 0;
+        }
+        int previousX = Mth.floor(this.getX()) >> 4, previousZ = Mth.floor(this.getZ()) >> 4;
+        int newX = Mth.floor(x) >> 4, newZ = Mth.floor(z) >> 4;
+        if (previousX != newX || previousZ != newZ) {
+            boolean isLoaded = ((net.minecraft.server.level.ServerChunkCache) this.level().getChunkSource()).getChunkAtIfLoadedMainThread(newX, newZ) != null;
+            if (!isLoaded) {
+                var maxProjectileChunkLoadsConfig = this.level().galeConfig().smallOptimizations.maxProjectileChunkLoads;
+                int maxChunkLoadsPerTick = maxProjectileChunkLoadsConfig.perTick;
+                if (maxChunkLoadsPerTick >= 0 && chunksLoadedThisTick > maxChunkLoadsPerTick) {
+                    return;
+                }
+                int maxChunkLoadsPerProjectile = maxProjectileChunkLoadsConfig.perProjectile.max;
+                if (maxChunkLoadsPerProjectile >= 0 && this.chunksLoadedByProjectile >= maxChunkLoadsPerProjectile) {
+                    if (maxProjectileChunkLoadsConfig.perProjectile.removeFromWorldAfterReachLimit) {
+                        this.discard();
+                    } else if (maxProjectileChunkLoadsConfig.perProjectile.resetMovementAfterReachLimit) {
+                        this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
+                    }
+                    return;
+                }
+                chunksLoadedThisTick++;
+                this.chunksLoadedByProjectile++;
+            }
+        }
+        super.setPos(x, y, z);
+    }
+    // Gale end - Airplane - reduce projectile chunk loading
+
     public void setOwner(@Nullable Entity entity) {
         if (entity != null) {
             this.ownerUUID = entity.getUUID();
