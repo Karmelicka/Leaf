@@ -89,6 +89,7 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
 
         public boolean invalidStatistics = true; // Gale - EMC - do not log invalid statistics
         public boolean ignoredAdvancements = true; // Gale - Purpur - do not log ignored advancements
+        public boolean setBlockInFarChunk = true; // Gale - Purpur - do not log setBlock in far chunks
 
         public Chat chat;
         public class Chat extends ConfigurationPart {

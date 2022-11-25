@@ -54,6 +54,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelTickAccess;
 import net.minecraft.world.ticks.WorldGenTickAccess;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
 public class WorldGenRegion implements WorldGenLevel {
@@ -318,6 +319,7 @@ public class WorldGenRegion implements WorldGenLevel {
             return true;
         } else {
             // Paper start - Buffer OOB setBlock calls
+            if (GaleGlobalConfiguration.get().logToConsole.setBlockInFarChunk) // Gale - Purpur - do not log setBlock in far chunks
             if (!hasSetFarWarned) {
             Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + pos + ", status: " + this.generatingStatus + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
             hasSetFarWarned = true;
