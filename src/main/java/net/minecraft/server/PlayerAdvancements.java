@@ -45,6 +45,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.GameRules;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
 public class PlayerAdvancements {
@@ -199,7 +200,7 @@ public class PlayerAdvancements {
 
             if (advancementholder == null) {
                 if (!minecraftkey.getNamespace().equals("minecraft")) return; // CraftBukkit
-                PlayerAdvancements.LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", minecraftkey, this.playerSavePath);
+                if (GaleGlobalConfiguration.get().logToConsole.ignoredAdvancements) PlayerAdvancements.LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", minecraftkey, this.playerSavePath); // Gale - Purpur - do not log ignored advancements
             } else {
                 this.startProgress(advancementholder, advancementprogress);
                 this.progressChanged.add(advancementholder);

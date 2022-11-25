@@ -88,6 +88,7 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
     public class LogToConsole extends ConfigurationPart {
 
         public boolean invalidStatistics = true; // Gale - EMC - do not log invalid statistics
+        public boolean ignoredAdvancements = true; // Gale - Purpur - do not log ignored advancements
 
         public Chat chat;
         public class Chat extends ConfigurationPart {
