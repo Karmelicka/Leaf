@@ -100,6 +100,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.PlayerTeam;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
 // CraftBukkit start
@@ -1433,7 +1434,7 @@ public abstract class PlayerList {
         // Paper end
         boolean flag = this.verifyChatTrusted(message);
 
-        this.server.logChatMessage((unsignedFunction == null ? message.decoratedContent() : unsignedFunction.apply(this.server.console)), params, flag ? null : "Not Secure"); // Paper
+        this.server.logChatMessage((unsignedFunction == null ? message.decoratedContent() : unsignedFunction.apply(this.server.console)), params, flag || !GaleGlobalConfiguration.get().logToConsole.chat.notSecureMarker ? null : "Not Secure"); // Paper // Gale - do not log Not Secure marker
         OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(message);
         boolean flag1 = false;
 

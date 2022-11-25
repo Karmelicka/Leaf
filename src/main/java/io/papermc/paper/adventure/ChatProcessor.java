@@ -44,6 +44,7 @@ import org.bukkit.event.player.PlayerChatEvent;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 
 import static net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection;
 
@@ -355,7 +356,7 @@ public final class ChatProcessor {
 
         private void sendToServer(final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
             final PlayerChatMessage toConsoleMessage = msgFunction == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(msgFunction.apply(ChatProcessor.this.server.console));
-            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) ? null : "Not Secure");
+            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, !GaleGlobalConfiguration.get().logToConsole.chat.notSecureMarker || ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) ? null : "Not Secure"); // Gale - do not log Not Secure marker
         }
     }
 
