@@ -91,6 +91,7 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
         public boolean ignoredAdvancements = true; // Gale - Purpur - do not log ignored advancements
         public boolean setBlockInFarChunk = true; // Gale - Purpur - do not log setBlock in far chunks
         public boolean unrecognizedRecipes = false; // Gale - Purpur - do not log unrecognized recipes
+        public boolean legacyMaterialInitialization = false; // Gale - Purpur - do not log legacy Material initialization
 
         public Chat chat;
         public class Chat extends ConfigurationPart {
