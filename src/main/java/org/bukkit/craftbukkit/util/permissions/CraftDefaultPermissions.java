@@ -5,6 +5,7 @@ import org.bukkit.util.permissions.DefaultPermissions;
 
 public final class CraftDefaultPermissions {
     private static final String ROOT = "minecraft";
+    public static final String GALE_ROOT = "gale"; // Gale - set Gale permissions root
 
     private CraftDefaultPermissions() {}
 
