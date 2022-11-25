@@ -98,6 +98,7 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
         public Chat chat;
         public class Chat extends ConfigurationPart {
             public boolean emptyMessageWarning = false; // Gale - do not log empty message warnings
+            public boolean expiredMessageWarning = false; // Gale - do not log expired message warnings
         }
 
         // Gale start - Purpur - do not log plugin library loads

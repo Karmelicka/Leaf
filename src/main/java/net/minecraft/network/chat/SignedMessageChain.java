@@ -48,7 +48,7 @@ public class SignedMessageChain {
                     throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.unsigned_chat"), true, org.bukkit.event.player.PlayerKickEvent.Cause.UNSIGNED_CHAT); // Paper - kick event causes
                 } else {
                     if (playerChatMessage.hasExpiredServer(Instant.now())) {
-                        LOGGER.warn("Received expired chat: '{}'. Is the client/server system time unsynchronized?", (Object)body.content());
+                        if (GaleGlobalConfiguration.get().logToConsole.chat.expiredMessageWarning) LOGGER.warn("Received expired chat: '{}'. Is the client/server system time unsynchronized?", (Object)body.content()); // Gale - do not log expired message warnings
                     }
 
                     return playerChatMessage;
