@@ -18,6 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
@@ -125,7 +126,7 @@ public class ServerRecipeBook extends RecipeBook {
                 Optional<RecipeHolder<?>> optional = recipeManager.byKey(minecraftkey);
 
                 if (optional.isEmpty()) {
-                    ServerRecipeBook.LOGGER.error("Tried to load unrecognized recipe: {} removed now.", minecraftkey);
+                    if (GaleGlobalConfiguration.get().logToConsole.unrecognizedRecipes) ServerRecipeBook.LOGGER.error("Tried to load unrecognized recipe: {} removed now.", minecraftkey); // Gale - Purpur - do not log unrecognized recipes
                 } else {
                     handler.accept((RecipeHolder) optional.get());
                 }
