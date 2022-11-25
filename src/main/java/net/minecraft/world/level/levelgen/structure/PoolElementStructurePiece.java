@@ -23,10 +23,11 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.minecraft.world.level.levelgen.structure.pools.JigsawJunction;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
 public class PoolElementStructurePiece extends StructurePiece {
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger(); // Gale - EMC - softly log invalid pool element errors - private -> public
     protected final StructurePoolElement element;
     protected BlockPos position;
     private final int groundLevelDelta;
@@ -49,7 +50,7 @@ public class PoolElementStructurePiece extends StructurePiece {
         this.position = new BlockPos(nbt.getInt("PosX"), nbt.getInt("PosY"), nbt.getInt("PosZ"));
         this.groundLevelDelta = nbt.getInt("ground_level_delta");
         DynamicOps<Tag> dynamicOps = RegistryOps.create(NbtOps.INSTANCE, context.registryAccess());
-        this.element = StructurePoolElement.CODEC.parse(dynamicOps, nbt.getCompound("pool_element")).resultOrPartial(LOGGER::error).orElseThrow(() -> {
+        this.element = StructurePoolElement.CODEC.parse(dynamicOps, nbt.getCompound("pool_element")).resultOrPartial(GaleGlobalConfiguration.get().logToConsole.invalidPoolElementErrorStringConsumer).orElseThrow(() -> { // Gale - EMC - softly log invalid pool element errors
             return new IllegalStateException("Invalid pool element found");
         });
         this.rotation = Rotation.valueOf(nbt.getString("rotation"));
