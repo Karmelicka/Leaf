@@ -95,6 +95,14 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
             public boolean sendMultiple = true; // Gale - Purpur - send multiple keep-alive packets
         }
 
+        // Gale start - YAPFA - last tick time - in TPS command
+        public LastTickTimeInTpsCommand lastTickTimeInTpsCommand;
+        public class LastTickTimeInTpsCommand extends ConfigurationPart {
+            public boolean enabled = false;
+            public boolean addOversleep = false;
+        }
+        // Gale end - YAPFA - last tick time - in TPS command
+
     }
 
     public LogToConsole logToConsole;
