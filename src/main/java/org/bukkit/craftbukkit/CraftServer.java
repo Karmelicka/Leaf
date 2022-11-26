@@ -3313,4 +3313,22 @@ public final class CraftServer implements Server {
     }
 
     // Paper end
+
+    // Gale start - YAPFA - last tick time - API
+    @Override
+    public long getLastTickTotalTime() {
+        return MinecraftServer.lastTickProperTime + MinecraftServer.lastTickOversleepTime;
+    }
+
+    @Override
+    public long getLastTickProperTime() {
+        return MinecraftServer.lastTickProperTime;
+    }
+
+    @Override
+    public long getLastTickOversleepTime() {
+        return MinecraftServer.lastTickOversleepTime;
+    }
+    // Gale end - YAPFA - last tick time - API
+
 }
