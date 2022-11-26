@@ -1105,6 +1105,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
     public static volatile RuntimeException chunkSystemCrash; // Paper - rewrite chunk system
 
+    // Gale start - YAPFA - last tick time
+    public static long lastTickProperTime;
+    public static long lastTickOversleepTime;
+    // Gale end - YAPFA - last tick time
+
     protected void runServer() {
         try {
             long serverStartTime = Util.getNanos(); // Paper
@@ -1187,9 +1192,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                 //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
                 lastTick = currentTime;
                 this.nextTickTimeNanos += i;
+                long tickProperStart = System.nanoTime(); // Gale - YAPFA - last tick time
                 this.tickServer(flag ? () -> {
                     return false;
                 } : this::haveTime);
+                lastTickProperTime = (System.nanoTime() - tickProperStart) / 1000000L; // Gale - YAPFA - last tick time
                 this.mayHaveDelayedTasks = true;
                 this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + i, this.nextTickTimeNanos);
                 this.waitUntilNextTick();
@@ -1301,9 +1308,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
     protected void waitUntilNextTick() {
         //this.executeAll(); // Paper - move this into the tick method for timings
+        long tickOversleepStart = System.nanoTime(); // Gale - YAPFA - last tick time
         this.managedBlock(() -> {
             return !this.canSleepForTickNoOversleep(); // Paper - move oversleep into full server tick
         });
+        lastTickOversleepTime = (System.nanoTime() - tickOversleepStart) / 1000000L; // Gale - YAPFA - last tick time
     }
 
     @Override
