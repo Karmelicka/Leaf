@@ -45,6 +45,7 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.storage.LevelStorageSource;
+import org.galemc.gale.command.GaleCommands;
 import org.slf4j.Logger;
 
 // CraftBukkit start
@@ -217,6 +218,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
         thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+        GaleCommands.registerCommands(this); // Gale - Gale commands - register commands
         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
         io.papermc.paper.brigadier.PaperBrigadierProviderImpl.INSTANCE.getClass(); // Paper - init PaperBrigadierProvider
