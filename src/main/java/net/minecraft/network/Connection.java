@@ -23,7 +23,6 @@ import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.flow.FlowControlHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -39,6 +38,8 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.crypto.Cipher;
 import net.minecraft.SharedConstants;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -321,7 +322,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
     }
 
     public void setListener(PacketListener packetListener) {
-        Validate.notNull(packetListener, "packetListener", new Object[0]);
+        Validate.notNull(packetListener, "packetListener", ArrayConstants.emptyObjectArray); // Gale - JettPack - reduce array allocations
         PacketFlow enumprotocoldirection = packetListener.flow();
 
         if (enumprotocoldirection != this.receiving) {

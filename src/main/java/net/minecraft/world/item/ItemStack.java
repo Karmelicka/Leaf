@@ -1053,7 +1053,7 @@ public final class ItemStack {
         int k;
 
         if (ItemStack.shouldShowInTooltip(i, ItemStack.TooltipPart.MODIFIERS)) {
-            EquipmentSlot[] aenumitemslot = EquipmentSlot.values();
+            EquipmentSlot[] aenumitemslot = EquipmentSlot.VALUES; // Gale - JettPack - reduce array allocations
 
             k = aenumitemslot.length;
 

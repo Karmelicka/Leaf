@@ -1,6 +1,5 @@
 package net.minecraft.server.players;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -21,6 +20,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.Util;
 import net.minecraft.util.GsonHelper;
 import org.slf4j.Logger;
@@ -76,7 +77,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
     }
 
     public String[] getUserList() {
-        return (String[]) this.map.keySet().toArray(new String[0]);
+        return (String[]) this.map.keySet().toArray(ArrayConstants.emptyStringArray); // Gale - JettPack - reduce array allocations
     }
 
     public boolean isEmpty() {

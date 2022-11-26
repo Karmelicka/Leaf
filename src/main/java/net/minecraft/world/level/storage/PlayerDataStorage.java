@@ -6,13 +6,14 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.annotation.Nullable;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.entity.player.Player;
 import org.slf4j.Logger;
 
@@ -124,7 +125,7 @@ public class PlayerDataStorage {
         String[] astring = this.playerDir.list();
 
         if (astring == null) {
-            astring = new String[0];
+            astring = ArrayConstants.emptyStringArray; // Gale - JettPack - reduce array allocations
         }
 
         for (int i = 0; i < astring.length; ++i) {

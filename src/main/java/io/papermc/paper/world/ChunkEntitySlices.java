@@ -2,9 +2,9 @@ package io.papermc.paper.world;
 
 import com.destroystokyo.paper.util.maplist.EntityList;
 import io.papermc.paper.chunk.system.entity.EntityLookup;
-import io.papermc.paper.util.TickThread;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.FullChunkStatus;
@@ -83,7 +83,7 @@ public final class ChunkEntitySlices {
             }
         }
 
-        return ret.toArray(new org.bukkit.entity.Entity[0]);
+        return ret.toArray(ArrayConstants.emptyBukkitEntityArray); // Gale - JettPack - reduce array allocations
     }
 
     public CompoundTag save() {
@@ -304,7 +304,7 @@ public final class ChunkEntitySlices {
 
     protected static final class BasicEntityList<E extends Entity> {
 
-        protected static final Entity[] EMPTY = new Entity[0];
+        //protected static final Entity[] EMPTY = new Entity[0]; // Gale - JettPack - reduce array allocations
         protected static final int DEFAULT_CAPACITY = 4;
 
         protected E[] storage;
@@ -315,7 +315,7 @@ public final class ChunkEntitySlices {
         }
 
         public BasicEntityList(final int cap) {
-            this.storage = (E[])(cap <= 0 ? EMPTY : new Entity[cap]);
+            this.storage = (E[])(cap <= 0 ? ArrayConstants.emptyEntityArray : new Entity[cap]); // Gale - JettPack - reduce array allocations
         }
 
         public boolean isEmpty() {
@@ -327,7 +327,7 @@ public final class ChunkEntitySlices {
         }
 
         private void resize() {
-            if (this.storage == EMPTY) {
+            if (this.storage == ArrayConstants.emptyEntityArray) { // Gale - JettPack - reduce array allocations
                 this.storage = (E[])new Entity[DEFAULT_CAPACITY];
             } else {
                 this.storage = Arrays.copyOf(this.storage, this.storage.length * 2);

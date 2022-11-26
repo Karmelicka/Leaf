@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -80,7 +82,7 @@ public abstract class Team {
         public final int id;
 
         public static String[] getAllNames() {
-            return BY_NAME.keySet().toArray(new String[0]);
+            return BY_NAME.keySet().toArray(ArrayConstants.emptyStringArray); // Gale - JettPack - reduce array allocations
         }
 
         @Nullable

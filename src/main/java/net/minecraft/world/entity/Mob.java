@@ -1063,7 +1063,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
         super.dropCustomDeathLoot(source, lootingMultiplier, allowDrops);
-        EquipmentSlot[] aenumitemslot = EquipmentSlot.values();
+        EquipmentSlot[] aenumitemslot = EquipmentSlot.VALUES; // Gale - JettPack - reduce array allocations
         int j = aenumitemslot.length;
 
         for (int k = 0; k < j; ++k) {
@@ -1126,7 +1126,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
             }
 
             boolean flag = true;
-            EquipmentSlot[] aenumitemslot = EquipmentSlot.values();
+            EquipmentSlot[] aenumitemslot = EquipmentSlot.VALUES; // Gale - JettPack - reduce array allocations
             int j = aenumitemslot.length;
 
             for (int k = 0; k < j; ++k) {
@@ -1213,7 +1213,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
         float f = localDifficulty.getSpecialMultiplier();
 
         this.enchantSpawnedWeapon(random, f);
-        EquipmentSlot[] aenumitemslot = EquipmentSlot.values();
+        EquipmentSlot[] aenumitemslot = EquipmentSlot.VALUES; // Gale - JettPack - reduce array allocations
         int i = aenumitemslot.length;
 
         for (int j = 0; j < i; ++j) {
@@ -1432,7 +1432,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
                 t0.setInvulnerable(this.isInvulnerable());
                 if (flag) {
                     t0.setCanPickUpLoot(this.canPickUpLoot());
-                    EquipmentSlot[] aenumitemslot = EquipmentSlot.values();
+                    EquipmentSlot[] aenumitemslot = EquipmentSlot.VALUES; // Gale - JettPack - reduce array allocations
                     int i = aenumitemslot.length;
 
                     for (int j = 0; j < i; ++j) {

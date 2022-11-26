@@ -1,5 +1,7 @@
 package net.minecraft.util;
 
+import me.titaniumtown.ArrayConstants;
+
 import javax.annotation.Nullable;
 
 public class MemoryReserve {
@@ -11,6 +13,6 @@ public class MemoryReserve {
     }
 
     public static void release() {
-        reserve = new byte[0];
+        reserve = ArrayConstants.emptyByteArray; // Gale - JettPack - reduce array allocations
     }
 }

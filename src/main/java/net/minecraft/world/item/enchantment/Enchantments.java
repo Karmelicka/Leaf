@@ -43,8 +43,10 @@ public class Enchantments {
     public static final Enchantment MULTISHOT = register("multishot", new MultiShotEnchantment(Enchantment.Rarity.RARE, EquipmentSlot.MAINHAND));
     public static final Enchantment QUICK_CHARGE = register("quick_charge", new QuickChargeEnchantment(Enchantment.Rarity.UNCOMMON, EquipmentSlot.MAINHAND));
     public static final Enchantment PIERCING = register("piercing", new ArrowPiercingEnchantment(Enchantment.Rarity.COMMON, EquipmentSlot.MAINHAND));
-    public static final Enchantment MENDING = register("mending", new MendingEnchantment(Enchantment.Rarity.RARE, EquipmentSlot.values()));
-    public static final Enchantment VANISHING_CURSE = register("vanishing_curse", new VanishingCurseEnchantment(Enchantment.Rarity.VERY_RARE, EquipmentSlot.values()));
+    // Gale start - JettPack - reduce array allocations
+    public static final Enchantment MENDING = register("mending", new MendingEnchantment(Enchantment.Rarity.RARE, EquipmentSlot.VALUES));
+    public static final Enchantment VANISHING_CURSE = register("vanishing_curse", new VanishingCurseEnchantment(Enchantment.Rarity.VERY_RARE, EquipmentSlot.VALUES));
+    // Gale end - JettPack - reduce array allocations
 
     private static Enchantment register(String name, Enchantment enchantment) {
         return Registry.register(BuiltInRegistries.ENCHANTMENT, name, enchantment);

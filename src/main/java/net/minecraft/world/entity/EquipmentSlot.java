@@ -15,6 +15,7 @@ public enum EquipmentSlot implements StringRepresentable {
     private final int index;
     private final int filterFlag;
     private final String name;
+    public static final EquipmentSlot[] VALUES = EquipmentSlot.values(); // Gale - JettPack - reduce array allocations
 
     private EquipmentSlot(EquipmentSlot.Type type, int entityId, int armorStandId, String name) {
         this.type = type;

@@ -3161,7 +3161,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
     @Nullable
     private Map<EquipmentSlot, ItemStack> collectEquipmentChanges() {
         Map<EquipmentSlot, ItemStack> map = null;
-        EquipmentSlot[] aenumitemslot = EquipmentSlot.values();
+        EquipmentSlot[] aenumitemslot = EquipmentSlot.VALUES; // Gale - JettPack - reduce array allocations
         int i = aenumitemslot.length;
 
         for (int j = 0; j < i; ++j) {

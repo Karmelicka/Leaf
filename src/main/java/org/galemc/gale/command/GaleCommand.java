@@ -4,6 +4,7 @@ package org.galemc.gale.command;
 
 import io.papermc.paper.command.CommandUtil;
 import it.unimi.dsi.fastutil.Pair;
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.Util;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -140,7 +141,7 @@ public final class GaleCommand extends Command {
 
         // If they did not give a subcommand
         if (args.length == 0) {
-            INFO_SUBCOMMAND.execute(sender, InfoCommand.LITERAL_ARGUMENT, new String[0]);
+            INFO_SUBCOMMAND.execute(sender, InfoCommand.LITERAL_ARGUMENT, ArrayConstants.emptyStringArray); // Gale - JettPack - reduce array allocations
             sender.sendMessage(newline().append(text("Command usage: " + specificUsageMessage, GRAY)));
             return false;
         }

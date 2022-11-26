@@ -6,6 +6,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+
+import me.titaniumtown.ArrayConstants;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class IntArrayTag extends CollectionTag<IntTag> {
@@ -186,7 +188,7 @@ public class IntArrayTag extends CollectionTag<IntTag> {
     }
 
     public void clear() {
-        this.data = new int[0];
+        this.data = ArrayConstants.emptyIntArray; // Gale - JettPack - reduce array allocations
     }
 
     @Override

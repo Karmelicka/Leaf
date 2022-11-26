@@ -335,7 +335,7 @@ public class ServerEntity {
 
         if (this.entity instanceof LivingEntity) {
             List<Pair<EquipmentSlot, ItemStack>> list = Lists.newArrayList();
-            EquipmentSlot[] aenumitemslot = EquipmentSlot.values();
+            EquipmentSlot[] aenumitemslot = EquipmentSlot.VALUES; // Gale - JettPack - reduce array allocations
             int i = aenumitemslot.length;
 
             for (int j = 0; j < i; ++j) {

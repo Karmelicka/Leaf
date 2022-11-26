@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.CrashReport;
 import net.minecraft.CrashReportCategory;
 import net.minecraft.Util;
@@ -1044,7 +1046,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                     BlockPos blockposition2 = blockposition.set(j + randomX, randomY, k + randomZ);
                     BlockState iblockdata = com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
 
-                    iblockdata.randomTick(this, blockposition2, this.randomTickRandom);
+                    iblockdata.randomTick(this, blockposition2.immutable(), this.randomTickRandom); // Gale - JettPack - reduce array allocations
                 }
                 // We drop the fluid tick since LAVA is ALREADY TICKED by the above method (See LiquidBlock).
                 // TODO CHECK ON UPDATE (ping the Canadian)
@@ -1350,7 +1352,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
     public static List<Entity> getCurrentlyTickingEntities() {
         Entity ticking = currentlyTickingEntity.get();
-        List<Entity> ret = java.util.Arrays.asList(ticking == null ? new Entity[0] : new Entity[] { ticking });
+        List<Entity> ret = java.util.Arrays.asList(ticking == null ? ArrayConstants.emptyEntityArray : new Entity[] { ticking }); // Gale - JettPack - reduce array allocations
 
         return ret;
     }

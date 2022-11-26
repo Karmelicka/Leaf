@@ -4,6 +4,8 @@ import com.mojang.serialization.MapCodec;
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import javax.annotation.Nullable;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -422,7 +424,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
 
         @Override
         public int[] getSlotsForFace(Direction side) {
-            return side == Direction.DOWN ? new int[]{0} : new int[0];
+            return side == Direction.DOWN ? ArrayConstants.zeroSingletonIntArray : ArrayConstants.emptyIntArray; // Gale - JettPack - reduce array allocations
         }
 
         @Override
@@ -471,7 +473,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
 
         @Override
         public int[] getSlotsForFace(Direction side) {
-            return side == Direction.UP ? new int[]{0} : new int[0];
+            return side == Direction.UP ? ArrayConstants.zeroSingletonIntArray : ArrayConstants.emptyIntArray; // Gale - JettPack - reduce array allocations
         }
 
         @Override
@@ -513,7 +515,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
 
         @Override
         public int[] getSlotsForFace(Direction side) {
-            return new int[0];
+            return ArrayConstants.emptyIntArray; // Gale - JettPack - reduce array allocations
         }
 
         @Override

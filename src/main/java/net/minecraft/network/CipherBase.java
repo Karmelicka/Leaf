@@ -2,13 +2,15 @@ package net.minecraft.network;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import me.titaniumtown.ArrayConstants;
+
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 
 public class CipherBase {
     private final Cipher cipher;
-    private byte[] heapIn = new byte[0];
-    private byte[] heapOut = new byte[0];
+    private byte[] heapIn = ArrayConstants.emptyByteArray; // Gale - JettPack - reduce array allocations
+    private byte[] heapOut = ArrayConstants.emptyByteArray; // Gale - JettPack - reduce array allocations
 
     protected CipherBase(Cipher cipher) {
         this.cipher = cipher;

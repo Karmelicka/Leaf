@@ -2,6 +2,8 @@ package net.minecraft.nbt;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import me.titaniumtown.ArrayConstants;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -279,7 +281,7 @@ public class ListTag extends CollectionTag<Tag> {
             }
         }
 
-        return new int[0];
+        return ArrayConstants.emptyIntArray; // Gale - JettPack - reduce array allocations
     }
 
     public long[] getLongArray(int index) {
@@ -291,7 +293,7 @@ public class ListTag extends CollectionTag<Tag> {
             }
         }
 
-        return new long[0];
+        return ArrayConstants.emptyLongArray; // Gale - JettPack - reduce array allocations
     }
 
     public double getDouble(int index) {

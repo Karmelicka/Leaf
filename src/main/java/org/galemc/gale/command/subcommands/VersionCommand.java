@@ -2,6 +2,7 @@
 
 package org.galemc.gale.command.subcommands;
 
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -26,7 +27,7 @@ public final class VersionCommand extends PermissionedGaleSubcommand {
     public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
         final @Nullable Command ver = MinecraftServer.getServer().server.getCommandMap().getCommand("version");
         if (ver != null) {
-            ver.execute(sender, GaleCommand.COMMAND_LABEL, new String[0]);
+            ver.execute(sender, GaleCommand.COMMAND_LABEL, ArrayConstants.emptyStringArray); // Gale - JettPack - reduce array allocations
         }
         return true;
     }

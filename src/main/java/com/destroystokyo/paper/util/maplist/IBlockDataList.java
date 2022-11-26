@@ -3,6 +3,8 @@ package com.destroystokyo.paper.util.maplist;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.shorts.Short2LongOpenHashMap;
 import java.util.Arrays;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.GlobalPalette;
@@ -20,9 +22,7 @@ public final class IBlockDataList {
         this.map.defaultReturnValue(Long.MAX_VALUE);
     }
 
-    private static final long[] EMPTY_LIST = new long[0];
-
-    private long[] byIndex = EMPTY_LIST;
+    private long[] byIndex = ArrayConstants.emptyLongArray; // Gale - JettPack - reduce array allocations
     private int size;
 
     public static int getLocationKey(final int x, final int y, final int z) {

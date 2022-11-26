@@ -1,6 +1,7 @@
 package com.destroystokyo.paper.util.maplist;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.world.entity.Entity;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -17,9 +18,7 @@ public final class EntityList implements Iterable<Entity> {
         this.entityToIndex.defaultReturnValue(Integer.MIN_VALUE);
     }
 
-    protected static final Entity[] EMPTY_LIST = new Entity[0];
-
-    protected Entity[] entities = EMPTY_LIST;
+    protected Entity[] entities = ArrayConstants.emptyEntityArray; // Gale - JettPack - reduce array allocations
     protected int count;
 
     public int size() {

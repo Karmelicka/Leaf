@@ -5,8 +5,10 @@ import org.bukkit.inventory.EquipmentSlot;
 
 public class CraftEquipmentSlot {
 
-    private static final net.minecraft.world.entity.EquipmentSlot[] slots = new net.minecraft.world.entity.EquipmentSlot[EquipmentSlot.values().length];
-    private static final EquipmentSlot[] enums = new EquipmentSlot[net.minecraft.world.entity.EquipmentSlot.values().length];
+    // Gale start - JettPack - reduce array allocations
+    private static final net.minecraft.world.entity.EquipmentSlot[] slots = net.minecraft.world.entity.EquipmentSlot.VALUES;
+    private static final EquipmentSlot[] enums = new EquipmentSlot[net.minecraft.world.entity.EquipmentSlot.VALUES.length];
+    // Gale end - JettPack - reduce array allocations
 
     static {
         set(EquipmentSlot.HAND, net.minecraft.world.entity.EquipmentSlot.MAINHAND);

@@ -165,7 +165,7 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     @Override
     public void clear() {
-        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.VALUES) { // Gale - JettPack - reduce array allocations
             this.setEquipment(slot, null, false);
         }
     }

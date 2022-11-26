@@ -13,9 +13,10 @@ import java.security.PrivateKey;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import net.minecraft.CrashReportCategory;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.DefaultUncaughtExceptionHandler;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.Connection;
@@ -147,8 +148,10 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
 
     @Override
     public void handleHello(ServerboundHelloPacket packet) {
-        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
-        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]); // Paper - config username validation
+        // Gale start - JettPack - reduce array allocations
+        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", ArrayConstants.emptyObjectArray);
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) Validate.validState(Player.isValidUsername(packet.name()), "Invalid characters in username", ArrayConstants.emptyObjectArray); // Paper - config username validation
+        // Gale end - JettPack - reduce array allocations
         this.requestedUsername = packet.name();
         GameProfile gameprofile = this.server.getSingleplayerProfile();
 
@@ -232,7 +235,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
 
     @Override
     public void handleKey(ServerboundKeyPacket packet) {
-        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.KEY, "Unexpected key packet", new Object[0]);
+        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.KEY, "Unexpected key packet", ArrayConstants.emptyObjectArray); // Gale - JettPack - reduce array allocations
 
         final String s;
 
@@ -412,7 +415,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
 
     @Override
     public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket packet) {
-        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet", new Object[0]);
+        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet", ArrayConstants.emptyObjectArray); // Gale - JettPack - reduce array allocations
         CommonListenerCookie commonlistenercookie = CommonListenerCookie.createInitial((GameProfile) Objects.requireNonNull(this.authenticatedProfile));
         ServerConfigurationPacketListenerImpl serverconfigurationpacketlistenerimpl = new ServerConfigurationPacketListenerImpl(this.server, this.connection, commonlistenercookie, this.player); // CraftBukkit
 

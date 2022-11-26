@@ -237,7 +237,7 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
             return;
         }
         // CraftBukkit end
-        EquipmentSlot[] aenumitemslot = EquipmentSlot.values();
+        EquipmentSlot[] aenumitemslot = EquipmentSlot.VALUES; // Gale - JettPack - reduce array allocations
         int i = aenumitemslot.length;
 
         for (int j = 0; j < i; ++j) {

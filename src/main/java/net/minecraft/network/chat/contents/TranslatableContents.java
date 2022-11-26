@@ -15,6 +15,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
@@ -28,7 +30,7 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.Entity;
 
 public class TranslatableContents implements ComponentContents {
-    public static final Object[] NO_ARGS = new Object[0];
+    public static final Object[] NO_ARGS = ArrayConstants.emptyObjectArray; // Gale - JettPack - reduce array allocations
     private static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.validate(ExtraCodecs.JAVA, TranslatableContents::filterAllowedArguments);
     private static final Codec<Object> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, ComponentSerialization.CODEC).xmap((either) -> {
         return either.map((object) -> {

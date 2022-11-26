@@ -6,6 +6,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+
+import me.titaniumtown.ArrayConstants;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class ByteArrayTag extends CollectionTag<ByteTag> {
@@ -175,7 +177,7 @@ public class ByteArrayTag extends CollectionTag<ByteTag> {
     }
 
     public void clear() {
-        this.data = new byte[0];
+        this.data = ArrayConstants.emptyByteArray; // Gale - JettPack - reduce array allocations
     }
 
     @Override

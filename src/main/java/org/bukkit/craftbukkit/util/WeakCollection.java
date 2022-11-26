@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import me.titaniumtown.ArrayConstants;
+
 public final class WeakCollection<T> implements Collection<T> {
     static final Object NO_VALUE = new Object();
     private final Collection<WeakReference<T>> collection;
@@ -164,7 +166,7 @@ public final class WeakCollection<T> implements Collection<T> {
 
     @Override
     public Object[] toArray() {
-        return this.toArray(new Object[0]);
+        return this.toArray(ArrayConstants.emptyObjectArray); // Gale - JettPack - reduce array allocations
     }
 
     @Override

@@ -10,6 +10,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.CrashReport;
 import net.minecraft.CrashReportCategory;
 import net.minecraft.core.BlockPos;
@@ -1873,7 +1875,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     public org.bukkit.entity.Entity[] getChunkEntities(int chunkX, int chunkZ) {
         io.papermc.paper.world.ChunkEntitySlices slices = ((ServerLevel)this).getEntityLookup().getChunk(chunkX, chunkZ);
         if (slices == null) {
-            return new org.bukkit.entity.Entity[0];
+            return ArrayConstants.emptyBukkitEntityArray; // Gale - JettPack - reduce array allocations
         }
         return slices.getChunkEntities();
     }

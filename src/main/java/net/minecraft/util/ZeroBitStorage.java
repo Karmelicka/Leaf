@@ -2,10 +2,11 @@ package net.minecraft.util;
 
 import java.util.Arrays;
 import java.util.function.IntConsumer;
-import org.apache.commons.lang3.Validate;
+
+import me.titaniumtown.ArrayConstants;
 
 public class ZeroBitStorage implements BitStorage {
-    public static final long[] RAW = new long[0];
+    public static final long[] RAW = ArrayConstants.emptyLongArray; // Gale - JettPack - reduce array allocations
     private final int size;
 
     public ZeroBitStorage(int size) {

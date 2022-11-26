@@ -6,6 +6,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+
+import me.titaniumtown.ArrayConstants;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class LongArrayTag extends CollectionTag<LongTag> {
@@ -190,7 +192,7 @@ public class LongArrayTag extends CollectionTag<LongTag> {
 
     @Override
     public void clear() {
-        this.data = new long[0];
+        this.data = ArrayConstants.emptyLongArray; // Gale - JettPack - reduce array allocations
     }
 
     @Override

@@ -87,7 +87,7 @@ public class Main {
         OptionSpec<Void> optionspec5 = optionparser.accepts("eraseCache");
         OptionSpec<Void> optionspec6 = optionparser.accepts("safeMode", "Loads level with vanilla datapack only");
         OptionSpec<Void> optionspec7 = optionparser.accepts("help").forHelp();
-        OptionSpec<String> optionspec8 = optionparser.accepts("universe").withRequiredArg().defaultsTo(".", new String[0]);
+        OptionSpec<String> optionspec8 = optionparser.accepts("universe").withRequiredArg().defaultsTo(".", me.titaniumtown.ArrayConstants.emptyStringArray); // Gale - JettPack - reduce array allocations
         OptionSpec<String> optionspec9 = optionparser.accepts("world").withRequiredArg();
         OptionSpec<Integer> optionspec10 = optionparser.accepts("port").withRequiredArg().ofType(Integer.class).defaultsTo(-1, new Integer[0]);
         OptionSpec<String> optionspec11 = optionparser.accepts("serverId").withRequiredArg();

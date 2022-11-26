@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.Util;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.FriendlyByteBuf;
@@ -89,7 +91,7 @@ public record ShapedRecipePattern(int width, int height, NonNullList<Ingredient>
         }
 
         if (pattern.size() == l) {
-            return new String[0];
+            return ArrayConstants.emptyStringArray; // Gale - JettPack - reduce array allocations
         } else {
             String[] strings = new String[pattern.size() - l - k];
 

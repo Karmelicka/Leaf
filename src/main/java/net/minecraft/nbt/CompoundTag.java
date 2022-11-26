@@ -1,6 +1,5 @@
 package net.minecraft.nbt;
 
-import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
@@ -14,6 +13,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
+
+import me.titaniumtown.ArrayConstants;
 import net.minecraft.CrashReport;
 import net.minecraft.CrashReportCategory;
 import net.minecraft.ReportedException;
@@ -420,7 +421,7 @@ public class CompoundTag implements Tag {
             throw new ReportedException(this.createReport(key, ByteArrayTag.TYPE, var3));
         }
 
-        return new byte[0];
+        return ArrayConstants.emptyByteArray; // Gale - JettPack - reduce array allocations
     }
 
     public int[] getIntArray(String key) {
@@ -432,7 +433,7 @@ public class CompoundTag implements Tag {
             throw new ReportedException(this.createReport(key, IntArrayTag.TYPE, var3));
         }
 
-        return new int[0];
+        return ArrayConstants.emptyIntArray; // Gale - JettPack - reduce array allocations
     }
 
     public long[] getLongArray(String key) {
@@ -444,7 +445,7 @@ public class CompoundTag implements Tag {
             throw new ReportedException(this.createReport(key, LongArrayTag.TYPE, var3));
         }
 
-        return new long[0];
+        return ArrayConstants.emptyLongArray; // Gale - JettPack - reduce array allocations
     }
 
     public CompoundTag getCompound(String key) {
