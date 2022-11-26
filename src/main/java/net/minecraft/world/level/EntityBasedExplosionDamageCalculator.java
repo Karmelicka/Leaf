@@ -15,9 +15,17 @@ public class EntityBasedExplosionDamageCalculator extends ExplosionDamageCalcula
 
     @Override
     public Optional<Float> getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState) {
-        return super.getBlockExplosionResistance(explosion, world, pos, blockState, fluidState).map((max) -> {
-            return this.source.getBlockExplosionResistance(explosion, world, pos, blockState, fluidState, max);
-        });
+        // Gale start - Lithium - reduce lambda and Optional allocation in EntityBasedExplosionDamageCalculator
+        Optional<Float> optionalBlastResistance = super.getBlockExplosionResistance(explosion, world, pos, blockState, fluidState);
+        if (optionalBlastResistance.isPresent()) {
+            float blastResistance = optionalBlastResistance.get();
+            float effectiveExplosionResistance = this.source.getBlockExplosionResistance(explosion, world, pos, blockState, fluidState, blastResistance);
+            if (effectiveExplosionResistance != blastResistance) {
+                return Optional.of(effectiveExplosionResistance);
+            }
+        }
+        return optionalBlastResistance;
+        // Gale end - Lithium - reduce lambda and Optional allocation in EntityBasedExplosionDamageCalculator
     }
 
     @Override
