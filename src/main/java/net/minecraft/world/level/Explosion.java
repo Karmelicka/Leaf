@@ -92,7 +92,7 @@ public class Explosion {
     }
 
     public Explosion(Level world, @Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Explosion.BlockInteraction destructionType, ParticleOptions particle, ParticleOptions emitterParticle, SoundEvent soundEvent) {
-        this.random = RandomSource.create();
+        this.random = world == null || world.random == null ? RandomSource.create() : world.random; // Gale - Patina - reduce RandomSource instances
         this.toBlow = new ObjectArrayList();
         this.hitPlayers = Maps.newHashMap();
         this.level = world;

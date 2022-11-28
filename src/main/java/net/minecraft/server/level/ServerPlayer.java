@@ -453,7 +453,7 @@ public class ServerPlayer extends Player {
             long l = k * k;
             int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
             int j1 = this.getCoprime(i1);
-            int k1 = RandomSource.create().nextInt(i1);
+            int k1 = worldserver.random.nextInt(i1); // Gale - Patina - reduce RandomSource instances
 
             for (int l1 = 0; l1 < i1; ++l1) {
                 int i2 = (k1 + j1 * l1) % i1;
@@ -490,7 +490,7 @@ public class ServerPlayer extends Player {
             long l = k * k;
             int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
             int j1 = this.getCoprime(i1);
-            int k1 = RandomSource.create().nextInt(i1);
+            int k1 = world.random.nextInt(i1); // Gale - Patina - reduce RandomSource instances
 
             for (int l1 = 0; l1 < i1; ++l1) {
                 int i2 = (k1 + j1 * l1) % i1;

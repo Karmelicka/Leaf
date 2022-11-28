@@ -349,7 +349,7 @@ public class QueryThreadGs4 extends GenericThread {
             this.identBytes[2] = bs[5];
             this.identBytes[3] = bs[6];
             this.ident = new String(this.identBytes, StandardCharsets.UTF_8);
-            this.challenge = RandomSource.create().nextInt(16777216);
+            this.challenge = java.util.concurrent.ThreadLocalRandom.current().nextInt(16777216); // Gale - Patina - reduce RandomSource instances
             this.challengeBytes = String.format(Locale.ROOT, "\t%s%d\u0000", this.ident, this.challenge).getBytes(StandardCharsets.UTF_8);
         }
 

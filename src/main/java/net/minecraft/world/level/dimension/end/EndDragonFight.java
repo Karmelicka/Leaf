@@ -472,7 +472,7 @@ public class EndDragonFight {
         this.level.registryAccess().registry(Registries.CONFIGURED_FEATURE).flatMap((iregistry) -> {
             return iregistry.getHolder(EndFeatures.END_GATEWAY_DELAYED);
         }).ifPresent((holder_c) -> {
-            ((ConfiguredFeature) holder_c.value()).place(this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), pos);
+            ((ConfiguredFeature) holder_c.value()).place(this.level, this.level.getChunkSource().getGenerator(), this.level.random, pos); // Gale - Patina - reduce RandomSource instances
         });
     }
 
@@ -490,7 +490,7 @@ public class EndDragonFight {
             this.portalLocation = this.portalLocation.atY(this.level.getMinBuildHeight() + 1);
         }
         // Paper end - Prevent "softlocked" exit portal generation
-        if (worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation)) {
+        if (worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), this.level.random, this.portalLocation)) { // Gale - Patina - reduce RandomSource instances
             int i = Mth.positiveCeilDiv(4, 16);
 
             this.level.getChunkSource().chunkMap.waitForLightBeforeSending(new ChunkPos(this.portalLocation), i);

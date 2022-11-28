@@ -110,7 +110,7 @@ public class Raid {
 
     public Raid(int id, ServerLevel world, BlockPos pos) {
         this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
-        this.random = RandomSource.create();
+        this.random = world.random; // Gale - Patina - reduce RandomSource instances
         this.waveSpawnPos = Optional.empty();
         this.id = id;
         this.level = world;
@@ -124,7 +124,7 @@ public class Raid {
 
     public Raid(ServerLevel world, CompoundTag nbt) {
         this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
-        this.random = RandomSource.create();
+        this.random = world.random; // Gale - Patina - reduce RandomSource instances
         this.waveSpawnPos = Optional.empty();
         this.level = world;
         this.id = nbt.getInt("Id");
