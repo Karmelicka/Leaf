@@ -2135,8 +2135,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     public void playerTouch(Player player) {}
 
     public void push(Entity entity) {
+        if (!entity.noPhysics && !this.noPhysics) { // Gale - Akarin - collision physics check before vehicle check
         if (!this.isPassengerOfSameVehicle(entity)) {
-            if (!entity.noPhysics && !this.noPhysics) {
                 if (this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper - Collision option for requiring a player participant
                 double d0 = entity.getX() - this.getX();
                 double d1 = entity.getZ() - this.getZ();
