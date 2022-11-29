@@ -104,7 +104,10 @@ public class RangedBowAttackGoal<T extends Monster & RangedAttackMob> extends Go
                 this.strafingTime = 0;
             }
 
-            if (this.strafingTime > -1) {
+            // Gale start - Purpur - fix MC-121706
+            boolean hasStrafingTime = this.strafingTime > -1;
+            if (hasStrafingTime) {
+                // Gale end - Purpur - fix MC-121706
                 if (d > (double)(this.attackRadiusSqr * 0.75F)) {
                     this.strafingBackwards = false;
                 } else if (d < (double)(this.attackRadiusSqr * 0.25F)) {
@@ -119,7 +122,10 @@ public class RangedBowAttackGoal<T extends Monster & RangedAttackMob> extends Go
                 }
 
                 this.mob.lookAt(livingEntity, 30.0F, 30.0F);
-            } else {
+                // Gale start - Purpur - fix MC-121706
+            }
+            if (!hasStrafingTime || this.mob.level().galeConfig().gameplayMechanics.fixes.mc121706) {
+            // Gale end - Purpur - fix MC-121706
                 this.mob.getLookControl().setLookAt(livingEntity, 30.0F, 30.0F);
             }
 
