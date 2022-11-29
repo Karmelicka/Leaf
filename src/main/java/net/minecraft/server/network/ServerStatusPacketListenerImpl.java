@@ -153,6 +153,10 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
             this.connection.send(new ClientboundStatusResponsePacket(ping));
             // CraftBukkit end
             */
+            // Gale start - Purpur - fix 'outdated server' showing in ping before server fully boots - do not respond to pings before we know the protocol version
+            var version = MinecraftServer.getServer().getStatus().version();
+            if (version == null || version.isEmpty()) return;
+            // Gale end - Purpur - fix 'outdated server' showing in ping before server fully boots - do not respond to pings before we know the protocol version
             com.destroystokyo.paper.network.StandardPaperServerListPingEventImpl.processRequest(MinecraftServer.getServer(), this.connection);
             // Paper end
         }
