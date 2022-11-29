@@ -171,6 +171,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
 
     public static void teleportEntity(Level world, BlockPos pos, BlockState state, Entity entity, TheEndGatewayBlockEntity blockEntity) {
         if (world instanceof ServerLevel && !blockEntity.isCoolingDown()) {
+            if (entity.level().galeConfig().gameplayMechanics.fixes.checkCanChangeDimensionsBeforeUseEndGateway && world.galeConfig().gameplayMechanics.fixes.checkCanChangeDimensionsBeforeUseEndGateway && !entity.canChangeDimensions()) return; // Gale - Purpur - end gateway should check if entity can use portal
             ServerLevel worldserver = (ServerLevel) world;
 
             blockEntity.teleportCooldown = 100;
