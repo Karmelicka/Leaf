@@ -1069,14 +1069,18 @@ public abstract class PlayerList {
         // Gale start - Purpur - spread out sending all player info
         ServerPlayer[] sendAllPlayerInfoBucket = this.sendAllPlayerInfoBuckets[this.sendAllPlayerInfoIn];
         if (sendAllPlayerInfoBucket != null) {
-            for (ServerPlayer target : sendAllPlayerInfoBucket) {
+            // Gale start - Purpur - optimize player list for sending player info
+            for (ServerPlayer targetPlayer : sendAllPlayerInfoBucket) {
                 // Gale end - Purpur - spread out sending all player info
-                target.connection.send(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), this.players.stream().filter(new Predicate<ServerPlayer>() {
-                    @Override
-                    public boolean test(ServerPlayer input) {
-                        return target.getBukkitEntity().canSee(input.getBukkitEntity());
+                var target = targetPlayer.getBukkitEntity();;
+                final List<ServerPlayer> list = new java.util.ArrayList<>(this.players.size());
+                for (ServerPlayer player : this.players) {
+                    if (target.canSee(player.getUUID())) {
+                        list.add(player);
                     }
-                }).collect(Collectors.toList())));
+                }
+                target.getHandle().connection.send(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), list));
+                // Gale end - Purpur - optimize player list for sending player info
                 // Gale start - Purpur - spread out sending all player info
             }
         }
