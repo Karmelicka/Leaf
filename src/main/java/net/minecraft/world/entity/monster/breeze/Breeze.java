@@ -59,7 +59,7 @@ public class Breeze extends Monster {
 
     @Override
     public Brain<Breeze> getBrain() {
-        return super.getBrain();
+        return (Brain<Breeze>) super.getBrain(); // Gale - dev import deobfuscation fixes
     }
 
     @Override

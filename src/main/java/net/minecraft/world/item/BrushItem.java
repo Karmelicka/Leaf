@@ -84,8 +84,10 @@ public class BrushItem extends Item {
                             BlockEntity var18 = world.getBlockEntity(blockPos);
                             if (var18 instanceof BrushableBlockEntity) {
                                 BrushableBlockEntity brushableBlockEntity = (BrushableBlockEntity)var18;
-                                boolean bl2 = brushableBlockEntity.brush(world.getGameTime(), player, blockHitResult.getDirection());
-                                if (bl2) {
+                                // Gale start - dev import deobfuscation fixes
+                                boolean bl22 = brushableBlockEntity.brush(world.getGameTime(), player, blockHitResult.getDirection());
+                                if (bl22) {
+                                    // Gale end - dev import deobfuscation fixes
                                     EquipmentSlot equipmentSlot = stack.equals(player.getItemBySlot(EquipmentSlot.OFFHAND)) ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
                                     stack.hurtAndBreak(1, user, (userx) -> {
                                         userx.broadcastBreakEvent(equipmentSlot);

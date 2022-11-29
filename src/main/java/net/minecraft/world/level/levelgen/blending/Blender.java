@@ -113,13 +113,15 @@ public class Blender {
             MutableDouble mutableDouble3 = new MutableDouble(Double.POSITIVE_INFINITY);
             this.heightAndBiomeBlendingData.forEach((chunkPos, data) -> {
                 data.iterateHeights(QuartPos.fromSection(ChunkPos.getX(chunkPos)), QuartPos.fromSection(ChunkPos.getZ(chunkPos)), (biomeX, biomeZ, height) -> {
-                    double d = Mth.length((double)(i - biomeX), (double)(j - biomeZ));
-                    if (!(d > (double)HEIGHT_BLENDING_RANGE_CELLS)) {
-                        if (d < mutableDouble3.doubleValue()) {
-                            mutableDouble3.setValue(d);
+                    // Gale start - dev import deobfuscation fixes
+                    double distance = Mth.length((double)(i - biomeX), (double)(j - biomeZ));
+                    if (!(distance > (double)HEIGHT_BLENDING_RANGE_CELLS)) {
+                        if (distance < mutableDouble3.doubleValue()) {
+                            mutableDouble3.setValue(distance);
                         }
 
-                        double e = 1.0D / (d * d * d * d);
+                        double e = 1.0D / (distance * distance * distance * distance);
+                        // Gale end - dev import deobfuscation fixes
                         mutableDouble2.add(height * e);
                         mutableDouble.add(e);
                     }
@@ -156,13 +158,15 @@ public class Blender {
             MutableDouble mutableDouble3 = new MutableDouble(Double.POSITIVE_INFINITY);
             this.densityBlendingData.forEach((chunkPos, data) -> {
                 data.iterateDensities(QuartPos.fromSection(ChunkPos.getX(chunkPos)), QuartPos.fromSection(ChunkPos.getZ(chunkPos)), j - 1, j + 1, (biomeX, halfSectionY, biomeZ, collidableBlockDensity) -> {
-                    double d = Mth.length((double)(i - biomeX), (double)((j - halfSectionY) * 2), (double)(k - biomeZ));
-                    if (!(d > 2.0D)) {
-                        if (d < mutableDouble3.doubleValue()) {
-                            mutableDouble3.setValue(d);
+                    // Gale start - dev import deobfuscation fixes
+                    double distance = Mth.length((double)(i - biomeX), (double)((j - halfSectionY) * 2), (double)(k - biomeZ));
+                    if (!(distance > 2.0D)) {
+                        if (distance < mutableDouble3.doubleValue()) {
+                            mutableDouble3.setValue(distance);
                         }
 
-                        double e = 1.0D / (d * d * d * d);
+                        double e = 1.0D / (distance * distance * distance * distance);
+                        // Gale end - dev import deobfuscation fixes
                         mutableDouble2.add(collidableBlockDensity * e);
                         mutableDouble.add(e);
                     }
@@ -317,8 +321,10 @@ public class Blender {
                 double f = (double)offsetZ + 0.5D + SHIFT_NOISE.getValue((double)offsetZ, (double)offsetX, (double)y) * 4.0D;
                 return distanceGetter.getDistance(d, e, f) < 4.0D;
             };
-            Stream.of(GenerationStep.Carving.values()).map(chunk::getOrCreateCarvingMask).forEach((mask) -> {
-                mask.setAdditionalMask(mask);
+            // Gale start - dev import deobfuscation fixes
+            Stream.of(GenerationStep.Carving.values()).map(chunk::getOrCreateCarvingMask).forEach((carvingMask) -> {
+                carvingMask.setAdditionalMask(mask);
+                // Gale end - dev import deobfuscation fixes
             });
         }
     }

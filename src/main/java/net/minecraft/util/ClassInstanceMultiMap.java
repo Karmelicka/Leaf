@@ -58,7 +58,7 @@ public class ClassInstanceMultiMap<T> extends AbstractCollection<T> {
         if (!this.baseClass.isAssignableFrom(type)) {
             throw new IllegalArgumentException("Don't know how to search for " + type);
         } else {
-            List<? extends T> list = this.byClass.computeIfAbsent(type, (typeClass) -> {
+            List list = this.byClass.computeIfAbsent(type, (typeClass) -> { // Gale - dev import deobfuscation fixes
                 return this.allInstances.stream().filter(typeClass::isInstance).collect(Collectors.toList());
             });
             return Collections.unmodifiableCollection(list);

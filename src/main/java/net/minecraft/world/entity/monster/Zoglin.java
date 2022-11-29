@@ -184,7 +184,7 @@ public class Zoglin extends Monster implements Enemy, HoglinBase {
 
     @Override
     public Brain<Zoglin> getBrain() {
-        return super.getBrain();
+        return (Brain<Zoglin>) super.getBrain(); // Gale - dev import deobfuscation fixes
     }
 
     protected void updateActivity() {

@@ -219,7 +219,7 @@ public class ExtraCodecs {
         }) : DataResult.success(is[0]);
     }, Character::toString);
     public static Codec<String> RESOURCE_PATH_CODEC = validate(Codec.STRING, (path) -> {
-        return !ResourceLocation.isValidPath(path) ? DataResult.error(() -> {
+        return !ResourceLocation.isValidResourceLocation(path) ? DataResult.error(() -> { // Gale - dev import deobfuscation fixes
             return "Invalid string to use as a resource path element: " + path;
         }) : DataResult.success(path);
     });
@@ -247,7 +247,7 @@ public class ExtraCodecs {
             return ImmutableList.of(leftFunction.apply(pair), rightFunction.apply(pair));
         });
         Codec<I> codec3 = RecordCodecBuilder.<Pair>create((instance) -> {
-            return instance.group(codec.fieldOf(leftFieldName).forGetter(Pair::getFirst), codec.fieldOf(rightFieldName).forGetter(Pair::getSecond)).apply(instance, Pair::of);
+            return instance.group(codec.fieldOf(leftFieldName).forGetter(pair -> (P) pair.getFirst()), codec.fieldOf(rightFieldName).forGetter(pair -> (P) pair.getSecond())).apply(instance, Pair::of); // Gale - dev import deobfuscation fixes
         }).comapFlatMap((pair) -> {
             return combineFunction.apply((P)pair.getFirst(), (P)pair.getSecond());
         }, (pair) -> {
@@ -272,7 +272,7 @@ public class ExtraCodecs {
                 Optional<Pair<A, T>> optional = dataResult.resultOrPartial(mutableObject::setValue);
                 return optional.isPresent() ? dataResult : DataResult.error(() -> {
                     return "(" + (String)mutableObject.getValue() + " -> using default)";
-                }, Pair.of(object, object));
+                }, Pair.of(object, (T) object)); // Gale - dev import deobfuscation fixes
             }
 
             public <T> DataResult<T> coApply(DynamicOps<T> dynamicOps, A objectx, DataResult<T> dataResult) {
@@ -574,8 +574,10 @@ public class ExtraCodecs {
                 return object == null ? DataResult.error(() -> {
                     return "Missing \"" + typeKey + "\" in: " + mapLike;
                 }) : typeCodec.decode(dynamicOps, object).flatMap((pair) -> {
-                    T object = Objects.requireNonNullElseGet(mapLike.get(parametersKey), dynamicOps::emptyMap);
-                    return parametersCodecGetter.apply(pair.getFirst()).decode(dynamicOps, object).map(Pair::getFirst);
+                    // Gale start - dev import deobfuscation fixes
+                    T object2 = Objects.requireNonNullElseGet(mapLike.get(parametersKey), dynamicOps::emptyMap);
+                    return parametersCodecGetter.apply(pair.getFirst()).decode(dynamicOps, object2).map(Pair::getFirst);
+                    // Gale end - dev import deobfuscation fixes
                 });
             }
 
@@ -591,7 +593,7 @@ public class ExtraCodecs {
             }
 
             private <T, V2 extends V> DataResult<T> encode(Codec<V2> codec, V value, DynamicOps<T> ops) {
-                return codec.encodeStart(ops, value);
+                return codec.encodeStart(ops, (V2) value); // Gale - dev import deobfuscation fixes
             }
         };
     }

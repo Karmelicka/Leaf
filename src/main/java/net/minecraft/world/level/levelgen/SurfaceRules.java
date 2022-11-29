@@ -154,7 +154,7 @@ public class SurfaceRules {
 
         @Override
         public SurfaceRules.SurfaceRule apply(SurfaceRules.Context context) {
-            return context.system::getBand;
+            return (x, y, z) -> context.system.getBand(x, y, z); // Gale - dev import deobfuscation fixes
         }
     }
 
@@ -176,10 +176,10 @@ public class SurfaceRules {
         }
 
         @Override
-        public SurfaceRules.Condition apply(final SurfaceRules.Context context) {
+        public SurfaceRules.Condition apply(final SurfaceRules.Context givenContext) { // Gale - dev import deobfuscation fixes
             class BiomeCondition extends SurfaceRules.LazyYCondition {
                 BiomeCondition() {
-                    super(context);
+                    super(givenContext); // Gale - dev import deobfuscation fixes
                 }
 
                 @Override
@@ -494,12 +494,14 @@ public class SurfaceRules {
         }
 
         @Override
-        public SurfaceRules.Condition apply(final SurfaceRules.Context context) {
-            final NormalNoise normalNoise = context.randomState.getOrCreateNoise(this.noise);
+        // Gale start - dev import deobfuscation fixes
+        public SurfaceRules.Condition apply(final SurfaceRules.Context givenContext) {
+            final NormalNoise normalNoise = givenContext.randomState.getOrCreateNoise(this.noise);
+            // Gale end - dev import deobfuscation fixes
 
             class NoiseThresholdCondition extends SurfaceRules.LazyXZCondition {
                 NoiseThresholdCondition() {
-                    super(context);
+                    super(givenContext); // Gale - dev import deobfuscation fixes
                 }
 
                 @Override
@@ -622,12 +624,12 @@ public class SurfaceRules {
         }
 
         @Override
-        public SurfaceRules.Condition apply(final SurfaceRules.Context context) {
+        public SurfaceRules.Condition apply(final SurfaceRules.Context givenContext) { // Gale - dev import deobfuscation fixes
             final boolean bl = this.surfaceType == CaveSurface.CEILING;
 
             class StoneDepthCondition extends SurfaceRules.LazyYCondition {
                 StoneDepthCondition() {
-                    super(context);
+                    super(givenContext); // Gale - dev import deobfuscation fixes
                 }
 
                 @Override
@@ -699,26 +701,32 @@ public class SurfaceRules {
         }
 
         @Override
-        public SurfaceRules.Condition apply(final SurfaceRules.Context context) {
-            final int i = this.trueAtAndBelow().resolveY(context.context);
-            final int j = this.falseAtAndAbove().resolveY(context.context);
-            final PositionalRandomFactory positionalRandomFactory = context.randomState.getOrCreateRandomFactory(this.randomName());
+        // Gale start - dev import deobfuscation fixes
+        public SurfaceRules.Condition apply(final SurfaceRules.Context givenContext) {
+            final int i = this.trueAtAndBelow().resolveY(givenContext.context);
+            final int j = this.falseAtAndAbove().resolveY(givenContext.context);
+            final PositionalRandomFactory positionalRandomFactory = givenContext.randomState.getOrCreateRandomFactory(this.randomName());
+            // Gale end - dev import deobfuscation fixes
 
             class VerticalGradientCondition extends SurfaceRules.LazyYCondition {
                 VerticalGradientCondition() {
-                    super(context);
+                    super(givenContext); // Gale - dev import deobfuscation fixes
                 }
 
                 @Override
                 protected boolean compute() {
-                    int i = this.context.blockY;
-                    if (i <= i) {
+                    // Gale start - dev import deobfuscation fixes
+                    int i2 = this.context.blockY;
+                    if (i2 <= i) {
+                        // Gale end - dev import deobfuscation fixes
                         return true;
-                    } else if (i >= j) {
+                    } else if (i2 >= j) { // Gale - dev import deobfuscation fixes
                         return false;
                     } else {
-                        double d = Mth.map((double)i, (double)i, (double)j, 1.0D, 0.0D);
-                        RandomSource randomSource = positionalRandomFactory.at(this.context.blockX, i, this.context.blockZ);
+                        // Gale start - dev import deobfuscation fixes
+                        double d = Mth.map((double)i2, (double)i, (double)j, 1.0D, 0.0D);
+                        RandomSource randomSource = positionalRandomFactory.at(this.context.blockX, i2, this.context.blockZ);
+                        // Gale end - dev import deobfuscation fixes
                         return (double)randomSource.nextFloat() < d;
                     }
                 }
@@ -739,10 +747,10 @@ public class SurfaceRules {
         }
 
         @Override
-        public SurfaceRules.Condition apply(final SurfaceRules.Context context) {
+        public SurfaceRules.Condition apply(final SurfaceRules.Context givenContext) { // Gale - dev import deobfuscation fixes
             class WaterCondition extends SurfaceRules.LazyYCondition {
                 WaterCondition() {
-                    super(context);
+                    super(givenContext); // Gale - dev import deobfuscation fixes
                 }
 
                 @Override
@@ -766,10 +774,10 @@ public class SurfaceRules {
         }
 
         @Override
-        public SurfaceRules.Condition apply(final SurfaceRules.Context context) {
+        public SurfaceRules.Condition apply(final SurfaceRules.Context givenContext) { // Gale - dev import deobfuscation fixes
             class YCondition extends SurfaceRules.LazyYCondition {
                 YCondition() {
-                    super(context);
+                    super(givenContext); // Gale - dev import deobfuscation fixes
                 }
 
                 @Override

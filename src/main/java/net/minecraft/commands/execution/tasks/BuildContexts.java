@@ -94,7 +94,7 @@ public class BuildContexts<T extends ExecutionCommandSource<T>> {
 
         if (list.isEmpty()) {
             if (chainModifiers.isReturn()) {
-                context.queueNext(new CommandQueueEntry<>(frame, FallthroughTask.instance()));
+                context.queueNext(new CommandQueueEntry<>(frame, (EntryAction<T>) FallthroughTask.instance())); // Gale - dev import deobfuscation fixes
             }
 
         } else {

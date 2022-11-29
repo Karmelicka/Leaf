@@ -17,6 +17,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -51,23 +52,27 @@ public class ChunkProtoTickListFix extends DataFix {
                 Dynamic<?> dynamic = typedx.get(DSL.remainderFinder());
                 MutableInt mutableInt = new MutableInt();
                 Int2ObjectMap<Supplier<ChunkProtoTickListFix.PoorMansPalettedContainer>> int2ObjectMap = new Int2ObjectArrayMap<>();
-                typedx.getOptionalTyped(opticFinder2).ifPresent((typed) -> {
-                    typed.getAllTyped(opticFinder3).forEach((typedx) -> {
-                        Dynamic<?> dynamic = typedx.get(DSL.remainderFinder());
-                        int i = dynamic.get("Y").asInt(Integer.MAX_VALUE);
+                // Gale start - dev import deobfuscation fixes
+                typedx.getOptionalTyped(opticFinder2).ifPresent((typed2) -> {
+                    typed2.getAllTyped(opticFinder3).forEach((typedx2) -> {
+                        Dynamic<?> dynamic2 = typedx2.get(DSL.remainderFinder());
+                        int i = dynamic2.get("Y").asInt(Integer.MAX_VALUE);
+                        // Gale end - dev import deobfuscation fixes
                         if (i != Integer.MAX_VALUE) {
-                            if (typedx.getOptionalTyped(opticFinder5).isPresent()) {
+                            if (typedx2.getOptionalTyped(opticFinder5).isPresent()) { // Gale - dev import deobfuscation fixes
                                 mutableInt.setValue(Math.min(i, mutableInt.getValue()));
                             }
 
-                            typedx.getOptionalTyped(opticFinder4).ifPresent((typed) -> {
+                            typedx2.getOptionalTyped(opticFinder4).ifPresent((typed3) -> { // Gale - dev import deobfuscation fixes
                                 int2ObjectMap.put(i, Suppliers.memoize(() -> {
-                                    List<? extends Dynamic<?>> list = typed.getOptionalTyped(opticFinder6).map((typedx) -> {
-                                        return typedx.write().result().map((dynamic) -> {
-                                            return dynamic.asList(Function.identity());
+                                    // Gale start - dev import deobfuscation fixes
+                                    List<? extends Dynamic<?>> list = typed.getOptionalTyped(opticFinder6).map((typedx3) -> {
+                                        return typedx3.write().result().map((dynamic3) -> {
+                                            return dynamic3.asList(Function.identity());
+                                            // Gale end - dev import deobfuscation fixes
                                         }).orElse(Collections.emptyList());
                                     }).orElse(Collections.emptyList());
-                                    long[] ls = typed.get(DSL.remainderFinder()).get("data").asLongStream().toArray();
+                                    long[] ls = typed3.get(DSL.remainderFinder()).get("data").asLongStream().toArray(); // Gale - dev import deobfuscation fixes
                                     return new ChunkProtoTickListFix.PoorMansPalettedContainer(list, ls);
                                 }));
                             });
@@ -76,8 +81,10 @@ public class ChunkProtoTickListFix extends DataFix {
                 });
                 byte b = mutableInt.getValue().byteValue();
                 typedx = typedx.update(DSL.remainderFinder(), (dynamicx) -> {
-                    return dynamicx.update("yPos", (dynamic) -> {
-                        return dynamic.createByte(b);
+                    // Gale start - dev import deobfuscation fixes
+                    return dynamicx.update("yPos", (dynamic2) -> {
+                        return dynamic2.createByte(b);
+                        // Gale end - dev import deobfuscation fixes
                     });
                 });
                 if (!typedx.getOptionalTyped(opticFinder7).isPresent() && !dynamic.get("fluid_ticks").result().isPresent()) {
@@ -144,7 +151,7 @@ public class ChunkProtoTickListFix extends DataFix {
         int n = l >>> 4 & 15;
         int o = l >>> 8 & 15;
         String string = function.apply(supplier != null ? supplier.get().get(m, n, o) : null);
-        return dynamic.createMap(ImmutableMap.builder().put(dynamic.createString("i"), dynamic.createString(string)).put(dynamic.createString("x"), dynamic.createInt(i * 16 + m)).put(dynamic.createString("y"), dynamic.createInt(j * 16 + n)).put(dynamic.createString("z"), dynamic.createInt(k * 16 + o)).put(dynamic.createString("t"), dynamic.createInt(0)).put(dynamic.createString("p"), dynamic.createInt(0)).build());
+        return dynamic.createMap((Map) ImmutableMap.builder().put(dynamic.createString("i"), dynamic.createString(string)).put(dynamic.createString("x"), dynamic.createInt(i * 16 + m)).put(dynamic.createString("y"), dynamic.createInt(j * 16 + n)).put(dynamic.createString("z"), dynamic.createInt(k * 16 + o)).put(dynamic.createString("t"), dynamic.createInt(0)).put(dynamic.createString("p"), dynamic.createInt(0)).build()); // Gale - dev import deobfuscation fixes
     }
 
     public static final class PoorMansPalettedContainer {
