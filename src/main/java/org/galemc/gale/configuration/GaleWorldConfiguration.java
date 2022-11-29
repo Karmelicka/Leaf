@@ -100,6 +100,11 @@ public class GaleWorldConfiguration extends ConfigurationPart {
         public class Fixes extends ConfigurationPart {
             public boolean tripwireDuping = true; // Gale - Leaf - make tripwire duping fix configurable
 
+            // Gale start - Purpur - fix MC-238526
+            @Setting("mc-238526")
+            public boolean mc238526 = false;
+            // Gale end - Purpur - fix MC-238526
+
         }
 
         public double entityWakeUpDurationRatioStandardDeviation = 0.2; // Gale - variable entity wake-up duration
