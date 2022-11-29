@@ -200,12 +200,21 @@ public class MushroomCow extends Cow implements Shearable, VariantHolder<Mushroo
                 // this.discard(); // CraftBukkit - moved down
                 entitycow.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
                 entitycow.setHealth(this.getHealth());
+                // Gale start - Purpur - fix cow rotation when shearing mooshroom
+                if (this.level().galeConfig().gameplayMechanics.fixes.keepMooshroomRotationAfterShearing) {
+                    entitycow.copyPosition(this);
+                    entitycow.yBodyRot = this.yBodyRot;
+                    entitycow.setYHeadRot(this.getYHeadRot());
+                    entitycow.yRotO = this.yRotO;
+                    entitycow.xRotO = this.xRotO;
+                } else {
+                    // Gale end - Purpur - fix cow rotation when shearing mooshroom
                 entitycow.yBodyRot = this.yBodyRot;
+                } // Gale - Purpur - fix cow rotation when shearing mooshroom
                 if (this.hasCustomName()) {
                     entitycow.setCustomName(this.getCustomName());
                     entitycow.setCustomNameVisible(this.isCustomNameVisible());
                 }
-
                 if (this.isPersistenceRequired()) {
                     entitycow.setPersistenceRequired();
                 }

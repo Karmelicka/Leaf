@@ -99,6 +99,7 @@ public class GaleWorldConfiguration extends ConfigurationPart {
         public Fixes fixes;
         public class Fixes extends ConfigurationPart {
             public boolean tripwireDuping = true; // Gale - Leaf - make tripwire duping fix configurable
+            public boolean keepMooshroomRotationAfterShearing = true; // Gale - Purpur - fix cow rotation when shearing mooshroom
 
             // Gale start - Purpur - fix MC-238526
             @Setting("mc-238526")
