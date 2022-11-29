@@ -13,6 +13,8 @@ import java.net.SocketAddress;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -134,10 +136,11 @@ public abstract class PlayerList {
     public static final Component CHAT_FILTERED_FULL = Component.translatable("chat.filtered_full");
     public static final Component DUPLICATE_LOGIN_DISCONNECT_MESSAGE = Component.translatable("multiplayer.disconnect.duplicate_login");
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final int SEND_PLAYER_INFO_INTERVAL = 600;
+    public static final int SEND_PLAYER_INFO_INTERVAL = 600; // Gale - Purpur - spread out sending all player info - private -> public
     private static final SimpleDateFormat BAN_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
     private final MinecraftServer server;
     public final List<ServerPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
+    private final ServerPlayer[][] sendAllPlayerInfoBuckets = new ServerPlayer[SEND_PLAYER_INFO_INTERVAL][]; // Gale - Purpur - spread out sending all player info
     private final Map<UUID, ServerPlayer> playersByUUID = Maps.newHashMap();
     private final UserBanList bans;
     private final IpBanList ipBans;
@@ -328,6 +331,7 @@ public abstract class PlayerList {
 
         // entityplayer.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(this.players)); // CraftBukkit - replaced with loop below
         this.players.add(player);
+        this.addToSendAllPlayerInfoBuckets(player); // Gale - Purpur - spread out sending all player info
         this.playersByName.put(player.getScoreboardName().toLowerCase(java.util.Locale.ROOT), player); // Spigot
         this.playersByUUID.put(player.getUUID(), player);
         // this.broadcastAll(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(entityplayer))); // CraftBukkit - replaced with loop below
@@ -671,6 +675,7 @@ public abstract class PlayerList {
         entityplayer.retireScheduler(); // Paper - Folia schedulers
         entityplayer.getAdvancements().stopListening();
         this.players.remove(entityplayer);
+        this.removeFromSendAllPlayerInfoBuckets(entityplayer); // Gale - Purpur - spread out sending all player info
         this.playersByName.remove(entityplayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
         this.server.getCustomBossEvents().onPlayerDisconnect(entityplayer);
         UUID uuid = entityplayer.getUUID();
@@ -832,6 +837,7 @@ public abstract class PlayerList {
         // Paper end - Expand PlayerRespawnEvent
         entityplayer.stopRiding(); // CraftBukkit
         this.players.remove(entityplayer);
+        this.removeFromSendAllPlayerInfoBuckets(entityplayer); // Gale - Purpur - spread out sending all player info
         this.playersByName.remove(entityplayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
         entityplayer.serverLevel().removePlayerImmediately(entityplayer, Entity.RemovalReason.DISCARDED);
         BlockPos blockposition = entityplayer.getRespawnPosition();
@@ -968,6 +974,7 @@ public abstract class PlayerList {
         if (!entityplayer.connection.isDisconnected()) {
             worldserver1.addRespawnedPlayer(entityplayer1);
             this.players.add(entityplayer1);
+            this.addToSendAllPlayerInfoBuckets(entityplayer1); // Gale - Purpur - spread out sending all player info
             this.playersByName.put(entityplayer1.getScoreboardName().toLowerCase(java.util.Locale.ROOT), entityplayer1); // Spigot
             this.playersByUUID.put(entityplayer1.getUUID(), entityplayer1);
         }
@@ -1026,20 +1033,55 @@ public abstract class PlayerList {
         this.sendPlayerPermissionLevel(player, i, recalculatePermissions); // Paper - avoid recalculating permissions if possible
     }
 
-    public void tick() {
-        if (++this.sendAllPlayerInfoIn > 600) {
-            // CraftBukkit start
-            for (int i = 0; i < this.players.size(); ++i) {
-                final ServerPlayer target = (ServerPlayer) this.players.get(i);
+    // Gale start - Purpur - spread out sending all player info
 
+    private void addToSendAllPlayerInfoBuckets(ServerPlayer player) {
+        ServerPlayer[] sendAllPlayerInfoBucket = this.sendAllPlayerInfoBuckets[player.sendAllPlayerInfoBucketIndex];
+        if (sendAllPlayerInfoBucket == null) {
+            this.sendAllPlayerInfoBuckets[player.sendAllPlayerInfoBucketIndex] = new ServerPlayer[]{player};
+        } else {
+            this.sendAllPlayerInfoBuckets[player.sendAllPlayerInfoBucketIndex] = sendAllPlayerInfoBucket = Arrays.copyOf(sendAllPlayerInfoBucket, sendAllPlayerInfoBucket.length + 1);
+            sendAllPlayerInfoBucket[sendAllPlayerInfoBucket.length - 1] = player;
+        }
+    }
+
+    private void removeFromSendAllPlayerInfoBuckets(ServerPlayer player) {
+        ServerPlayer[] sendAllPlayerInfoBucket = this.sendAllPlayerInfoBuckets[player.sendAllPlayerInfoBucketIndex];
+        if (sendAllPlayerInfoBucket != null) {
+            if (sendAllPlayerInfoBucket.length == 1) {
+                if (sendAllPlayerInfoBucket[0] == player) {
+                    this.sendAllPlayerInfoBuckets[player.sendAllPlayerInfoBucketIndex] = null;
+                }
+                return;
+            }
+            for (int i = 0; i < sendAllPlayerInfoBucket.length; i++) {
+                if (sendAllPlayerInfoBucket[i] == player) {
+                    sendAllPlayerInfoBucket[i] = sendAllPlayerInfoBucket[sendAllPlayerInfoBucket.length - 1];
+                    this.sendAllPlayerInfoBuckets[player.sendAllPlayerInfoBucketIndex] = Arrays.copyOf(sendAllPlayerInfoBucket, sendAllPlayerInfoBucket.length - 1);
+                }
+            }
+        }
+    }
+
+    // Gale end - Purpur - spread out sending all player info
+
+    public void tick() {
+        // Gale start - Purpur - spread out sending all player info
+        ServerPlayer[] sendAllPlayerInfoBucket = this.sendAllPlayerInfoBuckets[this.sendAllPlayerInfoIn];
+        if (sendAllPlayerInfoBucket != null) {
+            for (ServerPlayer target : sendAllPlayerInfoBucket) {
+                // Gale end - Purpur - spread out sending all player info
                 target.connection.send(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), this.players.stream().filter(new Predicate<ServerPlayer>() {
                     @Override
                     public boolean test(ServerPlayer input) {
                         return target.getBukkitEntity().canSee(input.getBukkitEntity());
                     }
                 }).collect(Collectors.toList())));
+                // Gale start - Purpur - spread out sending all player info
             }
-            // CraftBukkit end
+        }
+        if (++this.sendAllPlayerInfoIn >= SEND_PLAYER_INFO_INTERVAL) {
+            // Gale end - Purpur - spread out sending all player info
             this.sendAllPlayerInfoIn = 0;
         }
 

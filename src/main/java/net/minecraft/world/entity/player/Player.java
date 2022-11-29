@@ -39,6 +39,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -194,12 +195,15 @@ public abstract class Player extends LivingEntity {
     }
     // CraftBukkit end
 
+    public final int sendAllPlayerInfoBucketIndex; // Gale - Purpur - spread out sending all player info
+
     public Player(Level world, BlockPos pos, float yaw, GameProfile gameProfile) {
         super(EntityType.PLAYER, world);
         this.lastItemInMainHand = ItemStack.EMPTY;
         this.cooldowns = this.createItemCooldowns();
         this.lastDeathLocation = Optional.empty();
         this.setUUID(gameProfile.getId());
+        this.sendAllPlayerInfoBucketIndex = Math.floorMod(this.uuid.hashCode(), PlayerList.SEND_PLAYER_INFO_INTERVAL); // Gale - Purpur - spread out sending all player info
         this.gameProfile = gameProfile;
         this.inventoryMenu = new InventoryMenu(this.inventory, !world.isClientSide, this);
         this.containerMenu = this.inventoryMenu;
