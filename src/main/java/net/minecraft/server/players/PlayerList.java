@@ -348,6 +348,8 @@ public abstract class PlayerList {
             return;
         }
 
+        player.didPlayerJoinEvent = true; // Gale - EMC - do not process chat/commands before player has joined
+
         final net.kyori.adventure.text.Component jm = playerJoinEvent.joinMessage();
 
         if (jm != null && !jm.equals(net.kyori.adventure.text.Component.empty())) { // Paper - Adventure

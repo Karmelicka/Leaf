@@ -275,6 +275,7 @@ public class ServerPlayer extends Player {
     public boolean joining = true;
     public boolean sentListPacket = false;
     public boolean supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
+    public boolean didPlayerJoinEvent = false; // Gale - EMC - do not process chat/commands before player has joined
     // CraftBukkit end
     public boolean isRealPlayer; // Paper
     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper

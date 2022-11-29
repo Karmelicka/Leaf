@@ -2274,6 +2274,10 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
             this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
             return Optional.empty();
+            // Gale start - EMC - do not process chat/commands before player has joined
+        } else if (!player.didPlayerJoinEvent) {
+            return Optional.empty();
+            // Gale end - EMC - do not process chat/commands before player has joined
         } else {
             this.player.resetLastActionTime();
             return optional;
