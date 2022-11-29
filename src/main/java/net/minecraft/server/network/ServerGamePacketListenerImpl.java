@@ -8,6 +8,8 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import java.net.SocketAddress;
@@ -3400,6 +3402,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
     }
 
     @Override
+
     public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {
         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
         // CraftBukkit start

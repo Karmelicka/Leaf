@@ -88,6 +88,11 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
 
         }
 
+        public Keepalive keepalive;
+        public class Keepalive extends ConfigurationPart {
+            public boolean sendMultiple = true; // Gale - Purpur - send multiple keep-alive packets
+        }
+
     }
 
     public LogToConsole logToConsole;
