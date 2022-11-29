@@ -499,6 +499,7 @@ public class Commands {
     private void runSync(ServerPlayer player, Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootcommandnode) {
         // Paper end - Perf: Async command map building
         new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper - Brigadier API
+        if (PlayerCommandSendEvent.getHandlerList().getRegisteredListeners().length > 0) { // Gale - Purpur - skip PlayerCommandSendEvent if there are no listeners
         PlayerCommandSendEvent event = new PlayerCommandSendEvent(player.getBukkitEntity(), new LinkedHashSet<>(bukkit));
         event.getPlayer().getServer().getPluginManager().callEvent(event);
 
@@ -509,6 +510,7 @@ public class Commands {
             }
         }
         // CraftBukkit end
+        } // Gale - Purpur - skip PlayerCommandSendEvent if there are no listeners
         player.connection.send(new ClientboundCommandsPacket(rootcommandnode));
     }
 
