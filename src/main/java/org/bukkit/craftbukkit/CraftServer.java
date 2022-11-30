@@ -3080,6 +3080,24 @@ public final class CraftServer implements Server {
         };
     }
 
+    // Gale start - specific interval TPS API
+
+    @Override
+    public double get1MinuteTPSAverage() {
+        return net.minecraft.server.MinecraftServer.getServer().tps1.getAverage();
+    }
+
+    @Override
+    public double get5MinuteTPSAverage() {
+        return net.minecraft.server.MinecraftServer.getServer().tps5.getAverage();
+    }
+
+    @Override
+    public double get15MinuteTPSAverage() {
+        return net.minecraft.server.MinecraftServer.getServer().tps15.getAverage();
+    }
+    // Gale end - specific interval TPS API
+
     // Paper start - adventure sounds
     @Override
     public void playSound(final net.kyori.adventure.sound.Sound sound) {
