@@ -1252,9 +1252,19 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 }
 
                 this.tryCheckInsideBlocks();
+
+                // Gale start - skip negligible planar movement multiplication
+                Vec3 oldDeltaMovement = this.getDeltaMovement();
+                if (oldDeltaMovement.x < -1e-6 || oldDeltaMovement.x > 1e-6 || oldDeltaMovement.z < -1e-6 || oldDeltaMovement.z > 1e-6) {
+                // Gale end - skip negligible planar movement multiplication
                 float f = this.getBlockSpeedFactor();
 
-                this.setDeltaMovement(this.getDeltaMovement().multiply((double) f, 1.0D, (double) f));
+                // Gale start - skip negligible planar movement multiplication
+                if (f < 1 - 1e-6 || f > 1 + 1e-6) {
+                this.setDeltaMovement(oldDeltaMovement.multiply((double) f, 1.0D, (double) f));
+                }
+                }
+                // Gale end - skip negligible planar movement multiplication
                 // Paper start - remove expensive streams from here
                 boolean noneMatch = true;
                 AABB fireSearchBox = this.getBoundingBox().deflate(1.0E-6D);
