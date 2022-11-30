@@ -891,7 +891,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
 
         this.checkBelowWorld();
         if (!this.level().isClientSide) {
+            // Gale start - Slice - hide flames on entities with fire resistance
+            if (this instanceof net.minecraft.world.entity.LivingEntity livingEntity) {
+                this.setSharedFlagOnFire(this.remainingFireTicks > 0 && (!this.level.galeConfig().gameplayMechanics.hideFlamesOnEntitiesWithFireResistance || !livingEntity.hasEffect(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE)));
+            } else {
+            // Gale end - Slice - hide flames on entities with fire resistance
             this.setSharedFlagOnFire(this.remainingFireTicks > 0);
+            } // Gale - Slice - hide flames on entities with fire resistance
         }
 
         this.firstTick = false;
