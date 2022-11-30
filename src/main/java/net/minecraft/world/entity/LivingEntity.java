@@ -583,11 +583,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
     }
 
     protected void tryAddFrost() {
-        if (!this.getBlockStateOnLegacy().isAir()) {
             int i = this.getTicksFrozen();
 
             if (i > 0) {
-                AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
+                AttributeInstance attributemodifiable = this.getBlockStateOnLegacy().isAir() ? null : this.getAttribute(Attributes.MOVEMENT_SPEED); // Gale - Lithium - check frozen ticks before landing block
 
                 if (attributemodifiable == null) {
                     return;
@@ -597,7 +596,6 @@ public abstract class LivingEntity extends Entity implements Attackable {
 
                 attributemodifiable.addTransientModifier(new AttributeModifier(LivingEntity.SPEED_MODIFIER_POWDER_SNOW_UUID, "Powder snow slow", (double) f, AttributeModifier.Operation.ADDITION));
             }
-        }
 
     }
 
