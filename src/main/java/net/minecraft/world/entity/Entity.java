@@ -317,6 +317,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     public float yRotO;
     public float xRotO;
     private AABB bb;
+    private boolean boundingBoxChanged = false; // Gale - VMP - skip entity move if movement is zero
     public boolean onGround;
     public boolean horizontalCollision;
     public boolean verticalCollision;
@@ -1088,6 +1089,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     // Paper end - detailed watchdog information
 
     public void move(MoverType movementType, Vec3 movement) {
+        // Gale start - VMP - skip entity move if movement is zero
+        if (!this.boundingBoxChanged && movement.equals(Vec3.ZERO)) {
+            return;
+        }
+        // Gale end - VMP - skip entity move if movement is zero
         final Vec3 originalMovement = movement; // Paper - Expose pre-collision velocity
         // Paper start - detailed watchdog information
         io.papermc.paper.util.TickThread.ensureTickThread("Cannot move an entity off-main");
@@ -4089,6 +4095,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     public final void setBoundingBox(AABB boundingBox) {
+        // Gale start - VMP - skip entity move if movement is zero
+        if (!this.bb.equals(boundingBox)) {
+            this.boundingBoxChanged = true;
+        }
+        // Gale end - VMP - skip entity move if movement is zero
         // CraftBukkit start - block invalid bounding boxes
         double minX = boundingBox.minX,
                 minY = boundingBox.minY,
