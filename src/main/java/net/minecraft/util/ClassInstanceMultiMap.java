@@ -57,14 +57,33 @@ public class ClassInstanceMultiMap<T> extends AbstractCollection<T> {
     }
 
     public <S> Collection<S> find(Class<S> type) {
-        if (!this.baseClass.isAssignableFrom(type)) {
-            throw new IllegalArgumentException("Don't know how to search for " + type);
-        } else {
-            List list = this.byClass.computeIfAbsent(type, (typeClass) -> { // Gale - dev import deobfuscation fixes
-                return this.allInstances.stream().filter(typeClass::isInstance).collect(Collectors.toList());
-            });
-            return Collections.unmodifiableCollection(list);
+        // Gale start - Lithium - avoid Class#isAssignableFrom call in ClassInstanceMultiMap
+        /*
+        Only perform the slow Class#isAssignableFrom(Class) if a list doesn't exist for the type, otherwise
+        we can assume it's already valid. The slow-path code is moved to a separate method to help the JVM inline this.
+         */
+        Collection<T> collection = this.byClass.get(type);
+
+        if (collection == null) {
+            collection = this.createAllOfType(type);
         }
+
+        return (Collection<S>) Collections.unmodifiableCollection(collection);
+    }
+
+    private <S> Collection<T> createAllOfType(Class<S> type) {
+        List<T> list = new java.util.ArrayList<>(1);
+
+        for (T allElement : this.allInstances) {
+            if (type.isInstance(allElement)) {
+                list.add(allElement);
+            }
+        }
+
+        this.byClass.put(type, list);
+
+        return list;
+        // Gale end - Lithium - avoid Class#isAssignableFrom call in ClassInstanceMultiMap
     }
 
     @Override
