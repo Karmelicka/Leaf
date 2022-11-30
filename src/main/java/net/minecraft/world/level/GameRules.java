@@ -19,6 +19,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.nbt.CompoundTag;
@@ -142,7 +144,7 @@ public class GameRules {
     }
 
     private GameRules(Map<GameRules.Key<?>, GameRules.Value<?>> rules) {
-        this.rules = rules;
+        this.rules = new Object2ObjectOpenHashMap<>(rules); // Gale - Lithium - replace game rules map with optimized collection
 
         // Paper start - Perf: Use array for gamerule storage
         int arraySize = rules.keySet().stream().mapToInt(key -> key.gameRuleIndex).max().orElse(-1) + 1;
