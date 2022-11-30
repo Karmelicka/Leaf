@@ -31,7 +31,7 @@ public class TicksPerSecondCommand extends Command
         }
 
         // Paper start - Further improve tick handling
-        double[] tps = org.bukkit.Bukkit.getTPS();
+        double[] tps = org.bukkit.Bukkit.getTPSIncluding5SecondAverage(); // Gale - Purpur - 5 second TPS average
         net.kyori.adventure.text.Component[] tpsAvg = new net.kyori.adventure.text.Component[tps.length];
 
         for ( int i = 0; i < tps.length; i++) {
@@ -39,7 +39,7 @@ public class TicksPerSecondCommand extends Command
         }
 
         net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
-        builder.append(net.kyori.adventure.text.Component.text("TPS from last 1m, 5m, 15m: ", net.kyori.adventure.text.format.NamedTextColor.GOLD));
+        builder.append(net.kyori.adventure.text.Component.text("TPS from last 5s, 1m, 5m, 15m: ", net.kyori.adventure.text.format.NamedTextColor.GOLD)); // Gale - Purpur - 5 second TPS average
         builder.append(net.kyori.adventure.text.Component.join(net.kyori.adventure.text.JoinConfiguration.commas(true), tpsAvg));
         sender.sendMessage(builder.asComponent());
         if (args.length > 0 && args[0].equals("mem") && sender.hasPermission("bukkit.command.tpsmemory")) {

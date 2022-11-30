@@ -1055,6 +1055,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
     private long lastTick = 0;
     private long catchupTime = 0;
+    public final RollingAverage tps5s = new RollingAverage(5); // Gale - Purpur - 5 second TPS average
     public final RollingAverage tps1 = new RollingAverage(60);
     public final RollingAverage tps5 = new RollingAverage(60 * 5);
     public final RollingAverage tps15 = new RollingAverage(60 * 15);
@@ -1167,6 +1168,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                 if (++MinecraftServer.currentTick % MinecraftServer.SAMPLE_INTERVAL == 0) {
                     final long diff = currentTime - tickSection;
                     final java.math.BigDecimal currentTps = TPS_BASE.divide(new java.math.BigDecimal(diff), 30, java.math.RoundingMode.HALF_UP);
+                    tps5s.add(currentTps, diff); // Gale - Purpur - 5 second TPS average
                     tps1.add(currentTps, diff);
                     tps5.add(currentTps, diff);
                     tps15.add(currentTps, diff);

@@ -3080,7 +3080,26 @@ public final class CraftServer implements Server {
         };
     }
 
+    // Gale start - Purpur - 5 second TPS average
+    @Override
+    public double[] getTPSIncluding5SecondAverage() {
+        return new double[] {
+            net.minecraft.server.MinecraftServer.getServer().tps5s.getAverage(),
+            net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
+            net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
+            net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
+        };
+    }
+    // Gale end - Purpur - 5 second TPS average
+
     // Gale start - specific interval TPS API
+
+    // Gale start - Purpur - 5 second TPS average
+    @Override
+    public double get5SecondTPSAverage() {
+        return net.minecraft.server.MinecraftServer.getServer().tps5s.getAverage();
+    }
+    // Gale end - Purpur - 5 second TPS average
 
     @Override
     public double get1MinuteTPSAverage() {
