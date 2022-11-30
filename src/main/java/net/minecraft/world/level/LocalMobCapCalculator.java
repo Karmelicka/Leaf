@@ -47,16 +47,14 @@ public class LocalMobCapCalculator {
     }
 
     static class MobCounts {
-        private final Object2IntMap<MobCategory> counts = new Object2IntOpenHashMap<>(MobCategory.values().length);
+        public final int[] counts = new int[MobCategory.values().length]; // Gale - VMP - store mob counts in an array
 
         public void add(MobCategory spawnGroup) {
-            this.counts.computeInt(spawnGroup, (group, density) -> {
-                return density == null ? 1 : density + 1;
-            });
+            this.counts[spawnGroup.ordinal()]++; // Gale - VMP - store mob counts in an array
         }
 
         public boolean canSpawn(MobCategory spawnGroup) {
-            return this.counts.getOrDefault(spawnGroup, 0) < spawnGroup.getMaxInstancesPerChunk();
+            return this.counts[spawnGroup.ordinal()] < spawnGroup.getMaxInstancesPerChunk(); // Gale - VMP - store mob counts in an array
         }
     }
 }
