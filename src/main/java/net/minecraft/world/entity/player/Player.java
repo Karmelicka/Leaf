@@ -112,6 +112,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -149,6 +150,7 @@ public abstract class Player extends LivingEntity {
     protected static final EntityDataAccessor<Byte> DATA_PLAYER_MAIN_HAND = SynchedEntityData.defineId(Player.class, EntityDataSerializers.BYTE);
     protected static final EntityDataAccessor<CompoundTag> DATA_SHOULDER_LEFT = SynchedEntityData.defineId(Player.class, EntityDataSerializers.COMPOUND_TAG);
     protected static final EntityDataAccessor<CompoundTag> DATA_SHOULDER_RIGHT = SynchedEntityData.defineId(Player.class, EntityDataSerializers.COMPOUND_TAG);
+    public static int increaseTimeStatisticsInterval; // Gale - Hydrinity - increase time statistics in intervals - store as static field for fast access
     private long timeEntitySatOnShoulder;
     private final Inventory inventory = new Inventory(this);
     protected PlayerEnderChestContainer enderChestInventory = new PlayerEnderChestContainer(this); // CraftBukkit - add "this" to constructor
@@ -284,19 +286,23 @@ public abstract class Player extends LivingEntity {
         this.moveCloak();
         if (!this.level().isClientSide) {
             this.foodData.tick(this);
-            this.awardStat(Stats.PLAY_TIME);
-            this.awardStat(Stats.TOTAL_WORLD_TIME);
+            // Gale start - Hydrinity - increase time statistics in intervals
+            if (increaseTimeStatisticsInterval == 1 || this.tickCount % increaseTimeStatisticsInterval == 0) {
+            this.awardStat(Stats.PLAY_TIME, increaseTimeStatisticsInterval);
+            this.awardStat(Stats.TOTAL_WORLD_TIME, increaseTimeStatisticsInterval);
+            // Gale end - Hydrinity - increase time statistics in intervals
             if (this.isAlive()) {
-                this.awardStat(Stats.TIME_SINCE_DEATH);
+                this.awardStat(Stats.TIME_SINCE_DEATH, increaseTimeStatisticsInterval); // Gale - Hydrinity - increase time statistics in intervals
             }
 
             if (this.isDiscrete()) {
-                this.awardStat(Stats.CROUCH_TIME);
+                this.awardStat(Stats.CROUCH_TIME, increaseTimeStatisticsInterval); // Gale - Hydrinity - increase time statistics in intervals
             }
 
             if (!this.isSleeping()) {
-                this.awardStat(Stats.TIME_SINCE_REST);
+                this.awardStat(Stats.TIME_SINCE_REST, increaseTimeStatisticsInterval); // Gale - Hydrinity - increase time statistics in intervals
             }
+            } // Gale - Hydrinity - increase time statistics in intervals
         }
 
         int i = 29999999;

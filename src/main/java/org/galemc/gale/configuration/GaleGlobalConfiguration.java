@@ -29,7 +29,17 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
     public SmallOptimizations smallOptimizations;
     public class SmallOptimizations extends ConfigurationPart {
 
-        public int dummyValue = 0;
+        public ReducedIntervals reducedIntervals;
+        public class ReducedIntervals extends ConfigurationPart {
+
+            public int increaseTimeStatistics = 20; // Gale - Hydrinity - increase time statistics in intervals
+
+            @PostProcess
+            public void postProcess() {
+                net.minecraft.world.entity.player.Player.increaseTimeStatisticsInterval = Math.max(1, increaseTimeStatistics); // Gale - Hydrinity - increase time statistics in intervals - store as static field for fast access
+            }
+
+        }
 
         // Gale start - Pufferfish - SIMD support
         public Simd simd;
