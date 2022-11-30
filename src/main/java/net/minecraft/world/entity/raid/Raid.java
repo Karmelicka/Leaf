@@ -106,6 +106,7 @@ public class Raid {
     private Raid.RaidStatus status;
     private int celebrationTicks;
     private Optional<BlockPos> waveSpawnPos;
+    private boolean isBarDirty; // Gale - Lithium - update boss bar within tick
 
     public Raid(int id, ServerLevel world, BlockPos pos) {
         this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
@@ -272,6 +273,12 @@ public class Raid {
     }
 
     public void tick() {
+        // Gale start - Lithium - update boss bar within tick
+        if (this.isBarDirty) {
+            this.updateBossbarInternal();
+            this.isBarDirty = false;
+        }
+        // Gale end - Lithium - update boss bar within tick
         if (!this.isStopped()) {
             if (this.status == Raid.RaidStatus.ONGOING) {
                 boolean flag = this.active;
@@ -642,6 +649,12 @@ public class Raid {
     }
 
     public void updateBossbar() {
+        // Gale start - Lithium - update boss bar within tick
+        this.isBarDirty = true;
+    }
+
+    private void updateBossbarInternal() {
+        // Gale end - Lithium - update boss bar within tick
         this.raidEvent.setProgress(Mth.clamp(this.getHealthOfLivingRaiders() / this.totalHealth, 0.0F, 1.0F));
     }
 
