@@ -2,6 +2,9 @@ package net.minecraft.world.entity.ai.goal;
 
 import java.util.EnumSet;
 import javax.annotation.Nullable;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.phys.Vec3;
@@ -49,7 +52,7 @@ public class RandomStrollGoal extends Goal {
             }
 
             Vec3 vec3 = this.getPosition();
-            if (vec3 == null) {
+            if (vec3 == null || (!this.mob.level().galeConfig().gameplayMechanics.entitiesCanRandomStrollIntoNonTickingChunks && !((ServerLevel) this.mob.level()).isPositionEntityTicking(BlockPos.containing(vec3)))) { // Gale - MultiPaper - prevent entities random strolling into non-ticking chunks
                 return false;
             } else {
                 this.wantedX = vec3.x;
