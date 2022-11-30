@@ -706,7 +706,7 @@ public class Raid {
         this.level.getRaids().setDirty();
     }
 
-    public static ItemStack getLeaderBannerInstance() {
+    private static ItemStack createLeaderBanner() { // Gale - Lithium - cache ominous banner item
         ItemStack itemstack = new ItemStack(Items.WHITE_BANNER);
         CompoundTag nbttagcompound = new CompoundTag();
         ListTag nbttaglist = (new BannerPattern.Builder()).addPattern(BannerPatterns.RHOMBUS_MIDDLE, DyeColor.CYAN).addPattern(BannerPatterns.STRIPE_BOTTOM, DyeColor.LIGHT_GRAY).addPattern(BannerPatterns.STRIPE_CENTER, DyeColor.GRAY).addPattern(BannerPatterns.BORDER, DyeColor.LIGHT_GRAY).addPattern(BannerPatterns.STRIPE_MIDDLE, DyeColor.BLACK).addPattern(BannerPatterns.HALF_HORIZONTAL, DyeColor.LIGHT_GRAY).addPattern(BannerPatterns.CIRCLE_MIDDLE, DyeColor.LIGHT_GRAY).addPattern(BannerPatterns.BORDER, DyeColor.BLACK).toListTag();
@@ -717,6 +717,14 @@ public class Raid {
         itemstack.setHoverName(Component.translatable("block.minecraft.ominous_banner").withStyle(ChatFormatting.GOLD));
         return itemstack;
     }
+
+    // Gale start - Lithium - cache ominous banner item
+    public static final ItemStack LEADER_BANNER = createLeaderBanner();
+
+    public static ItemStack getLeaderBannerInstance() {
+        return LEADER_BANNER.copy();
+    }
+    // Gale end - Lithium - cache ominous banner item
 
     @Nullable
     public Raider getLeader(int wave) {

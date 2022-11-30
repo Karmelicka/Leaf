@@ -15,7 +15,7 @@ public record EntityEquipmentPredicate(Optional<ItemPredicate> head, Optional<It
     public static final Codec<EntityEquipmentPredicate> CODEC = RecordCodecBuilder.create((instance) -> {
         return instance.group(ExtraCodecs.strictOptionalField(ItemPredicate.CODEC, "head").forGetter(EntityEquipmentPredicate::head), ExtraCodecs.strictOptionalField(ItemPredicate.CODEC, "chest").forGetter(EntityEquipmentPredicate::chest), ExtraCodecs.strictOptionalField(ItemPredicate.CODEC, "legs").forGetter(EntityEquipmentPredicate::legs), ExtraCodecs.strictOptionalField(ItemPredicate.CODEC, "feet").forGetter(EntityEquipmentPredicate::feet), ExtraCodecs.strictOptionalField(ItemPredicate.CODEC, "mainhand").forGetter(EntityEquipmentPredicate::mainhand), ExtraCodecs.strictOptionalField(ItemPredicate.CODEC, "offhand").forGetter(EntityEquipmentPredicate::offhand)).apply(instance, EntityEquipmentPredicate::new);
     });
-    public static final EntityEquipmentPredicate CAPTAIN = EntityEquipmentPredicate.Builder.equipment().head(ItemPredicate.Builder.item().of(Items.WHITE_BANNER).hasNbt(Raid.getLeaderBannerInstance().getTag())).build();
+    public static final EntityEquipmentPredicate CAPTAIN = EntityEquipmentPredicate.Builder.equipment().head(ItemPredicate.Builder.item().of(Items.WHITE_BANNER).hasNbt(Raid.LEADER_BANNER.getTag())).build(); // Gale - Lithium - cache ominous banner item
 
     public boolean matches(@Nullable Entity entity) {
         if (entity instanceof LivingEntity livingEntity) {

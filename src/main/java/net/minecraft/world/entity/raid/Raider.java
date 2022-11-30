@@ -50,7 +50,7 @@ public abstract class Raider extends PatrollingMonster {
 
     protected static final EntityDataAccessor<Boolean> IS_CELEBRATING = SynchedEntityData.defineId(Raider.class, EntityDataSerializers.BOOLEAN);
     static final Predicate<ItemEntity> ALLOWED_ITEMS = (entityitem) -> {
-        return !entityitem.hasPickUpDelay() && entityitem.isAlive() && ItemStack.matches(entityitem.getItem(), Raid.getLeaderBannerInstance());
+        return !entityitem.hasPickUpDelay() && entityitem.isAlive() && ItemStack.matches(entityitem.getItem(), Raid.LEADER_BANNER); // Gale - Lithium - cache ominous banner item
     };
     @Nullable
     protected Raid raid;
@@ -152,7 +152,7 @@ public abstract class Raider extends PatrollingMonster {
                     }
                 }
 
-                if (!itemstack.isEmpty() && ItemStack.matches(itemstack, Raid.getLeaderBannerInstance()) && entityhuman != null) {
+                if (!itemstack.isEmpty() && ItemStack.matches(itemstack, Raid.LEADER_BANNER) && entityhuman != null) { // Gale - Lithium - cache ominous banner item
                     MobEffectInstance mobeffect = entityhuman.getEffect(MobEffects.BAD_OMEN);
                     byte b0 = 1;
                     int i;
@@ -247,7 +247,7 @@ public abstract class Raider extends PatrollingMonster {
         ItemStack itemstack = item.getItem();
         boolean flag = this.hasActiveRaid() && this.getCurrentRaid().getLeader(this.getWave()) != null;
 
-        if (this.hasActiveRaid() && !flag && ItemStack.matches(itemstack, Raid.getLeaderBannerInstance())) {
+        if (this.hasActiveRaid() && !flag && ItemStack.matches(itemstack, Raid.LEADER_BANNER)) { // Gale - Lithium - cache ominous banner item
             // Paper start - EntityPickupItemEvent fixes
             if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, item, 0, false).isCancelled()) {
                 return;
@@ -325,7 +325,7 @@ public abstract class Raider extends PatrollingMonster {
             if (!this.mob.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) || !this.mob.canPickUpLoot()) return false; // Paper - respect game and entity rules for picking up items
             Raid raid = this.mob.getCurrentRaid();
 
-            if (this.mob.hasActiveRaid() && !this.mob.getCurrentRaid().isOver() && this.mob.canBeLeader() && !ItemStack.matches(this.mob.getItemBySlot(EquipmentSlot.HEAD), Raid.getLeaderBannerInstance())) {
+            if (this.mob.hasActiveRaid() && !this.mob.getCurrentRaid().isOver() && this.mob.canBeLeader() && !ItemStack.matches(this.mob.getItemBySlot(EquipmentSlot.HEAD), Raid.LEADER_BANNER)) { // Gale - Lithium - cache ominous banner item
                 Raider entityraider = raid.getLeader(this.mob.getWave());
 
                 if (entityraider == null || !entityraider.isAlive()) {
