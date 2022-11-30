@@ -1,6 +1,7 @@
 package net.minecraft.util;
 
 import java.util.function.IntConsumer;
+import net.minecraft.world.level.chunk.Palette;
 
 public interface BitStorage {
     int getAndSet(int index, int value);
@@ -31,4 +32,6 @@ public interface BitStorage {
 
     }
     // Paper end
+
+    <T> void compact(Palette<T> srcPalette, Palette<T> dstPalette, short[] out); // Gale - Lithium - faster chunk serialization
 }

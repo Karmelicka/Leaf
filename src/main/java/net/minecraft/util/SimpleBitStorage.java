@@ -2,6 +2,7 @@ package net.minecraft.util;
 
 import java.util.function.IntConsumer;
 import javax.annotation.Nullable;
+import net.minecraft.world.level.chunk.Palette;
 import org.apache.commons.lang3.Validate;
 
 public class SimpleBitStorage implements BitStorage {
@@ -201,4 +202,45 @@ public class SimpleBitStorage implements BitStorage {
             super(message);
         }
     }
+
+    // Gale start - Lithium - faster chunk serialization
+    @Override
+    public <T> void compact(Palette<T> srcPalette, Palette<T> dstPalette, short[] out) {
+        if (this.size >= Short.MAX_VALUE) {
+            throw new IllegalStateException("Array too large");
+        }
+
+        if (this.size != out.length) {
+            throw new IllegalStateException("Array size mismatch");
+        }
+
+        short[] mappings = new short[(int) (this.mask + 1)];
+
+        int idx = 0;
+
+        for (long word : this.data) {
+            long bits = word;
+
+            for (int elementIdx = 0; elementIdx < this.valuesPerLong; ++elementIdx) {
+                int value = (int) (bits & this.mask);
+                int remappedId = mappings[value];
+
+                if (remappedId == 0) {
+                    remappedId = dstPalette.idFor(srcPalette.valueFor(value)) + 1;
+                    mappings[value] = (short) remappedId;
+                }
+
+                out[idx] = (short) (remappedId - 1);
+                bits >>= this.bits;
+
+                ++idx;
+
+                if (idx >= this.size) {
+                    return;
+                }
+            }
+        }
+    }
+    // Gale end - Lithium - faster chunk serialization
+
 }

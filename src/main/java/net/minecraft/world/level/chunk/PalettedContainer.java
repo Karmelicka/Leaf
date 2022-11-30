@@ -23,8 +23,25 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.SimpleBitStorage;
 import net.minecraft.util.ThreadingDetector;
 import net.minecraft.util.ZeroBitStorage;
+import me.jellysquid.mods.lithium.common.world.chunk.LithiumHashPalette;
 
 public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainerRO<T> {
+
+    // Gale start - Lithium - faster chunk serialization
+    private static final ThreadLocal<short[]> CACHED_ARRAY_4096 = ThreadLocal.withInitial(() -> new short[4096]);
+    private static final ThreadLocal<short[]> CACHED_ARRAY_64 = ThreadLocal.withInitial(() -> new short[64]);
+    private Optional<LongStream> asOptional(long[] data) {
+        return Optional.of(Arrays.stream(data));
+    }
+    private short[] getOrCreate(int size) {
+        return switch (size) {
+            case 64 -> CACHED_ARRAY_64.get();
+            case 4096 -> CACHED_ARRAY_4096.get();
+            default -> new short[size];
+        };
+    }
+    // Gale end - Lithium - faster chunk serialization
+
     private static final int MIN_PALETTE_BITS = 0;
     private final PaletteResize<T> dummyPaletteResize = (newSize, added) -> {
         return 0;
@@ -302,30 +319,54 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
     public synchronized PalettedContainerRO.PackedData<T> pack(IdMap<T> idList, PalettedContainer.Strategy paletteProvider) { // Paper - synchronize
         this.acquire();
 
-        PalettedContainerRO.PackedData var12;
+        // Gale start - Lithium - faster chunk serialization
+        Optional<LongStream> data = Optional.empty();
+        List<T> elements = null;
         try {
-            HashMapPalette<T> hashMapPalette = new HashMapPalette<>(idList, this.data.storage.getBits(), this.dummyPaletteResize);
-            int i = paletteProvider.size();
-            int[] is = new int[i];
-            this.data.storage.unpack(is);
-            swapPalette(is, (id) -> {
-                return hashMapPalette.idFor(this.data.palette.valueFor(id));
-            });
-            int j = paletteProvider.calculateBitsForSerialization(idList, hashMapPalette.getSize());
-            Optional<LongStream> optional;
-            if (j != 0) {
-                SimpleBitStorage simpleBitStorage = new SimpleBitStorage(j, i, is);
-                optional = Optional.of(Arrays.stream(simpleBitStorage.getRaw()));
-            } else {
-                optional = Optional.empty();
+            // The palette that will be serialized
+            LithiumHashPalette<T> hashPalette = null;
+
+            final Palette<T> palette = this.data.palette();
+            final BitStorage storage = this.data.storage();
+            if (storage instanceof ZeroBitStorage || palette.getSize() == 1) {
+                // If the palette only contains one entry, don't attempt to repack it.
+                elements = List.of(palette.valueFor(0));
+            } else if (palette instanceof LithiumHashPalette<T> lithiumHashPalette) {
+                hashPalette = lithiumHashPalette;
             }
 
-            var12 = new PalettedContainerRO.PackedData<>(hashMapPalette.getEntries(), optional);
+            if (elements == null) {
+                LithiumHashPalette<T> compactedPalette = new LithiumHashPalette<>(idList, storage.getBits(), this.dummyPaletteResize);
+                short[] array = this.getOrCreate(paletteProvider.size());
+
+                storage.compact(this.data.palette(), compactedPalette, array);
+
+                // If the palette didn't change during compaction, do a simple copy of the data array
+                if (hashPalette != null && hashPalette.getSize() == compactedPalette.getSize() && storage.getBits() == paletteProvider.calculateBitsForSerialization(idList, hashPalette.getSize())) { // paletteSize can de-sync from palette - see https://github.com/CaffeineMC/lithium-fabric/issues/279
+                    data = this.asOptional(storage.getRaw().clone());
+                    elements = hashPalette.getElements();
+                } else {
+                    int bits = paletteProvider.calculateBitsForSerialization(idList, compactedPalette.getSize());
+                    if (bits != 0) {
+                        // Re-pack the integer array as the palette has changed size
+                        SimpleBitStorage copy = new SimpleBitStorage(bits, array.length);
+                        for (int i = 0; i < array.length; ++i) {
+                            copy.set(i, array[i]);
+                        }
+
+                        // We don't need to clone the data array as we are the sole owner of it
+                        data = this.asOptional(copy.getRaw());
+                    }
+
+                    elements = compactedPalette.getElements();
+                }
+            }
         } finally {
             this.release();
         }
 
-        return var12;
+        return new PalettedContainerRO.PackedData<>(elements, data);
+        // Gale end - Lithium - faster chunk serialization
     }
 
     private static <T> void swapPalette(int[] is, IntUnaryOperator applier) {
@@ -365,17 +406,37 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
 
     @Override
     public void count(PalettedContainer.CountConsumer<T> counter) {
-        if (this.data.palette.getSize() == 1) {
-            counter.accept(this.data.palette.valueFor(0), this.data.storage.getSize());
-        } else {
-            Int2IntOpenHashMap int2IntOpenHashMap = new Int2IntOpenHashMap();
-            this.data.storage.getAll((key) -> {
-                int2IntOpenHashMap.addTo(key, 1);
-            });
-            int2IntOpenHashMap.int2IntEntrySet().forEach((entry) -> {
-                counter.accept(this.data.palette.valueFor(entry.getIntKey()), entry.getIntValue());
-            });
+        // Gale start - Lithium - faster chunk serialization
+        int len = this.data.palette().getSize();
+
+        // Do not allocate huge arrays if we're using a large palette
+        if (len > 4096) {
+            // VanillaCopy
+            if (this.data.palette.getSize() == 1) {
+                counter.accept(this.data.palette.valueFor(0), this.data.storage.getSize());
+            } else {
+                Int2IntOpenHashMap int2IntOpenHashMap = new Int2IntOpenHashMap();
+                this.data.storage.getAll((key) -> {
+                    int2IntOpenHashMap.addTo(key, 1);
+                });
+                int2IntOpenHashMap.int2IntEntrySet().forEach((entry) -> {
+                    counter.accept(this.data.palette.valueFor(entry.getIntKey()), entry.getIntValue());
+                });
+            }
         }
+
+        short[] counts = new short[len];
+
+        this.data.storage().getAll(i -> counts[i]++);
+
+        for (int i = 0; i < counts.length; i++) {
+            T obj = this.data.palette().valueFor(i);
+
+            if (obj != null) {
+                counter.accept(obj, counts[i]);
+            }
+        }
+        // Gale end - Lithium - faster chunk serialization
     }
 
     static record Configuration<T>(Palette.Factory factory, int bits) {

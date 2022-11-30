@@ -2,6 +2,7 @@ package net.minecraft.util;
 
 import java.util.Arrays;
 import java.util.function.IntConsumer;
+import net.minecraft.world.level.chunk.Palette;
 
 import me.titaniumtown.ArrayConstants;
 
@@ -73,4 +74,6 @@ public class ZeroBitStorage implements BitStorage {
     public BitStorage copy() {
         return this;
     }
+
+    @Override public <T> void compact(Palette<T> srcPalette, Palette<T> dstPalette, short[] out) {}  // Gale - Lithium - faster chunk serialization
 }
