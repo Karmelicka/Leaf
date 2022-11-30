@@ -26,6 +26,10 @@ public class PerlinNoise {
     private final double lowestFreqValueFactor;
     private final double lowestFreqInputFactor;
     private final double maxValue;
+    // Gale start - C2ME - optimize noise generation
+    private final int octaveSamplersCount;
+    private final double [] amplitudesArray;
+    // Gale end - C2ME - optimize noise generation
 
     /** @deprecated */
     @Deprecated
@@ -131,6 +135,10 @@ public class PerlinNoise {
         this.lowestFreqInputFactor = Math.pow(2.0D, (double)(-j));
         this.lowestFreqValueFactor = Math.pow(2.0D, (double)(i - 1)) / (Math.pow(2.0D, (double)i) - 1.0D);
         this.maxValue = this.edgeValue(2.0D);
+        // Gale start - C2ME - optimize noise generation
+        this.octaveSamplersCount = this.noiseLevels.length;
+        this.amplitudesArray = this.amplitudes.toDoubleArray();
+        // Gale end - C2ME - optimize noise generation
     }
 
     protected double maxValue() {
@@ -142,7 +150,27 @@ public class PerlinNoise {
     }
 
     public double getValue(double x, double y, double z) {
-        return this.getValue(x, y, z, 0.0D, 0.0D, false);
+        // Gale start - C2ME - optimize noise generation - optimize for common cases
+        double d = 0.0;
+        double e = this.lowestFreqInputFactor;
+        double f = this.lowestFreqValueFactor;
+
+        for(int i = 0; i < this.octaveSamplersCount; ++i) {
+            ImprovedNoise perlinNoiseSampler = this.noiseLevels[i];
+            if (perlinNoiseSampler != null) {
+                @SuppressWarnings("deprecation")
+                double g = perlinNoiseSampler.noise(
+                        wrap(x * e), wrap(y * e), wrap(z * e), 0.0, 0.0
+                );
+                d += this.amplitudesArray[i] * g * f;
+            }
+
+            e *= 2.0;
+            f /= 2.0;
+        }
+
+        return d;
+        // Gale end - C2ME - optimize noise generation - optimize for common cases
     }
 
     /** @deprecated */
