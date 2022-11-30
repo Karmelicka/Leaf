@@ -11,6 +11,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import org.slf4j.Logger;
 
 public class GoalSelector {
@@ -27,7 +29,7 @@ public class GoalSelector {
         }
     };
     private final Map<Goal.Flag, WrappedGoal> lockedFlags = new EnumMap<>(Goal.Flag.class);
-    private final Set<WrappedGoal> availableGoals = Sets.newLinkedHashSet();
+    private final Set<WrappedGoal> availableGoals = new ObjectLinkedOpenHashSet<>(); // Gale - Lithium - replace AI goal set with optimized collection
     private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
     private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
     private int tickCount;
