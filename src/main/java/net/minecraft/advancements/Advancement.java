@@ -40,7 +40,7 @@ public record Advancement(Optional<ResourceLocation> parent, Optional<DisplayInf
     }), Advancement::validate);
 
     public Advancement(Optional<ResourceLocation> parent, Optional<DisplayInfo> display, AdvancementRewards rewards, Map<String, Criterion<?>> criteria, AdvancementRequirements requirements, boolean sendsTelemetryEvent) {
-        this(parent, display, rewards, Map.copyOf(criteria), requirements, sendsTelemetryEvent, display.map(Advancement::decorateName));
+        this(parent, display, rewards, criteria, requirements, sendsTelemetryEvent, display.map(Advancement::decorateName)); // Gale - Mirai - skip cloning advancement criteria
     }
 
     private static DataResult<Advancement> validate(Advancement advancement) {
