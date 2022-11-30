@@ -615,11 +615,18 @@ public class Block extends BlockBehaviour implements ItemLike {
         private final BlockState first;
         private final BlockState second;
         private final Direction direction;
+        private final int hash; // Gale - Lithium - cache BlockStatePairKey hash
 
         public BlockStatePairKey(BlockState self, BlockState other, Direction facing) {
             this.first = self;
             this.second = other;
             this.direction = facing;
+            // Gale start - Lithium - cache BlockStatePairKey hash
+            int hash = this.first.hashCode();
+            hash = 31 * hash + this.second.hashCode();
+            hash = 31 * hash + this.direction.hashCode();
+            this.hash = hash;
+            // Gale end - Lithium - cache BlockStatePairKey hash
         }
 
         public boolean equals(Object object) {
@@ -635,11 +642,7 @@ public class Block extends BlockBehaviour implements ItemLike {
         }
 
         public int hashCode() {
-            int i = this.first.hashCode();
-
-            i = 31 * i + this.second.hashCode();
-            i = 31 * i + this.direction.hashCode();
-            return i;
+            return this.hash; // Gale - Lithium - cache BlockStatePairKey hash
         }
     }
 }
