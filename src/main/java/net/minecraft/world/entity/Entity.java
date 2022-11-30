@@ -308,7 +308,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     public double xo;
     public double yo;
     public double zo;
-    private Vec3 position;
+    public Vec3 position; // Gale - JettPack - optimize sun burn tick - private -> public
     public BlockPos blockPosition; // Gale - Pufferfish - optimize entity coordinate key - private -> public
     private ChunkPos chunkPosition;
     private Vec3 deltaMovement;
@@ -2018,8 +2018,16 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     /** @deprecated */
     @Deprecated
     public float getLightLevelDependentMagicValue() {
-        return this.level().hasChunkAt(this.getBlockX(), this.getBlockZ()) ? this.level().getLightLevelDependentMagicValue(BlockPos.containing(this.getX(), this.getEyeY(), this.getZ())) : 0.0F;
+        return this.getLightLevelDependentMagicValue(BlockPos.containing(this.getX(), this.getEyeY(), this.getZ())); // Gale - JettPack - optimize sun burn tick - allow passing BlockPos to getLightLevelDependentMagicValue
     }
+
+    // Gale start - JettPack - optimize sun burn tick - allow passing BlockPos to getLightLevelDependentMagicValue
+    /** @deprecated */
+    @Deprecated
+    public float getLightLevelDependentMagicValue(BlockPos pos) {
+        return this.level().hasChunkAt(this.getBlockX(), this.getBlockZ()) ? this.level.getLightLevelDependentMagicValue(pos) : 0.0F;
+    }
+    // Gale end - JettPack - optimize sun burn tick - allow passing BlockPos to getLightLevelDependentMagicValue
 
     public void absMoveTo(double x, double y, double z, float yaw, float pitch) {
         this.absMoveTo(x, y, z);
