@@ -291,7 +291,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
         String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
         String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
         // Paper end - Add Velocity IP Forwarding Support
-        if (!this.usesAuthentication()) {
+        if (!"false".equalsIgnoreCase(System.getProperty("gale.log.warning.offline.mode")) && !this.usesAuthentication()) { // Gale - KeYi - do not log offline mode warning
             DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
             DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
             // Spigot start
