@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
+
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -84,6 +85,10 @@ public class WorldGenRegion implements WorldGenLevel {
     private Supplier<String> currentlyGenerating;
     private final AtomicLong subTickCount = new AtomicLong();
     private static final ResourceLocation WORLDGEN_REGION_RANDOM = new ResourceLocation("worldgen_region_random");
+    // Gale start - Lithium - optimize world generation chunk and block access
+    private ChunkAccess[] chunksArr;
+    private int minChunkX, minChunkZ;
+    // Gale end - Lithium - optimize world generation chunk and block access
 
     public WorldGenRegion(ServerLevel world, List<ChunkAccess> chunks, ChunkStatus status, int placementRadius) {
         this.generatingStatus = status;
@@ -106,6 +111,11 @@ public class WorldGenRegion implements WorldGenLevel {
             this.lastPos = ((ChunkAccess) chunks.get(chunks.size() - 1)).getPos();
             this.structureManager = world.structureManager().forWorldGenRegion(this);
         }
+        // Gale start - Lithium - optimize world generation chunk and block access
+        this.minChunkX = this.firstPos.x;
+        this.minChunkZ = this.firstPos.z;
+        this.chunksArr = chunks.toArray(new ChunkAccess[0]);
+        // Gale end - Lithium - optimize world generation chunk and block access
     }
 
     // Paper start - starlight
@@ -144,8 +154,28 @@ public class WorldGenRegion implements WorldGenLevel {
 
     @Override
     public ChunkAccess getChunk(int chunkX, int chunkZ) {
-        return this.getChunk(chunkX, chunkZ, ChunkStatus.EMPTY);
+        // Gale start - Lithium - optimize world generation chunk and block access - use the chunk array for faster access
+        int x = chunkX - this.minChunkX;
+        int z = chunkZ - this.minChunkZ;
+        int w = this.size;
+
+        if (x >= 0 && z >= 0 && x < w && z < w) {
+            return this.chunksArr[x + z * w];
+        } else {
+            throw new NullPointerException("No chunk exists at " + new ChunkPos(chunkX, chunkZ));
+        }
+        // Gale end - Lithium - optimize world generation chunk and block access - use the chunk array for faster access
     }
+
+    // Gale start - Lithium - optimize world generation chunk and block access
+    /**
+     * Use our chunk fetch function
+     */
+    public ChunkAccess getChunk(BlockPos pos) {
+        // Skip checking chunk.getStatus().isAtLeast(ChunkStatus.EMPTY) here, because it is always true
+        return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
+    }
+    // Gale end - Lithium - optimize world generation chunk and block access
 
     @Nullable
     @Override
@@ -204,7 +234,17 @@ public class WorldGenRegion implements WorldGenLevel {
 
     @Override
     public BlockState getBlockState(BlockPos pos) {
-        return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
+        // Gale start - Lithium - optimize world generation chunk and block access - avoid pointer de-referencing, make method easier to inline
+        int x = SectionPos.blockToSectionCoord(pos.getX()) - this.minChunkX;
+        int z = SectionPos.blockToSectionCoord(pos.getZ()) - this.minChunkZ;
+        int w = this.size;
+
+        if (x >= 0 && z >= 0 && x < w && z < w) {
+            return this.chunksArr[x + z * w].getBlockState(pos);
+        } else {
+            throw new NullPointerException("No chunk exists at " + new ChunkPos(pos));
+        }
+        // Gale end - Lithium - optimize world generation chunk and block access - avoid pointer de-referencing, make method easier to inline
     }
 
     @Override
