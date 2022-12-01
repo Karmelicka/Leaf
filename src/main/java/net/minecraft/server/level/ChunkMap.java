@@ -14,6 +14,7 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
@@ -250,7 +251,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         // Paper - rewrite chunk system
         this.tickingGenerated = new AtomicInteger();
         this.playerMap = new PlayerMap();
-        this.entityMap = new Int2ObjectOpenHashMap();
+        this.entityMap = new Int2ObjectLinkedOpenHashMap(); // Gale - VMP - use linked map for entity trackers - provides faster iteration
         this.chunkTypeCache = new Long2ByteOpenHashMap();
         this.chunkSaveCooldowns = new Long2LongOpenHashMap();
         this.unloadQueue = Queues.newConcurrentLinkedQueue();
