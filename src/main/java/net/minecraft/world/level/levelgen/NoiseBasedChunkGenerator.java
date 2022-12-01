@@ -62,12 +62,17 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
     private static final BlockState AIR = Blocks.AIR.defaultBlockState();
     public final Holder<NoiseGeneratorSettings> settings;
     private final Supplier<Aquifer.FluidPicker> globalFluidPicker;
+    private int cachedSeaLevel; // Gale - Lithium - cache world generator sea level
 
     public NoiseBasedChunkGenerator(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings) {
         super(biomeSource);
         this.settings = settings;
         this.globalFluidPicker = Suppliers.memoize(() -> {
-            return NoiseBasedChunkGenerator.createFluidPicker((NoiseGeneratorSettings) settings.value());
+            // Gale start - Lithium - cache world generator sea level
+            var fluidPicker = NoiseBasedChunkGenerator.createFluidPicker((NoiseGeneratorSettings) settings.value());
+            this.cachedSeaLevel = settings.value().seaLevel();
+            return fluidPicker;
+            // Gale end - Lithium - cache world generator sea level
         });
     }
 
@@ -394,7 +399,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getSeaLevel() {
-        return ((NoiseGeneratorSettings) this.settings.value()).seaLevel();
+        return this.cachedSeaLevel; // Gale - Lithium - cache world generator sea level
     }
 
     @Override
