@@ -179,7 +179,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
         }
 
         // Paper start - detect running as root
-        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
+        if (!"false".equalsIgnoreCase(System.getProperty("gale.log.warning.root")) && io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) { // Gale - KeYi - do not log run as root warning
             DedicatedServer.LOGGER.warn("****************************");
             DedicatedServer.LOGGER.warn("YOU ARE RUNNING THIS SERVER AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
             DedicatedServer.LOGGER.warn("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
