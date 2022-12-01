@@ -97,7 +97,7 @@ public class GlobalConfiguration extends ConfigurationPart {
     public class Timings extends ConfigurationPart {
         public boolean enabled = true;
         public boolean verbose = true;
-        public String url = "https://timings.aikar.co/";
+        public String url = "https://timin.gs/"; // Gale - use timin.gs by default
         public boolean serverNamePrivacy = false;
         public List<String> hiddenConfigEntries = List.of(
             "database",
