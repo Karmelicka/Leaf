@@ -50,7 +50,7 @@ public class TrialSpawnerData {
     });
     protected final Set<UUID> detectedPlayers = new HashSet<>();
     protected final Set<UUID> currentMobs = new HashSet<>();
-    protected long cooldownEndsAt;
+    public long cooldownEndsAt; // Leaves - protected -> public
     protected long nextMobSpawnsAt;
     protected int totalMobsSpawned;
     protected Optional<SpawnData> nextSpawnData;

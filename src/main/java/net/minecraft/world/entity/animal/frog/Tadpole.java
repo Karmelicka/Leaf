@@ -291,7 +291,7 @@ public class Tadpole extends AbstractFish {
 
     }
 
-    private int getTicksLeftUntilAdult() {
+    public int getTicksLeftUntilAdult() { // Leaves - private -> public
         return Math.max(0, Tadpole.ticksToBeFrog - this.age);
     }
 
