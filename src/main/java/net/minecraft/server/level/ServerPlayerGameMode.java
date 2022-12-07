@@ -561,6 +561,7 @@ public class ServerPlayerGameMode {
             }
             // Paper end - extend Player Interact cancellation
             player.getBukkitEntity().updateInventory(); // SPIGOT-2867
+            this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
             enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
             MenuProvider itileinventory = iblockdata.getMenuProvider(world, blockposition);
@@ -604,6 +605,11 @@ public class ServerPlayerGameMode {
 
                 return enuminteractionresult1;
             }
+            // Paper start - Properly cancel usable items; Cancel only if cancelled + if the interact result is different from default response
+            else if (this.interactResult && this.interactResult != cancelledItem) {
+                this.player.resyncUsingItem(this.player);
+            }
+            // Paper end - Properly cancel usable items
         }
         return enuminteractionresult;
         // CraftBukkit end

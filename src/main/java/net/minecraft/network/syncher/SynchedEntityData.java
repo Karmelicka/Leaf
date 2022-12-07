@@ -275,14 +275,63 @@ public class SynchedEntityData {
     // CraftBukkit start
     public void refresh(ServerPlayer to) {
         if (!this.isEmpty()) {
-            List<SynchedEntityData.DataValue<?>> list = this.getNonDefaultValues();
+            List<SynchedEntityData.DataValue<?>> list = this.packAll(); // Paper - Update EVERYTHING not just not default
 
             if (list != null) {
+                if (to.getBukkitEntity().canSee(this.entity.getBukkitEntity())) { // Paper
                 to.connection.send(new ClientboundSetEntityDataPacket(this.entity.getId(), list));
+                } // Paper
             }
         }
     }
     // CraftBukkit end
+    // Paper start
+    // We need to pack all as we cannot rely on "non default values" or "dirty" ones.
+    // Because these values can possibly be desynced on the client.
+    @Nullable
+    private List<SynchedEntityData.DataValue<?>> packAll() {
+        if (this.isEmpty()) {
+            return null;
+        }
+
+        List<SynchedEntityData.DataValue<?>> list = new ArrayList<>();
+        for (DataItem<?> dataItem : this.itemsById.values()) {
+            list.add(dataItem.value());
+        }
+
+        return list;
+    }
+
+    // This method should only be used if the data of an entity could have became desynced
+    // due to interactions on the client.
+    public void resendPossiblyDesyncedEntity(ServerPlayer player) {
+        if (this.entity.tracker == null) {
+            return;
+        }
+
+        if (player.getBukkitEntity().canSee(entity.getBukkitEntity())) {
+            net.minecraft.server.level.ServerEntity serverEntity = this.entity.tracker.serverEntity;
+
+            List<net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener>> list = new ArrayList<>();
+            serverEntity.sendPairingData(player, list::add);
+            player.connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket(list));
+        }
+    }
+
+    // This method allows you to specifically resend certain data accessor keys to the client
+    public void resendPossiblyDesyncedDataValues(List<EntityDataAccessor<?>> keys, ServerPlayer to) {
+        if (!to.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {
+            return;
+        }
+        List<SynchedEntityData.DataValue<?>> values = new ArrayList<>(keys.size());
+        for (EntityDataAccessor<?> key : keys) {
+            SynchedEntityData.DataItem<?> synchedValue = this.getItem(key);
+            values.add(synchedValue.value());
+        }
+
+        to.connection.send(new ClientboundSetEntityDataPacket(this.entity.getId(), values));
+    }
+    // Paper end
 
     public static class DataItem<T> {
 

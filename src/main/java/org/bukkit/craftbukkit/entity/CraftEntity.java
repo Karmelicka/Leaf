@@ -1000,7 +1000,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return;
         }
 
-        entityTracker.broadcast(this.getHandle().getAddEntityPacket());
+        // Paper start, resend possibly desynced entity instead of add entity packet
+        for (ServerPlayerConnection playerConnection : entityTracker.seenBy) {
+            this.getHandle().getEntityData().resendPossiblyDesyncedEntity(playerConnection.getPlayer());
+        }
+        // Paper end
     }
 
     private static PermissibleBase getPermissibleBase() {
