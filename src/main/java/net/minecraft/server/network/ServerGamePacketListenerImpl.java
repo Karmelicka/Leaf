@@ -2060,7 +2060,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
     private void performChatCommand(ServerboundChatCommandPacket packet, LastSeenMessages lastSeenMessages) {
         // CraftBukkit start
         String command = "/" + packet.command();
+        if (org.spigotmc.SpigotConfig.logCommands) { // Paper - Add missing SpigotConfig logCommands check
         ServerGamePacketListenerImpl.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + command);
+        } // Paper - Add missing SpigotConfig logCommands check
 
         PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(this.getCraftPlayer(), command, new LazyPlayerSet(this.server));
         this.cserver.getPluginManager().callEvent(event);
