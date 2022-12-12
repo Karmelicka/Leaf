@@ -241,10 +241,14 @@ public interface DispenseItemBehavior {
                         idispensebehavior.dispense(pointer, eventStack);
                         return stack;
                     }
+                    // Paper start - track changed items in the dispense event
+                    itemstack1 = CraftItemStack.unwrap(event.getItem()); // unwrap is safe because the stack won't be modified
+                    entitytypes = ((SpawnEggItem) itemstack1.getItem()).getType(itemstack1.getTag());
+                    // Paper end - track changed item from dispense event
                 }
 
                 try {
-                    entitytypes.spawn(pointer.level(), stack, (Player) null, pointer.pos().relative(enumdirection), MobSpawnType.DISPENSER, enumdirection != Direction.UP, false);
+                    entitytypes.spawn(pointer.level(), itemstack1, (Player) null, pointer.pos().relative(enumdirection), MobSpawnType.DISPENSER, enumdirection != Direction.UP, false); // Paper - track changed item in dispense event
                 } catch (Exception exception) {
                     DispenseItemBehavior.LOGGER.error("Error while dispensing spawn egg from dispenser at {}", pointer.pos(), exception); // CraftBukkit - decompile error
                     return ItemStack.EMPTY;
@@ -299,10 +303,11 @@ public interface DispenseItemBehavior {
                 }
                 // CraftBukkit end
 
+                final ItemStack newStack = CraftItemStack.unwrap(event.getItem()); // Paper - use event itemstack (unwrap is fine here because the stack won't be modified)
                 Consumer<ArmorStand> consumer = EntityType.appendDefaultStackConfig((entityarmorstand) -> {
                     entityarmorstand.setYRot(enumdirection.toYRot());
-                }, worldserver, stack, (Player) null);
-                ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, stack.getTag(), consumer, blockposition, MobSpawnType.DISPENSER, false, false);
+                }, worldserver, newStack, (Player) null); // Paper - track changed items in the dispense event
+                ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, newStack.getTag(), consumer, blockposition, MobSpawnType.DISPENSER, false, false); // Paper - track changed items in the dispense event
 
                 if (entityarmorstand != null) {
                     if (shrink) stack.shrink(1); // Paper - actually handle here
@@ -582,7 +587,7 @@ public interface DispenseItemBehavior {
                 }
 
                 SmallFireball entitysmallfireball = new SmallFireball(worldserver, d0, d1, d2, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
-                entitysmallfireball.setItem(itemstack1);
+                entitysmallfireball.setItem(CraftItemStack.unwrap(event.getItem())); // Paper - track changed items in the dispense event (unwrap is save cause setItem already copies)
                 entitysmallfireball.projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
 
                 worldserver.addFreshEntity(entitysmallfireball);
@@ -628,6 +633,7 @@ public interface DispenseItemBehavior {
                 int y = blockposition.getY();
                 int z = blockposition.getZ();
                 BlockState iblockdata = worldserver.getBlockState(blockposition);
+                ItemStack dispensedItem = stack; // Paper - track changed item from the dispense event
                 // Paper start - correctly check if the bucket place will succeed
                 /* Taken from SolidBucketItem#emptyContents */
                 boolean willEmptyContentsSolidBucketItem = dispensiblecontaineritem instanceof net.minecraft.world.item.SolidBucketItem && worldserver.isInWorldBounds(blockposition) && iblockdata.isAir();
@@ -657,12 +663,15 @@ public interface DispenseItemBehavior {
                         }
                     }
 
-                    dispensiblecontaineritem = (DispensibleContainerItem) CraftItemStack.asNMSCopy(event.getItem()).getItem();
+                    // Paper start - track changed item from dispense event
+                    dispensedItem = CraftItemStack.unwrap(event.getItem()); // unwrap is safe here as the stack isn't mutated
+                    dispensiblecontaineritem = (DispensibleContainerItem) dispensedItem.getItem();
+                    // Paper end - track changed item from dispense event
                 }
                 // CraftBukkit end
 
                 if (dispensiblecontaineritem.emptyContents((Player) null, worldserver, blockposition, (BlockHitResult) null)) {
-                    dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, stack, blockposition);
+                    dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, dispensedItem, blockposition); // Paper - track changed item from dispense event
                     // CraftBukkit start - Handle stacked buckets
                     Item item = Items.BUCKET;
                     stack.shrink(1);

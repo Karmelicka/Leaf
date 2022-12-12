@@ -23,7 +23,7 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
         ServerLevel worldserver = pointer.level();
         Position iposition = DispenserBlock.getDispensePosition(pointer);
         Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
-        Projectile iprojectile = this.getProjectile(worldserver, iposition, stack);
+        // Paper - move down
 
         // CraftBukkit start
         // iprojectile.shoot((double) enumdirection.getStepX(), (double) ((float) enumdirection.getStepY() + 0.1F), (double) enumdirection.getStepZ(), this.getPower(), this.getUncertainty());
@@ -52,6 +52,7 @@ public abstract class AbstractProjectileDispenseBehavior extends DefaultDispense
                 return stack;
             }
         }
+        Projectile iprojectile = this.getProjectile(worldserver, iposition, CraftItemStack.asNMSCopy(event.getItem())); // Paper - move from above and track changed items in the dispense event
 
         iprojectile.shoot(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.getPower(), this.getUncertainty());
         ((Entity) iprojectile).projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(pointer.blockEntity());
