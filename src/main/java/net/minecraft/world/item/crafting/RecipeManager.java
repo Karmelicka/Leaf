@@ -84,7 +84,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
             return entry1.getValue(); // CraftBukkit // Paper - decompile fix - *shrugs internally* // todo: is this needed anymore?
         }));
         this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
-        RecipeManager.LOGGER.info("Loaded {} recipes", map1.size());
+        RecipeManager.LOGGER.info("Loaded {} recipes", this.byName.size()); // Paper - Improve logging and errors; log correct number of recipes
     }
 
     // CraftBukkit start
