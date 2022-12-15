@@ -3495,7 +3495,14 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         Location enter = bukkitEntity.getLocation();
         Location exit = CraftLocation.toBukkit(exitPosition, exitWorldServer.getWorld());
 
-        EntityPortalEvent event = new EntityPortalEvent(bukkitEntity, enter, exit, searchRadius);
+        // Paper start
+        final org.bukkit.PortalType portalType = switch (cause) {
+            case END_PORTAL -> org.bukkit.PortalType.ENDER;
+            case NETHER_PORTAL -> org.bukkit.PortalType.NETHER;
+            default -> org.bukkit.PortalType.CUSTOM;
+        };
+        EntityPortalEvent event = new EntityPortalEvent(bukkitEntity, enter, exit, searchRadius, portalType);
+        // Paper end
         event.getEntity().getServer().getPluginManager().callEvent(event);
         if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !entity.isAlive()) {
             return null;
