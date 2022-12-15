@@ -513,7 +513,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
             b0 = 5;
             if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
                 flag = true;
-                this.setInLove(player);
+                this.setInLove(player, item.copy()); // Paper - Fix EntityBreedEvent copying
             }
         } else if (item.is(Items.GOLDEN_APPLE) || item.is(Items.ENCHANTED_GOLDEN_APPLE)) {
             f = 10.0F;
@@ -521,7 +521,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
             b0 = 10;
             if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
                 flag = true;
-                this.setInLove(player);
+                this.setInLove(player, item.copy()); // Paper - Fix EntityBreedEvent copying
             }
         }
 
