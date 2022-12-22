@@ -82,12 +82,8 @@ public class Tadpole extends AbstractFish {
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("tadpoleBrain");
         this.getBrain().tick((ServerLevel) this.level(), this);
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("tadpoleActivityUpdate");
         TadpoleAi.updateActivity(this);
-        this.level().getProfiler().pop();
         super.customServerAiStep();
     }
 

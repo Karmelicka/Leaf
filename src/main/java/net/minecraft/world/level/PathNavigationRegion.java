@@ -8,7 +8,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.biome.Biome;
@@ -153,9 +152,5 @@ public class PathNavigationRegion implements BlockGetter, CollisionGetter {
     @Override
     public int getHeight() {
         return this.level.getHeight();
-    }
-
-    public ProfilerFiller getProfiler() {
-        return this.level.getProfiler();
     }
 }

@@ -130,7 +130,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     private final ResourceKey<DimensionType> dimensionTypeId;
     private final Holder<DimensionType> dimensionTypeRegistration;
     public final WritableLevelData levelData;
-    private final Supplier<ProfilerFiller> profiler;
     public final boolean isClientSide;
     private final WorldBorder worldBorder;
     private final BiomeManager biomeManager;
@@ -217,7 +216,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
 
     public abstract ResourceKey<LevelStem> getTypeKey();
 
-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, GaleWorldConfiguration> galeWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Gale - Gale configuration
+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, GaleWorldConfiguration> galeWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Gale - Gale configuration // Gale - Purpur - remove vanilla profiler
         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
         this.galeConfig = galeWorldConfigCreator.apply(this.spigotConfig); // Gale - Gale configuration
@@ -232,7 +231,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         }
 
         // CraftBukkit end
-        this.profiler = supplier;
         this.levelData = worlddatamutable;
         this.dimensionTypeRegistration = holder;
         this.dimensionTypeId = (ResourceKey) holder.unwrapKey().orElseThrow(() -> {
@@ -1268,9 +1266,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     }
 
     protected void tickBlockEntities() {
-        ProfilerFiller gameprofilerfiller = this.getProfiler();
-
-        gameprofilerfiller.push("blockEntities");
         this.timings.tileEntityPending.startTiming(); // Spigot
         this.tickingBlockEntities = true;
         if (!this.pendingBlockEntityTickers.isEmpty()) {
@@ -1311,7 +1306,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         this.timings.tileEntityTick.stopTiming(); // Spigot
         this.tickingBlockEntities = false;
         co.aikar.timings.TimingHistory.tileEntityTicks += this.blockEntityTickers.size(); // Paper
-        gameprofilerfiller.pop();
         this.spigotConfig.currentPrimedTnt = 0; // Spigot
     }
 
@@ -1521,7 +1515,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
 
     @Override
     public List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate) {
-        this.getProfiler().incrementCounter("getEntities");
         List<Entity> list = Lists.newArrayList();
         ((ServerLevel)this).getEntityLookup().getEntities(except, box, list, predicate); // Paper - optimise this call
         return list;
@@ -1540,7 +1533,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     }
 
     public <T extends Entity> void getEntities(EntityTypeTest<Entity, T> filter, AABB box, Predicate<? super T> predicate, List<? super T> result, int limit) {
-        this.getProfiler().incrementCounter("getEntities");
         // Paper start - optimise this call
         //TODO use limit
         if (filter instanceof net.minecraft.world.entity.EntityType entityTypeTest) {
@@ -1799,11 +1791,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     }
 
     public ProfilerFiller getProfiler() {
-        return (ProfilerFiller) this.profiler.get();
+        return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Gale - Purpur - remove vanilla profiler
     }
 
     public Supplier<ProfilerFiller> getProfilerSupplier() {
-        return this.profiler;
+        return () -> net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Gale - Purpur - remove vanilla profiler
     }
 
     @Override

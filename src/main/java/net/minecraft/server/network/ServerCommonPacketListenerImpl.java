@@ -203,7 +203,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
     }
 
     protected void keepConnectionAlive() {
-        this.server.getProfiler().push("keepAlive");
         // Paper start - give clients a longer time to respond to pings as per pre 1.12.2 timings
         // This should effectively place the keepalive handling back to "as it was" before 1.12.2
         long currentTime = Util.getMillis();
@@ -224,7 +223,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         }
         // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
 
-        this.server.getProfiler().pop();
     }
 
     public void suspendFlushing() {

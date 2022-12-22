@@ -23,7 +23,6 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.util.VisibleForDebug;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
@@ -261,16 +260,12 @@ public class ServerChunkCache extends ChunkSource {
                 return ifLoaded;
             }
             // Paper end - Perf: Optimise getChunkAt calls for loaded chunks
-            ProfilerFiller gameprofilerfiller = this.level.getProfiler();
-
-            gameprofilerfiller.incrementCounter("getChunk");
             long k = ChunkPos.asLong(x, z);
 
             ChunkAccess ichunkaccess;
 
             // Paper - rewrite chunk system - there are no correct callbacks to remove items from cache in the new chunk system
 
-            gameprofilerfiller.incrementCounter("getChunkCacheMiss");
             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkFutureMainThread(x, z, leastStatus, create, true); // Paper
             ServerChunkCache.MainThreadExecutor chunkproviderserver_b = this.mainThreadProcessor;
 
@@ -464,24 +459,19 @@ public class ServerChunkCache extends ChunkSource {
     // CraftBukkit start - modelled on below
     public void purgeUnload() {
         if (true) return; // Paper - tickets will be removed later, this behavior isn't really well accounted for by the chunk system
-        this.level.getProfiler().push("purge");
         this.distanceManager.purgeStaleTickets();
         this.runDistanceManagerUpdates();
-        this.level.getProfiler().popPush("unload");
         this.chunkMap.tick(() -> true);
-        this.level.getProfiler().pop();
         this.clearCache();
     }
     // CraftBukkit end
 
     @Override
     public void tick(BooleanSupplier shouldKeepTicking, boolean tickChunks) {
-        this.level.getProfiler().push("purge");
         this.level.timings.doChunkMap.startTiming(); // Spigot
         this.distanceManager.purgeStaleTickets();
         this.runDistanceManagerUpdates();
         this.level.timings.doChunkMap.stopTiming(); // Spigot
-        this.level.getProfiler().popPush("chunks");
         if (tickChunks) {
             this.level.timings.chunks.startTiming(); // Paper - timings
             this.chunkMap.level.playerChunkLoader.tick(); // Paper - replace player chunk loader - this is mostly required to account for view distance changes
@@ -491,10 +481,8 @@ public class ServerChunkCache extends ChunkSource {
         }
 
         this.level.timings.doChunkUnload.startTiming(); // Spigot
-        this.level.getProfiler().popPush("unload");
         this.chunkMap.tick(shouldKeepTicking);
         this.level.timings.doChunkUnload.stopTiming(); // Spigot
-        this.level.getProfiler().pop();
         this.clearCache();
     }
 
@@ -504,17 +492,12 @@ public class ServerChunkCache extends ChunkSource {
 
         this.lastInhabitedUpdate = i;
         if (!this.level.isDebug()) {
-            ProfilerFiller gameprofilerfiller = this.level.getProfiler();
-
-            gameprofilerfiller.push("pollingChunks");
-            gameprofilerfiller.push("filteringLoadedChunks");
             // Paper - optimise chunk tick iteration
             if (this.level.getServer().tickRateManager().runsNormally()) this.level.timings.chunkTicks.startTiming(); // Paper
 
             // Paper - optimise chunk tick iteration
 
             if (this.level.getServer().tickRateManager().runsNormally()) {
-                gameprofilerfiller.popPush("naturalSpawnCount");
                 this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
                 int k = this.distanceManager.getNaturalSpawnChunkCount();
                 // Paper start - Optional per player mob spawns
@@ -543,7 +526,6 @@ public class ServerChunkCache extends ChunkSource {
                 this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
 
                 this.lastSpawnState = spawnercreature_d;
-                gameprofilerfiller.popPush("spawnAndTick");
                 boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
 
                 // Paper start - optimise chunk tick iteration
@@ -651,7 +633,6 @@ public class ServerChunkCache extends ChunkSource {
                 // Paper end - optimise chunk tick iteration
                 this.level.timings.chunkTicks.stopTiming(); // Paper
 
-                gameprofilerfiller.popPush("customSpawners");
                 if (flag) {
                     try (co.aikar.timings.Timing ignored = this.level.timings.miscMobSpawning.startTiming()) { // Paper - timings
                     this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
@@ -659,7 +640,6 @@ public class ServerChunkCache extends ChunkSource {
                 }
             }
 
-            gameprofilerfiller.popPush("broadcast");
             // Paper - optimise chunk tick iteration
                 this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
             // Paper start - optimise chunk tick iteration
@@ -677,8 +657,6 @@ public class ServerChunkCache extends ChunkSource {
             // Paper end - optimise chunk tick iteration
                 this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
             // Paper - optimise chunk tick iteration
-            gameprofilerfiller.pop();
-            gameprofilerfiller.pop();
         }
     }
 
@@ -850,7 +828,6 @@ public class ServerChunkCache extends ChunkSource {
 
         @Override
         protected void doRunTask(Runnable task) {
-            ServerChunkCache.this.level.getProfiler().incrementCounter("runTask");
             super.doRunTask(task);
         }
 

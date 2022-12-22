@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import net.minecraft.util.profiling.ProfilerFiller;
 import org.slf4j.Logger;
 
 public class GoalSelector {
@@ -29,7 +28,6 @@ public class GoalSelector {
     };
     private final Map<Goal.Flag, WrappedGoal> lockedFlags = new EnumMap<>(Goal.Flag.class);
     private final Set<WrappedGoal> availableGoals = Sets.newLinkedHashSet();
-    private final Supplier<ProfilerFiller> profiler;
     private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
     private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
     private int tickCount;
@@ -37,9 +35,7 @@ public class GoalSelector {
     private int curRate;
     private static final Goal.Flag[] GOAL_FLAG_VALUES = Goal.Flag.values(); // Paper - remove streams from pathfindergoalselector
 
-    public GoalSelector(Supplier<ProfilerFiller> profiler) {
-        this.profiler = profiler;
-    }
+    public GoalSelector() {} // Gale - Purpur - remove vanilla profiler
 
     public void addGoal(int priority, Goal goal) {
         this.availableGoals.add(new WrappedGoal(priority, goal));
@@ -102,9 +98,6 @@ public class GoalSelector {
     }
 
     public void tick() {
-        ProfilerFiller profilerFiller = this.profiler.get();
-        profilerFiller.push("goalCleanup");
-
         for(WrappedGoal wrappedGoal : this.availableGoals) {
             if (wrappedGoal.isRunning() && (goalContainsAnyFlags(wrappedGoal, this.goalTypes) || !wrappedGoal.canContinueToUse())) {
                 wrappedGoal.stop();
@@ -119,9 +112,6 @@ public class GoalSelector {
                 iterator.remove();
             }
         }
-
-        profilerFiller.pop();
-        profilerFiller.push("goalUpdate");
 
         for(WrappedGoal wrappedGoal2 : this.availableGoals) {
             // Paper start
@@ -141,21 +131,15 @@ public class GoalSelector {
             }
         }
 
-        profilerFiller.pop();
         this.tickRunningGoals(true);
     }
 
     public void tickRunningGoals(boolean tickAll) {
-        ProfilerFiller profilerFiller = this.profiler.get();
-        profilerFiller.push("goalTick");
-
         for(WrappedGoal wrappedGoal : this.availableGoals) {
             if (wrappedGoal.isRunning() && (tickAll || wrappedGoal.requiresUpdateEveryTick())) {
                 wrappedGoal.tick();
             }
         }
-
-        profilerFiller.pop();
     }
 
     public Set<WrappedGoal> getAvailableGoals() {

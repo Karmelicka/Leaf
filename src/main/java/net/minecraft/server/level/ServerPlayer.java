@@ -1213,7 +1213,6 @@ public class ServerPlayer extends Player {
             PortalInfo shapedetectorshape = this.findDimensionEntryPoint(worldserver);
 
             if (shapedetectorshape != null) {
-                worldserver1.getProfiler().push("moving");
                 worldserver = shapedetectorshape.world; // CraftBukkit
                 if (worldserver == null) { } else // CraftBukkit - empty to fall through to null to event
                 if (resourcekey == LevelStem.OVERWORLD && worldserver.getTypeKey() == LevelStem.NETHER) { // CraftBukkit
@@ -1236,8 +1235,6 @@ public class ServerPlayer extends Player {
             worldserver = ((CraftWorld) exit.getWorld()).getHandle();
             // CraftBukkit end
 
-            worldserver1.getProfiler().pop();
-            worldserver1.getProfiler().push("placing");
             if (true) { // CraftBukkit
                 this.isChangingDimension = true; // CraftBukkit - Set teleport invulnerability only if player changing worlds
 
@@ -1254,7 +1251,6 @@ public class ServerPlayer extends Player {
                 this.connection.teleport(exit); // CraftBukkit - use internal teleport without event
                 this.connection.resetPosition();
                 worldserver.addDuringPortalTeleport(this);
-                worldserver1.getProfiler().pop();
                 this.triggerDimensionChangeTriggers(worldserver1);
                 this.connection.send(new ClientboundPlayerAbilitiesPacket(this.getAbilities()));
                 playerlist.sendLevelInfo(this, worldserver);

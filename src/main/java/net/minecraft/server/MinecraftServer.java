@@ -106,18 +106,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.SignatureValidator;
 import net.minecraft.util.TimeUtil;
 import net.minecraft.util.datafix.DataFixers;
-import net.minecraft.util.profiling.EmptyProfileResults;
-import net.minecraft.util.profiling.ProfileResults;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraft.util.profiling.ResultField;
-import net.minecraft.util.profiling.SingleTickProfiler;
 import net.minecraft.util.profiling.jfr.JvmProfiler;
 import net.minecraft.util.profiling.jfr.callback.ProfiledDuration;
-import net.minecraft.util.profiling.metrics.profiling.ActiveMetricsRecorder;
-import net.minecraft.util.profiling.metrics.profiling.InactiveMetricsRecorder;
-import net.minecraft.util.profiling.metrics.profiling.MetricsRecorder;
-import net.minecraft.util.profiling.metrics.profiling.ServerMetricsSamplersProvider;
-import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
 import net.minecraft.util.thread.ReentrantBlockableEventLoop;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.RandomSequences;
@@ -215,14 +206,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     public LevelStorageSource.LevelStorageAccess storageSource;
     public final PlayerDataStorage playerDataStorage;
     private final List<Runnable> tickables = Lists.newArrayList();
-    private MetricsRecorder metricsRecorder;
-    private ProfilerFiller profiler;
-    private Consumer<ProfileResults> onMetricsRecordingStopped;
-    private Consumer<Path> onMetricsRecordingFinished;
-    private boolean willStartRecordingMetrics;
-    @Nullable
-    private MinecraftServer.TimeProfiler debugCommandProfiler;
-    private boolean debugCommandProfilerDelayStart;
     private ServerConnectionListener connection;
     public final ChunkProgressListenerFactory progressListenerFactory;
     @Nullable
@@ -336,13 +319,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     public MinecraftServer(OptionSet options, WorldLoader.DataLoadContext worldLoader, Thread thread, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PackRepository resourcepackrepository, WorldStem worldstem, Proxy proxy, DataFixer datafixer, Services services, ChunkProgressListenerFactory worldloadlistenerfactory) {
         super("Server");
         SERVER = this; // Paper - better singleton
-        this.metricsRecorder = InactiveMetricsRecorder.INSTANCE;
-        this.profiler = this.metricsRecorder.getProfiler();
-        this.onMetricsRecordingStopped = (methodprofilerresults) -> {
-            this.stopRecordingMetrics();
-        };
-        this.onMetricsRecordingFinished = (path) -> {
-        };
         this.random = RandomSource.create();
         this.port = -1;
         this.levels = Maps.newLinkedHashMap();
@@ -968,9 +944,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         }
         // Paper end
         // CraftBukkit end
-        if (this.metricsRecorder.isRecording()) {
-            this.cancelRecordingMetrics();
-        }
 
         MinecraftServer.LOGGER.info("Stopping server");
         Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
@@ -1209,20 +1182,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
                 boolean flag = i == 0L;
 
-                if (this.debugCommandProfilerDelayStart) {
-                    this.debugCommandProfilerDelayStart = false;
-                    this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
-                }
-
                 //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
                 lastTick = currentTime;
                 this.nextTickTimeNanos += i;
-                this.startMetricsRecordingTick();
-                this.profiler.push("tick");
                 this.tickServer(flag ? () -> {
                     return false;
                 } : this::haveTime);
-                this.profiler.popPush("nextTickWait");
                 this.mayHaveDelayedTasks = true;
                 this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + i, this.nextTickTimeNanos);
                 this.waitUntilNextTick();
@@ -1230,8 +1195,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                     this.tickRateManager.endTickWork();
                 }
 
-                this.profiler.pop();
-                this.endMetricsRecordingTick();
                 this.isReady = true;
                 JvmProfiler.INSTANCE.onServerTick(this.smoothedTickTimeMillis);
             }
@@ -1457,7 +1420,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
 
     public void doRunTask(TickTask ticktask) { // CraftBukkit - decompile error
-        this.getProfiler().incrementCounter("runTask");
         super.doRunTask(ticktask);
     }
 
@@ -1530,7 +1492,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         if (playerSaveInterval < 0) {
             playerSaveInterval = autosavePeriod;
         }
-        this.profiler.push("save");
         final boolean fullSave = autosavePeriod > 0 && this.tickCount % autosavePeriod == 0;
         try {
             this.isSaving = true;
@@ -1545,7 +1506,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         } finally {
             this.isSaving = false;
         }
-        this.profiler.pop();
         // Paper end - Incremental chunk and player saving
         io.papermc.paper.util.CachedLists.reset(); // Paper
         // Paper start - move executeAll() into full server tick timing
@@ -1558,7 +1518,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
         new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
         // Paper end - Server Tick Events
-        this.profiler.push("tallying");
         long j = Util.getNanos() - i;
         int k = this.tickCount % 100;
 
@@ -1574,7 +1533,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         tickTimes60s.add(this.tickCount, j);
         // Paper end - Add tick times API and /mspt command
         this.logTickTime(l - i);
-        this.profiler.pop();
         org.spigotmc.WatchdogThread.tick(); // Spigot
         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTimingFullServerTick(); // Paper // Gale - final timings calls
     }
@@ -1656,11 +1614,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         });
         // Paper end - Folia scheduler API
         io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
-        this.profiler.push("commandFunctions");
         MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot // Paper
         this.getFunctions().tick();
         MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot // Paper
-        this.profiler.popPush("levels");
         //Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; moved down
 
         // CraftBukkit start
@@ -1702,18 +1658,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
             worldserver.updateLagCompensationTick(); // Paper - lag compensation
 
-            this.profiler.push(() -> {
-                return worldserver + " " + worldserver.dimension().location();
-            });
             /* Drop global time updates
             if (this.tickCount % 20 == 0) {
-                this.profiler.push("timeSync");
                 this.synchronizeTime(worldserver);
-                this.profiler.pop();
             }
             // CraftBukkit end */
-
-            this.profiler.push("tick");
 
             try {
                 worldserver.timings.doTick.startTiming(); // Spigot
@@ -1731,17 +1680,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                 throw new ReportedException(crashreport);
             }
 
-            this.profiler.pop();
-            this.profiler.pop();
             worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
         }
         this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
 
-        this.profiler.popPush("connection");
         MinecraftTimings.connectionTimer.startTiming(); // Spigot // Paper
         this.getConnection().tick();
         MinecraftTimings.connectionTimer.stopTiming(); // Spigot // Paper
-        this.profiler.popPush("players");
         MinecraftTimings.playerListTimer.startTiming(); // Spigot // Paper
         this.playerList.tick();
         MinecraftTimings.playerListTimer.stopTiming(); // Spigot // Paper
@@ -1749,15 +1694,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             GameTestTicker.SINGLETON.tick();
         }
 
-        this.profiler.popPush("server gui refresh");
-
         MinecraftTimings.tickablesTimer.startTiming(); // Spigot // Paper
         for (int i = 0; i < this.tickables.size(); ++i) {
             ((Runnable) this.tickables.get(i)).run();
         }
         MinecraftTimings.tickablesTimer.stopTiming(); // Spigot // Paper
 
-        this.profiler.popPush("send chunks");
         iterator = this.playerList.getPlayers().iterator();
 
         while (iterator.hasNext()) {
@@ -1767,7 +1709,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             entityplayer.connection.resumeFlushing();
         }
 
-        this.profiler.pop();
     }
 
     private void synchronizeTime(ServerLevel world) {
@@ -1775,7 +1716,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
 
     public void forceTimeSynchronization() {
-        this.profiler.push("timeSync");
         Iterator iterator = this.getAllLevels().iterator();
 
         while (iterator.hasNext()) {
@@ -1783,8 +1723,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
             this.synchronizeTime(worldserver);
         }
-
-        this.profiler.pop();
     }
 
     public boolean isNetherEnabled() {
@@ -2448,7 +2386,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
 
     public ProfilerFiller getProfiler() {
-        return this.profiler;
+        return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Gale - Purpur - remove vanilla profiler
     }
 
     public abstract boolean isSingleplayerOwner(GameProfile profile);
@@ -2686,53 +2624,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
     // CraftBukkit end
 
-    private void startMetricsRecordingTick() {
-        if (this.willStartRecordingMetrics) {
-            this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-                this.executeBlocking(() -> {
-                    this.saveDebugReport(path.resolve("server"));
-                });
-                this.onMetricsRecordingFinished.accept(path);
-            });
-            this.willStartRecordingMetrics = false;
-        }
-
-        this.profiler = SingleTickProfiler.decorateFiller(this.metricsRecorder.getProfiler(), SingleTickProfiler.createTickProfiler("Server"));
-        this.metricsRecorder.startTick();
-        this.profiler.startTick();
-    }
-
-    private void endMetricsRecordingTick() {
-        this.profiler.endTick();
-        this.metricsRecorder.endTick();
-    }
-
-    public boolean isRecordingMetrics() {
-        return this.metricsRecorder.isRecording();
-    }
-
-    public void startRecordingMetrics(Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
-        this.onMetricsRecordingStopped = (methodprofilerresults) -> {
-            this.stopRecordingMetrics();
-            resultConsumer.accept(methodprofilerresults);
-        };
-        this.onMetricsRecordingFinished = dumpConsumer;
-        this.willStartRecordingMetrics = true;
-    }
-
-    public void stopRecordingMetrics() {
-        this.metricsRecorder = InactiveMetricsRecorder.INSTANCE;
-    }
-
-    public void finishRecordingMetrics() {
-        this.metricsRecorder.end();
-    }
-
-    public void cancelRecordingMetrics() {
-        this.metricsRecorder.cancel();
-        this.profiler = this.metricsRecorder.getProfiler();
-    }
-
     public Path getWorldPath(LevelResource worldSavePath) {
         return this.storageSource.getLevelPath(worldSavePath);
     }
@@ -2778,25 +2669,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         return this.isSaving;
     }
 
-    public boolean isTimeProfilerRunning() {
-        return this.debugCommandProfilerDelayStart || this.debugCommandProfiler != null;
-    }
-
-    public void startTimeProfiler() {
-        this.debugCommandProfilerDelayStart = true;
-    }
-
-    public ProfileResults stopTimeProfiler() {
-        if (this.debugCommandProfiler == null) {
-            return EmptyProfileResults.EMPTY;
-        } else {
-            ProfileResults methodprofilerresults = this.debugCommandProfiler.stop(Util.getNanos(), this.tickCount);
-
-            this.debugCommandProfiler = null;
-            return methodprofilerresults;
-        }
-    }
-
     public int getMaxChainedNeighborUpdates() {
         return 1000000;
     }
@@ -2834,56 +2706,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
         public void close() {
             this.resourceManager.close();
-        }
-    }
-
-    private static class TimeProfiler {
-
-        final long startNanos;
-        final int startTick;
-
-        TimeProfiler(long time, int tick) {
-            this.startNanos = time;
-            this.startTick = tick;
-        }
-
-        ProfileResults stop(final long endTime, final int endTick) {
-            return new ProfileResults() {
-                @Override
-                public List<ResultField> getTimes(String parentPath) {
-                    return Collections.emptyList();
-                }
-
-                @Override
-                public boolean saveResults(Path path) {
-                    return false;
-                }
-
-                @Override
-                public long getStartTimeNano() {
-                    return TimeProfiler.this.startNanos;
-                }
-
-                @Override
-                public int getStartTimeTicks() {
-                    return TimeProfiler.this.startTick;
-                }
-
-                @Override
-                public long getEndTimeNano() {
-                    return endTime;
-                }
-
-                @Override
-                public int getEndTimeTicks() {
-                    return endTick;
-                }
-
-                @Override
-                public String getProfilerResults() {
-                    return "";
-                }
-            };
         }
     }
 

@@ -68,7 +68,6 @@ import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.util.CsvOutput;
 import net.minecraft.util.Mth;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.util.thread.ProcessorHandle;
 import net.minecraft.util.thread.ProcessorMailbox;
@@ -538,20 +537,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     }
 
     protected void tick(BooleanSupplier shouldKeepTicking) {
-        ProfilerFiller gameprofilerfiller = this.level.getProfiler();
-
         try (Timing ignored = this.level.timings.poiUnload.startTiming()) { // Paper
-        gameprofilerfiller.push("poi");
         this.poiManager.tick(shouldKeepTicking);
         } // Paper
-        gameprofilerfiller.popPush("chunk_unload");
         if (!this.level.noSave()) {
             try (Timing ignored = this.level.timings.chunkUnload.startTiming()) { // Paper
             this.processUnloads(shouldKeepTicking);
             } // Paper
         }
-
-        gameprofilerfiller.pop();
     }
 
     public boolean hasWork() {

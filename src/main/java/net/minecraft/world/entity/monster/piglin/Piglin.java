@@ -302,9 +302,7 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("piglinBrain");
         this.getBrain().tick((ServerLevel) this.level(), this);
-        this.level().getProfiler().pop();
         PiglinAi.updateActivity(this);
         super.customServerAiStep();
     }

@@ -16,7 +16,6 @@ import net.minecraft.commands.functions.CommandFunction;
 import net.minecraft.commands.functions.InstantiatedFunction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.profiling.ProfilerFiller;
 import org.slf4j.Logger;
 
 public class ServerFunctionManager {
@@ -53,10 +52,7 @@ public class ServerFunctionManager {
     }
 
     private void executeTagFunctions(Collection<CommandFunction<CommandSourceStack>> functions, ResourceLocation label) {
-        ProfilerFiller gameprofilerfiller = this.server.getProfiler();
-
         Objects.requireNonNull(label);
-        gameprofilerfiller.push(label::toString);
         Iterator iterator = functions.iterator();
 
         while (iterator.hasNext()) {
@@ -64,17 +60,9 @@ public class ServerFunctionManager {
 
             this.execute(commandfunction, this.getGameLoopSender());
         }
-
-        this.server.getProfiler().pop();
     }
 
     public void execute(CommandFunction<CommandSourceStack> function, CommandSourceStack source) {
-        ProfilerFiller gameprofilerfiller = this.server.getProfiler();
-
-        gameprofilerfiller.push(() -> {
-            return "function " + function.id();
-        });
-
         try {
             InstantiatedFunction<CommandSourceStack> instantiatedfunction = function.instantiate((CompoundTag) null, this.getDispatcher(), source);
 
@@ -85,8 +73,6 @@ public class ServerFunctionManager {
             ;
         } catch (Exception exception) {
             ServerFunctionManager.LOGGER.warn("Failed to execute function {}", function.id(), exception);
-        } finally {
-            gameprofilerfiller.pop();
         }
 
     }

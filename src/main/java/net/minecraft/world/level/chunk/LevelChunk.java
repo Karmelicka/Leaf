@@ -25,7 +25,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
 import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -441,13 +440,8 @@ public class LevelChunk extends ChunkAccess {
                 }
 
                 if (LightEngine.hasDifferentLightProperties(this, blockposition, iblockdata1, iblockdata)) {
-                    ProfilerFiller gameprofilerfiller = this.level.getProfiler();
-
-                    gameprofilerfiller.push("updateSkyLightSources");
                     // Paper - starlight - remove skyLightSources
-                    gameprofilerfiller.popPush("queueCheckLight");
                     this.level.getChunkSource().getLightEngine().checkBlock(blockposition);
-                    gameprofilerfiller.pop();
                 }
 
                 boolean flag3 = iblockdata1.hasBlockEntity();
@@ -1160,9 +1154,6 @@ public class LevelChunk extends ChunkAccess {
 
                 if (LevelChunk.this.isTicking(blockposition)) {
                     try {
-                        ProfilerFiller gameprofilerfiller = LevelChunk.this.level.getProfiler();
-
-                        gameprofilerfiller.push(this::getType);
                         this.blockEntity.tickTimer.startTiming(); // Spigot
                         BlockState iblockdata = LevelChunk.this.getBlockState(blockposition);
 
@@ -1173,8 +1164,6 @@ public class LevelChunk extends ChunkAccess {
                             this.loggedInvalidBlockState = true;
                             LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new Object[]{LogUtils.defer(this::getType), LogUtils.defer(this::getPos), iblockdata});
                         }
-
-                        gameprofilerfiller.pop();
                     } catch (Throwable throwable) {
                         if (throwable instanceof ThreadDeath) throw throwable; // Paper
                         // Paper start - Prevent block entity and entity crashes

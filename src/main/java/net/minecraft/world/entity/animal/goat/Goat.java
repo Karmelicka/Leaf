@@ -193,12 +193,8 @@ public class Goat extends Animal {
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("goatBrain");
         this.getBrain().tick((ServerLevel) this.level(), this);
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("goatActivityUpdate");
         GoatAi.updateActivity(this);
-        this.level().getProfiler().pop();
         super.customServerAiStep();
     }
 

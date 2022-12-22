@@ -405,7 +405,6 @@ public abstract class LivingEntity extends Entity implements Attackable {
         }
 
         super.baseTick();
-        this.level().getProfiler().push("livingEntityBaseTick");
         if (this.fireImmune() || this.level().isClientSide) {
             this.clearFire();
         }
@@ -507,7 +506,6 @@ public abstract class LivingEntity extends Entity implements Attackable {
         this.yHeadRotO = this.yHeadRot;
         this.yRotO = this.getYRot();
         this.xRotO = this.getXRot();
-        this.level().getProfiler().pop();
     }
 
     public boolean canSpawnSoulSpeedParticle() {
@@ -3097,10 +3095,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
         }
 
         this.run += (f3 - this.run) * 0.3F;
-        this.level().getProfiler().push("headTurn");
         f2 = this.tickHeadTurn(f1, f2);
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("rangeChecks");
 
         // Paper start - stop large pitch and yaw changes from crashing the server
         this.yRotO += Math.round((this.getYRot() - this.yRotO) / 360.0F) * 360.0F;
@@ -3112,7 +3107,6 @@ public abstract class LivingEntity extends Entity implements Attackable {
         this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
         // Paper end
 
-        this.level().getProfiler().pop();
         this.animStep += f2;
         if (this.isFallFlying()) {
             ++this.fallFlyTicks;
@@ -3407,19 +3401,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
         }
 
         this.setDeltaMovement(d0, d1, d2);
-        this.level().getProfiler().push("ai");
         if (this.isImmobile()) {
             this.jumping = false;
             this.xxa = 0.0F;
             this.zza = 0.0F;
         } else if (this.isEffectiveAi()) {
-            this.level().getProfiler().push("newAi");
             this.serverAiStep();
-            this.level().getProfiler().pop();
         }
 
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("jump");
         if (this.jumping && this.isAffectedByFluids()) {
             double d3;
 
@@ -3446,8 +3435,6 @@ public abstract class LivingEntity extends Entity implements Attackable {
             this.noJumpDelay = 0;
         }
 
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("travel");
         this.xxa *= 0.98F;
         this.zza *= 0.98F;
         this.updateFallFlying();
@@ -3474,8 +3461,6 @@ public abstract class LivingEntity extends Entity implements Attackable {
             this.travel(vec3d1);
         }
 
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("freezing");
         if (!this.level().isClientSide && !this.isDeadOrDying() && !this.freezeLocked) { // Paper - Freeze Tick Lock API
             int i = this.getTicksFrozen();
 
@@ -3492,15 +3477,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
             this.hurt(this.damageSources().freeze(), 1.0F);
         }
 
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("push");
         if (this.autoSpinAttackTicks > 0) {
             --this.autoSpinAttackTicks;
             this.checkAutoSpinAttack(axisalignedbb, this.getBoundingBox());
         }
 
         this.pushEntities();
-        this.level().getProfiler().pop();
         // Paper start - Add EntityMoveEvent
         if (((ServerLevel) this.level()).hasEntityMoveEvent && !(this instanceof net.minecraft.world.entity.player.Player)) {
             if (this.xo != this.getX() || this.yo != this.getY() || this.zo != this.getZ() || this.yRotO != this.getYRot() || this.xRotO != this.getXRot()) {

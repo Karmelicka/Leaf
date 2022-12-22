@@ -43,7 +43,7 @@ public class ReloadableResourceManager implements ResourceManager, AutoCloseable
         }));
         this.resources.close();
         this.resources = new MultiPackResourceManager(this.type, packs);
-        return SimpleReloadInstance.create(this.resources, this.listeners, prepareExecutor, applyExecutor, initialStage, LOGGER.isDebugEnabled());
+        return SimpleReloadInstance.create(this.resources, this.listeners, prepareExecutor, applyExecutor, initialStage, false); // Gale - Purpur - remove vanilla profiler
     }
 
     @Override

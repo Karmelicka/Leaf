@@ -147,8 +147,10 @@ public abstract class Mob extends LivingEntity implements Targeting {
         this.pathfindingMalus = Maps.newEnumMap(BlockPathTypes.class);
         this.restrictCenter = BlockPos.ZERO;
         this.restrictRadius = -1.0F;
-        this.goalSelector = new GoalSelector(world.getProfilerSupplier());
-        this.targetSelector = new GoalSelector(world.getProfilerSupplier());
+        // Gale start - Purpur - remove vanilla profiler
+        this.goalSelector = new GoalSelector();
+        this.targetSelector = new GoalSelector();
+        // Gale end - Purpur - remove vanilla profiler
         this.lookControl = new LookControl(this);
         this.moveControl = new MoveControl(this);
         this.jumpControl = new JumpControl(this);
@@ -363,13 +365,10 @@ public abstract class Mob extends LivingEntity implements Targeting {
     @Override
     public void baseTick() {
         super.baseTick();
-        this.level().getProfiler().push("mobBaseTick");
         if (this.isAlive() && this.random.nextInt(1000) < this.ambientSoundTime++) {
             this.resetAmbientSoundTime();
             this.playAmbientSound();
         }
-
-        this.level().getProfiler().pop();
     }
 
     @Override
@@ -674,7 +673,6 @@ public abstract class Mob extends LivingEntity implements Targeting {
     @Override
     public void aiStep() {
         super.aiStep();
-        this.level().getProfiler().push("looting");
         if (!this.level().isClientSide && this.canPickUpLoot() && this.isAlive() && !this.dead && this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
             Vec3i baseblockposition = this.getPickupReach();
             List<ItemEntity> list = this.level().getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate((double) baseblockposition.getX(), (double) baseblockposition.getY(), (double) baseblockposition.getZ()));
@@ -693,8 +691,6 @@ public abstract class Mob extends LivingEntity implements Targeting {
                 }
             }
         }
-
-        this.level().getProfiler().pop();
     }
 
     protected Vec3i getPickupReach() {
@@ -906,42 +902,22 @@ public abstract class Mob extends LivingEntity implements Targeting {
             return;
         }
         // Paper end - Allow nerfed mobs to jump and float
-        this.level().getProfiler().push("sensing");
         this.sensing.tick();
-        this.level().getProfiler().pop();
         int i = this.level().getServer().getTickCount() + this.getId();
 
         if (i % 2 != 0 && this.tickCount > 1) {
-            this.level().getProfiler().push("targetSelector");
             this.targetSelector.tickRunningGoals(false);
-            this.level().getProfiler().pop();
-            this.level().getProfiler().push("goalSelector");
             this.goalSelector.tickRunningGoals(false);
-            this.level().getProfiler().pop();
         } else {
-            this.level().getProfiler().push("targetSelector");
             this.targetSelector.tick();
-            this.level().getProfiler().pop();
-            this.level().getProfiler().push("goalSelector");
             this.goalSelector.tick();
-            this.level().getProfiler().pop();
         }
 
-        this.level().getProfiler().push("navigation");
         this.navigation.tick();
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("mob tick");
         this.customServerAiStep();
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("controls");
-        this.level().getProfiler().push("move");
         this.moveControl.tick();
-        this.level().getProfiler().popPush("look");
         this.lookControl.tick();
-        this.level().getProfiler().popPush("jump");
         this.jumpControl.tick();
-        this.level().getProfiler().pop();
-        this.level().getProfiler().pop();
         this.sendDebugPackets();
     }
 

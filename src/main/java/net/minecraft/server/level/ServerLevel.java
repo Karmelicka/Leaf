@@ -78,7 +78,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.ProgressListener;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Unit;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.util.valueproviders.IntProvider;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.DifficultyInstance;
@@ -690,15 +689,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
         // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
 
         // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
-        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), spigotConfig -> minecraftserver.galeConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor // Gale - Gale configuration
+        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), spigotConfig -> minecraftserver.galeConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor // Gale - Gale configuration // Gale - Purpur - remove vanilla profiler
         this.pvpMode = minecraftserver.isPvpAllowed();
         this.convertable = convertable_conversionsession;
         this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
         // CraftBukkit end
         this.players = Lists.newArrayList();
         this.entityTickList = new EntityTickList();
-        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
-        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
+        // Gale start - Purpur - remove vanilla profiler
+        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded);
+        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded);
+        // Gale end - Purpur - remove vanilla profiler
         this.navigatingMobs = new ObjectOpenHashSet();
         this.blockEvents = new ObjectLinkedOpenHashSet();
         this.blockEventsToReschedule = new ArrayList(64);
@@ -801,16 +802,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
     }
 
     public void tick(BooleanSupplier shouldKeepTicking) {
-        ProfilerFiller gameprofilerfiller = this.getProfiler();
-
         this.handlingTick = true;
         TickRateManager tickratemanager = this.tickRateManager();
         boolean flag = tickratemanager.runsNormally();
 
         if (flag) {
-            gameprofilerfiller.push("world border");
             this.getWorldBorder().tick();
-            gameprofilerfiller.popPush("weather");
             this.advanceWeatherCycle();
         }
 
@@ -842,30 +839,23 @@ public class ServerLevel extends Level implements WorldGenLevel {
             this.tickTime();
         }
 
-        gameprofilerfiller.popPush("tickPending");
         this.timings.scheduledBlocks.startTiming(); // Paper
         if (!this.isDebug() && flag) {
             j = this.getGameTime();
-            gameprofilerfiller.push("blockTicks");
             this.blockTicks.tick(j, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
-            gameprofilerfiller.popPush("fluidTicks");
             this.fluidTicks.tick(j, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks
-            gameprofilerfiller.pop();
         }
         this.timings.scheduledBlocks.stopTiming(); // Paper
 
-        gameprofilerfiller.popPush("raid");
         if (flag) {
             this.timings.raids.startTiming(); // Paper - timings
             this.raids.tick();
             this.timings.raids.stopTiming(); // Paper - timings
         }
 
-        gameprofilerfiller.popPush("chunkSource");
         this.timings.chunkProviderTick.startTiming(); // Paper - timings
         this.getChunkSource().tick(shouldKeepTicking, true);
         this.timings.chunkProviderTick.stopTiming(); // Paper - timings
-        gameprofilerfiller.popPush("blockEvents");
         if (flag) {
             this.timings.doSounds.startTiming(); // Spigot
             this.runBlockEvents();
@@ -873,7 +863,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
         }
 
         this.handlingTick = false;
-        gameprofilerfiller.pop();
         boolean flag1 = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty() || !this.getForcedChunks().isEmpty(); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players // Paper - restore this
 
         if (flag1) {
@@ -881,12 +870,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
         }
 
         if (flag1 || this.emptyTime++ < 300) {
-            gameprofilerfiller.push("entities");
             this.timings.tickEntities.startTiming(); // Spigot
             if (this.dragonFight != null && flag) {
-                gameprofilerfiller.push("dragonFight");
                 this.dragonFight.tick();
-                gameprofilerfiller.pop();
             }
 
             org.spigotmc.ActivationRange.activateEntities(this); // Spigot
@@ -896,9 +882,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                     if (false && this.shouldDiscardEntity(entity)) { // CraftBukkit - We prevent spawning in general, so this butchering is not needed
                         entity.discard();
                     } else if (!tickratemanager.isEntityFrozen(entity)) {
-                        gameprofilerfiller.push("checkDespawn");
                         entity.checkDespawn();
-                        gameprofilerfiller.pop();
                         if (true || this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(entity.chunkPosition().toLong())) { // Paper - now always true if in the ticking list
                             Entity entity1 = entity.getVehicle();
 
@@ -910,22 +894,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
                                 entity.stopRiding();
                             }
 
-                            gameprofilerfiller.push("tick");
                             this.guardEntityTick(this::tickNonPassenger, entity);
-                            gameprofilerfiller.pop();
                         }
                     }
                 }
             });
             this.timings.entityTick.stopTiming(); // Spigot
             this.timings.tickEntities.stopTiming(); // Spigot
-            gameprofilerfiller.pop();
             this.tickBlockEntities();
         }
 
-        gameprofilerfiller.push("entityManagement");
         //this.entityManager.tick(); // Paper - rewrite chunk system
-        gameprofilerfiller.pop();
     }
 
     @Override
@@ -984,9 +963,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
         boolean flag = this.isRaining();
         int j = chunkcoordintpair.getMinBlockX();
         int k = chunkcoordintpair.getMinBlockZ();
-        ProfilerFiller gameprofilerfiller = this.getProfiler();
-
-        gameprofilerfiller.push("thunder");
         final BlockPos.MutableBlockPos blockposition = this.chunkTickMutablePosition; // Paper - use mutable to reduce allocation rate, final to force compile fail on change
 
         if (!this.paperConfig().environment.disableThunder && flag && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
@@ -1017,8 +993,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
             }
         }
 
-        gameprofilerfiller.popPush("iceandsnow");
-
         if (!this.paperConfig().environment.disableIceAndSnow) { // Paper - Option to disable ice and snow
         for (int l = 0; l < randomTickSpeed; ++l) {
             if (this.random.nextInt(48) == 0) {
@@ -1030,7 +1004,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
         }
         } // Paper - Option to disable ice and snow
 
-        gameprofilerfiller.popPush("tickBlocks");
         timings.chunkTicksBlocks.startTiming(); // Paper
         if (randomTickSpeed > 0) {
             // Paper start - optimize random block ticking
@@ -1066,7 +1039,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
         // Paper end - optimise random block ticking
 
         timings.chunkTicksBlocks.stopTiming(); // Paper
-        gameprofilerfiller.pop();
     }
 
     @VisibleForTesting
@@ -1395,19 +1367,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
         try {
         // Paper end - timings
         entity.setOldPosAndRot();
-        ProfilerFiller gameprofilerfiller = this.getProfiler();
 
         ++entity.tickCount;
-        this.getProfiler().push(() -> {
-            return BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
-        });
-        gameprofilerfiller.incrementCounter("tickNonPassenger");
         if (isActive) { // Paper - EAR 2
             TimingHistory.activatedEntityTicks++;
         entity.tick();
         entity.postTick(); // CraftBukkit
         } else { entity.inactiveTick(); } // Paper - EAR 2
-        this.getProfiler().pop();
         } finally { timer.stopTiming(); } // Paper - timings
         Iterator iterator = entity.getPassengers().iterator();
 
@@ -1436,12 +1402,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 // Paper end
                 passenger.setOldPosAndRot();
                 ++passenger.tickCount;
-                ProfilerFiller gameprofilerfiller = this.getProfiler();
-
-                gameprofilerfiller.push(() -> {
-                    return BuiltInRegistries.ENTITY_TYPE.getKey(passenger.getType()).toString();
-                });
-                gameprofilerfiller.incrementCounter("tickPassenger");
                 // Paper start - EAR 2
                 if (isActive) {
                 passenger.rideTick();
@@ -1453,7 +1413,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
                     vehicle.positionRider(passenger);
                 }
                 // Paper end - EAR 2
-                gameprofilerfiller.pop();
                 Iterator iterator = passenger.getPassengers().iterator();
 
                 while (iterator.hasNext()) {

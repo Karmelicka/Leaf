@@ -833,7 +833,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     // CraftBukkit end
 
     public void baseTick() {
-        this.level().getProfiler().push("entityBaseTick");
         if (firstTick && this instanceof net.minecraft.world.entity.NeutralMob neutralMob) neutralMob.tickInitialPersistentAnger(level); // Paper - Prevent entity loading causing async lookups
         this.feetBlockState = null;
         if (this.isPassenger() && this.getVehicle().isRemoved()) {
@@ -894,7 +893,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         }
 
         this.firstTick = false;
-        this.level().getProfiler().pop();
     }
 
     public void setSharedFlagOnFire(boolean onFire) {
@@ -1113,7 +1111,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 }
             }
 
-            this.level().getProfiler().push("move");
             if (this.stuckSpeedMultiplier.lengthSqr() > 1.0E-7D) {
                 movement = movement.multiply(this.stuckSpeedMultiplier);
                 this.stuckSpeedMultiplier = Vec3.ZERO;
@@ -1122,7 +1119,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             // Paper start - ignore movement changes while inactive.
             if (isTemporarilyActive && !(this instanceof ItemEntity || this instanceof net.minecraft.world.entity.vehicle.AbstractMinecart) && movement == getDeltaMovement() && movementType == MoverType.SELF) {
                 setDeltaMovement(Vec3.ZERO);
-                this.level.getProfiler().pop();
                 return;
             }
             // Paper end
@@ -1143,8 +1139,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 this.setPos(this.getX() + vec3d1.x, this.getY() + vec3d1.y, this.getZ() + vec3d1.z);
             }
 
-            this.level().getProfiler().pop();
-            this.level().getProfiler().push("rest");
             boolean flag = !Mth.equal(movement.x, vec3d1.x);
             boolean flag1 = !Mth.equal(movement.z, vec3d1.z);
 
@@ -1162,9 +1156,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             BlockState iblockdata = this.level().getBlockState(blockposition);
 
             this.checkFallDamage(vec3d1.y, this.onGround(), iblockdata, blockposition);
-            if (this.isRemoved()) {
-                this.level().getProfiler().pop();
-            } else {
+            if (!this.isRemoved()) {
                 if (this.horizontalCollision) {
                     Vec3 vec3d2 = this.getDeltaMovement();
 
@@ -1300,8 +1292,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 if (this.isOnFire() && (this.isInPowderSnow || this.isInWaterRainOrBubble())) {
                     this.setRemainingFireTicks(-this.getFireImmuneTicks());
                 }
-
-                this.level().getProfiler().pop();
             }
         }
         // Paper start - detailed watchdog information
@@ -3159,7 +3149,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 ServerLevel worldserver1 = minecraftserver.getLevel(resourcekey);
 
                 if (true && !this.isPassenger() && this.portalTime++ >= i) { // CraftBukkit
-                    this.level().getProfiler().push("portal");
                     this.portalTime = i;
                     // Paper start - Add EntityPortalReadyEvent
                     io.papermc.paper.event.entity.EntityPortalReadyEvent event = new io.papermc.paper.event.entity.EntityPortalReadyEvent(this.getBukkitEntity(), worldserver1 == null ? null : worldserver1.getWorld(), org.bukkit.PortalType.NETHER);
@@ -3177,7 +3166,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                     }
                     } // Paper - Add EntityPortalReadyEvent
                     // CraftBukkit end
-                    this.level().getProfiler().pop();
                 }
 
                 this.isInsidePortal = false;
@@ -3651,14 +3639,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         }
         // Paper end - Fix item duplication and teleport issues
         if (this.level() instanceof ServerLevel && !this.isRemoved()) {
-            this.level().getProfiler().push("changeDimension");
             // CraftBukkit start
             // this.unRide();
             if (worldserver == null) {
                 return null;
             }
             // CraftBukkit end
-            this.level().getProfiler().push("reposition");
             PortalInfo shapedetectorshape = (location == null) ? this.findDimensionEntryPoint(worldserver) : new PortalInfo(new Vec3(location.x(), location.y(), location.z()), Vec3.ZERO, this.yRot, this.xRot, worldserver, null); // CraftBukkit
 
             if (shapedetectorshape == null) {
@@ -3697,7 +3683,6 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 this.unRide();
                 // CraftBukkit end
 
-                this.level().getProfiler().popPush("reloading");
                 // Paper start - Fix item duplication and teleport issues
                 if (this instanceof Mob) {
                     ((Mob) this).dropLeash(true, true); // Paper drop lead
@@ -3724,10 +3709,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 }
 
                 this.removeAfterChangingDimensions();
-                this.level().getProfiler().pop();
                 ((ServerLevel) this.level()).resetEmptyTime();
                 worldserver.resetEmptyTime();
-                this.level().getProfiler().pop();
                 return entity;
             }
         } else {

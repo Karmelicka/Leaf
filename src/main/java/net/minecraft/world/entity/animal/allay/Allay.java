@@ -223,12 +223,8 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("allayBrain");
         this.getBrain().tick((ServerLevel) this.level(), this);
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("allayActivityUpdate");
         AllayAi.updateActivity(this);
-        this.level().getProfiler().pop();
         super.customServerAiStep();
     }
 

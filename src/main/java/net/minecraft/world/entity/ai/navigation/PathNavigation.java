@@ -173,12 +173,10 @@ public abstract class PathNavigation {
                 }
             }
             // Paper end - EntityPathfindEvent
-            this.level.getProfiler().push("pathfind");
             BlockPos blockPos = useHeadPos ? this.mob.blockPosition().above() : this.mob.blockPosition();
             int i = (int)(followRange + (float)range);
             PathNavigationRegion pathNavigationRegion = new PathNavigationRegion(this.level, blockPos.offset(-i, -i, -i), blockPos.offset(i, i, i));
             Path path = this.pathFinder.findPath(pathNavigationRegion, this.mob, positions, followRange, distance, this.maxVisitedNodesMultiplier);
-            this.level.getProfiler().pop();
             if (path != null && path.getTarget() != null) {
                 this.targetPos = path.getTarget();
                 this.reachRange = distance;

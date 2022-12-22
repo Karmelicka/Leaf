@@ -43,11 +43,7 @@ public class BuildContexts<T extends ExecutionCommandSource<T>> {
         ChainModifiers chainModifiers = flags;
         List<T> list = sources;
         if (contextChain.getStage() != Stage.EXECUTE) {
-            context.profiler().push(() -> {
-                return "prepare " + this.commandInput;
-            });
 
-            try {
                 for(int i = context.forkLimit(); contextChain.getStage() != Stage.EXECUTE; contextChain = contextChain.nextStage()) {
                     CommandContext<T> commandContext = contextChain.getTopContext();
                     if (commandContext.isForked()) {
@@ -87,9 +83,6 @@ public class BuildContexts<T extends ExecutionCommandSource<T>> {
                         list = list2;
                     }
                 }
-            } finally {
-                context.profiler().pop();
-            }
         }
 
         if (list.isEmpty()) {

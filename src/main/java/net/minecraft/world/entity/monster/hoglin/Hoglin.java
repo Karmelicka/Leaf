@@ -130,9 +130,7 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("hoglinBrain");
         this.getBrain().tick((ServerLevel)this.level(), this);
-        this.level().getProfiler().pop();
         HoglinAi.updateActivity(this);
         if (this.isConverting()) {
             ++this.timeInOverworld;

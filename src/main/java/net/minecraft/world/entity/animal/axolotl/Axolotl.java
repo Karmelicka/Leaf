@@ -277,12 +277,8 @@ public class Axolotl extends Animal implements LerpingModel, VariantHolder<Axolo
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("axolotlBrain");
         this.getBrain().tick((ServerLevel) this.level(), this);
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("axolotlActivityUpdate");
         AxolotlAi.updateActivity(this);
-        this.level().getProfiler().pop();
         if (!this.isNoAi()) {
             Optional<Integer> optional = this.getBrain().getMemory(MemoryModuleType.PLAY_DEAD_TICKS);
 

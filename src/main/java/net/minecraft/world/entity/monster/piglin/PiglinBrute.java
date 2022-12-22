@@ -85,9 +85,7 @@ public class PiglinBrute extends AbstractPiglin {
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("piglinBruteBrain");
         this.getBrain().tick((ServerLevel)this.level(), this);
-        this.level().getProfiler().pop();
         PiglinBruteAi.updateActivity(this);
         PiglinBruteAi.maybePlayActivitySound(this);
         super.customServerAiStep();

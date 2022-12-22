@@ -490,11 +490,8 @@ public class Sniffer extends Animal {
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("snifferBrain");
         this.getBrain().tick((ServerLevel) this.level(), this);
-        this.level().getProfiler().popPush("snifferActivityUpdate");
         SnifferAi.updateActivity(this);
-        this.level().getProfiler().pop();
         super.customServerAiStep();
     }
 

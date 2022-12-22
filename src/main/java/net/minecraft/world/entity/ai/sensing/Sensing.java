@@ -26,9 +26,7 @@ public class Sensing {
         } else if (this.unseen.contains(i)) {
             return false;
         } else {
-            this.mob.level().getProfiler().push("hasLineOfSight");
             boolean bl = this.mob.hasLineOfSight(entity);
-            this.mob.level().getProfiler().pop();
             if (bl) {
                 this.seen.add(i);
             } else {

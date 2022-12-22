@@ -149,14 +149,10 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("camelBrain");
         Brain<Camel> behaviorcontroller = (Brain<Camel>) this.getBrain(); // CraftBukkit - decompile error
 
         behaviorcontroller.tick((ServerLevel) this.level(), this);
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("camelActivityUpdate");
         CamelAi.updateActivity(this);
-        this.level().getProfiler().pop();
         super.customServerAiStep();
     }
 

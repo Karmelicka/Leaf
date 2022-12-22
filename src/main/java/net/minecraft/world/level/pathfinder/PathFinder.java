@@ -12,7 +12,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.util.profiling.metrics.MetricCategory;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.PathNavigationRegion;
@@ -44,7 +43,7 @@ public class PathFinder {
                 map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos));
             }
             // Paper end - Perf: remove streams and optimize collection
-            Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
+            Path path = this.findPath(node, map, followRange, distance, rangeMultiplier); // Gale - Purpur - remove vanilla profiler
             this.nodeEvaluator.done();
             return path;
         }
@@ -52,9 +51,7 @@ public class PathFinder {
 
     @Nullable
     // Paper start - Perf: remove streams and optimize collection
-    private Path findPath(ProfilerFiller profiler, Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
-        profiler.push("find_path");
-        profiler.markForCharting(MetricCategory.PATH_FINDING);
+    private Path findPath(Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) { // Gale - Purpur - remove vanilla profiler
         // Set<Target> set = positions.keySet();
         startNode.g = 0.0F;
         startNode.h = this.getBestH(startNode, positions); // Paper - optimize collection

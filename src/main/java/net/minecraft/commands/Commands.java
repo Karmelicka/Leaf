@@ -54,7 +54,6 @@ import net.minecraft.server.commands.CloneCommands;
 import net.minecraft.server.commands.DamageCommand;
 import net.minecraft.server.commands.DataPackCommand;
 import net.minecraft.server.commands.DeOpCommands;
-import net.minecraft.server.commands.DebugCommand;
 import net.minecraft.server.commands.DebugConfigCommand;
 import net.minecraft.server.commands.DebugMobSpawningCommand;
 import net.minecraft.server.commands.DebugPathCommand;
@@ -165,7 +164,6 @@ public class Commands {
         DamageCommand.register(this.dispatcher, commandRegistryAccess);
         DataCommands.register(this.dispatcher);
         DataPackCommand.register(this.dispatcher);
-        DebugCommand.register(this.dispatcher);
         DefaultGameModeCommands.register(this.dispatcher);
         DifficultyCommand.register(this.dispatcher);
         EffectCommands.register(this.dispatcher, commandRegistryAccess);
@@ -326,9 +324,6 @@ public class Commands {
     public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label) { // CraftBukkit
         CommandSourceStack commandlistenerwrapper = (CommandSourceStack) parseresults.getContext().getSource();
 
-        commandlistenerwrapper.getServer().getProfiler().push(() -> {
-            return "/" + s;
-        });
         ContextChain contextchain = this.finishParsing(parseresults, s, commandlistenerwrapper, label); // CraftBukkit // Paper - Add UnknownCommandEvent
 
         try {
@@ -356,8 +351,6 @@ public class Commands {
                 commandlistenerwrapper.sendFailure(Component.literal(Util.describeError(exception)));
                 Commands.LOGGER.error("'/{}' threw an exception", s, exception);
             }
-        } finally {
-            commandlistenerwrapper.getServer().getProfiler().pop();
         }
 
     }
@@ -426,7 +419,7 @@ public class Commands {
             int j = minecraftserver.getGameRules().getInt(GameRules.RULE_MAX_COMMAND_FORK_COUNT);
 
             try {
-                ExecutionContext executioncontext1 = new ExecutionContext<>(i, j, minecraftserver.getProfiler());
+                ExecutionContext executioncontext1 = new ExecutionContext<>(i, j); // Gale - Purpur - remove vanilla profiler
 
                 try {
                     Commands.CURRENT_EXECUTION_CONTEXT.set(executioncontext1);

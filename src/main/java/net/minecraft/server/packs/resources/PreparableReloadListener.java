@@ -5,7 +5,13 @@ import java.util.concurrent.Executor;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 public interface PreparableReloadListener {
-    CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler, Executor prepareExecutor, Executor applyExecutor);
+    // Gale start - Purpur - remove vanilla profiler
+    default CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler, Executor prepareExecutor, Executor applyExecutor) {
+        return this.reload(synchronizer, manager, prepareExecutor, applyExecutor);
+    }
+    
+    CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, Executor prepareExecutor, Executor applyExecutor);
+    // Gale end - Purpur - remove vanilla profiler
 
     default String getName() {
         return this.getClass().getSimpleName();

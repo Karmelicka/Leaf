@@ -69,7 +69,7 @@ public class ReloadableServerResources {
 
     public static CompletableFuture<ReloadableServerResources> loadResources(ResourceManager manager, RegistryAccess.Frozen dynamicRegistryManager, FeatureFlagSet enabledFeatures, Commands.CommandSelection environment, int functionPermissionLevel, Executor prepareExecutor, Executor applyExecutor) {
         ReloadableServerResources reloadableServerResources = new ReloadableServerResources(dynamicRegistryManager, enabledFeatures, environment, functionPermissionLevel);
-        return SimpleReloadInstance.create(manager, reloadableServerResources.listeners(), prepareExecutor, applyExecutor, DATA_RELOAD_INITIAL_TASK, LOGGER.isDebugEnabled()).done().whenComplete((void_, throwable) -> {
+        return SimpleReloadInstance.create(manager, reloadableServerResources.listeners(), prepareExecutor, applyExecutor, DATA_RELOAD_INITIAL_TASK, false).done().whenComplete((void_, throwable) -> { // Gale - Purpur - remove vanilla profiler
             reloadableServerResources.commandBuildContext.missingTagAccessPolicy(CommandBuildContext.MissingTagAccessPolicy.FAIL);
         }).thenApply((void_) -> {
             return reloadableServerResources;

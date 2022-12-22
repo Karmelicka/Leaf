@@ -277,9 +277,7 @@ public class Warden extends Monster implements VibrationSystem {
     protected void customServerAiStep() {
         ServerLevel worldserver = (ServerLevel) this.level();
 
-        worldserver.getProfiler().push("wardenBrain");
         this.getBrain().tick(worldserver, this);
-        this.level().getProfiler().pop();
         super.customServerAiStep();
         if ((this.tickCount + this.getId()) % 120 == 0) {
             Warden.applyDarknessAround(worldserver, this.position(), this, 20);

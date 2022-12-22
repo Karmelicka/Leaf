@@ -23,7 +23,6 @@ import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
@@ -32,7 +31,6 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
         return ScheduledTick.INTRA_TICK_DRAIN_ORDER.compare(a.peek(), b.peek());
     };
     private final LongPredicate tickCheck;
-    private final Supplier<ProfilerFiller> profiler;
     private final Long2ObjectMap<LevelChunkTicks<T>> allContainers = new Long2ObjectOpenHashMap<>();
     private final Long2LongMap nextTickForContainer = Util.make(new Long2LongOpenHashMap(), (map) -> {
         map.defaultReturnValue(Long.MAX_VALUE);
@@ -48,9 +46,8 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
 
     };
 
-    public LevelTicks(LongPredicate tickingFutureReadyPredicate, Supplier<ProfilerFiller> profilerGetter) {
+    public LevelTicks(LongPredicate tickingFutureReadyPredicate) { // Gale - Purpur - remove vanilla profiler
         this.tickCheck = tickingFutureReadyPredicate;
-        this.profiler = profilerGetter;
     }
 
     public void addContainer(ChunkPos pos, LevelChunkTicks<T> scheduler) {
@@ -86,20 +83,13 @@ public class LevelTicks<T> implements LevelTickAccess<T> {
     }
 
     public void tick(long time, int maxTicks, BiConsumer<BlockPos, T> ticker) {
-        ProfilerFiller profilerFiller = this.profiler.get();
-        profilerFiller.push("collect");
-        this.collectTicks(time, maxTicks, profilerFiller);
-        profilerFiller.popPush("run");
-        profilerFiller.incrementCounter("ticksToRun", this.toRunThisTick.size());
+        this.collectTicks(time, maxTicks); // Gale - Purpur - remove vanilla profiler
         this.runCollectedTicks(ticker);
-        profilerFiller.popPush("cleanup");
         this.cleanupAfterTick();
-        profilerFiller.pop();
     }
 
-    private void collectTicks(long time, int maxTicks, ProfilerFiller profiler) {
+    private void collectTicks(long time, int maxTicks) { // Gale - Purpur - remove vanilla profiler
         this.sortContainersToTick(time);
-        profiler.incrementCounter("containersToTick", this.containersToTick.size());
         this.drainContainers(time, maxTicks);
         this.rescheduleLeftoverContainers();
     }

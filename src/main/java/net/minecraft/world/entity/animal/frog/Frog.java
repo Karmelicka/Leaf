@@ -161,12 +161,8 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("frogBrain");
         this.getBrain().tick((ServerLevel)this.level(), this);
-        this.level().getProfiler().pop();
-        this.level().getProfiler().push("frogActivityUpdate");
         FrogAi.updateActivity(this);
-        this.level().getProfiler().pop();
         super.customServerAiStep();
     }
 

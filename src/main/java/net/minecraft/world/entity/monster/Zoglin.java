@@ -200,9 +200,7 @@ public class Zoglin extends Monster implements Enemy, HoglinBase {
 
     @Override
     protected void customServerAiStep() {
-        this.level().getProfiler().push("zoglinBrain");
         this.getBrain().tick((ServerLevel)this.level(), this);
-        this.level().getProfiler().pop();
         this.updateActivity();
     }
 

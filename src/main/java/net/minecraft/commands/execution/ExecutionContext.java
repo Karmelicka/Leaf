@@ -20,7 +20,6 @@ public class ExecutionContext<T> implements AutoCloseable {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final int commandLimit;
     private final int forkLimit;
-    private final ProfilerFiller profiler;
     @Nullable
     private TraceCallbacks tracer;
     private int commandQuota;
@@ -29,10 +28,9 @@ public class ExecutionContext<T> implements AutoCloseable {
     private final List<CommandQueueEntry<T>> newTopCommands = new ObjectArrayList<>();
     private int currentFrameDepth;
 
-    public ExecutionContext(int maxCommandChainLength, int maxCommandForkCount, ProfilerFiller profiler) {
+    public ExecutionContext(int maxCommandChainLength, int maxCommandForkCount) { // Gale - Purpur - remove vanilla profiler
         this.commandLimit = maxCommandChainLength;
         this.forkLimit = maxCommandForkCount;
-        this.profiler = profiler;
         this.commandQuota = maxCommandChainLength;
     }
 
@@ -128,7 +126,7 @@ public class ExecutionContext<T> implements AutoCloseable {
     }
 
     public ProfilerFiller profiler() {
-        return this.profiler;
+        return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Gale - Purpur - remove vanilla profiler
     }
 
     public int forkLimit() {

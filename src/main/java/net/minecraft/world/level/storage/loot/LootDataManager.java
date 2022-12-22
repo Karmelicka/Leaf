@@ -20,7 +20,6 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.ProblemReporter;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -37,7 +36,7 @@ public class LootDataManager implements PreparableReloadListener, LootDataResolv
     public LootDataManager() {}
 
     @Override
-    public final CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler, Executor prepareExecutor, Executor applyExecutor) {
+    public final CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, Executor prepareExecutor, Executor applyExecutor) { // Gale - Purpur - remove vanilla profiler
         Map<LootDataType<?>, Map<ResourceLocation, ?>> map = new HashMap();
         CompletableFuture<?>[] acompletablefuture = (CompletableFuture[]) LootDataType.values().map((lootdatatype) -> {
             return LootDataManager.scheduleElementParse(lootdatatype, manager, prepareExecutor, map);

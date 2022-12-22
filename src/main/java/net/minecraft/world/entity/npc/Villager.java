@@ -254,9 +254,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
     }
     protected void customServerAiStep(final boolean inactive) {
         // Paper end
-        this.level().getProfiler().push("villagerBrain");
         if (!inactive) this.getBrain().tick((ServerLevel) this.level(), this); // Paper
-        this.level().getProfiler().pop();
         if (this.assignProfessionWhenSpawned) {
             this.assignProfessionWhenSpawned = false;
         }
