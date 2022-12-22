@@ -182,6 +182,8 @@ import co.aikar.timings.MinecraftTimings; // Paper
 
 public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, CommandSource, AutoCloseable {
 
+    public static final int SERVER_THREAD_PRIORITY = Integer.getInteger("gale.thread.priority.server", -1); // Gale - server thread priority environment variable
+
     private static MinecraftServer SERVER; // Paper
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(LOGGER.getName()); // Paper
@@ -312,6 +314,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         S s0 = serverFactory.apply(thread); // CraftBukkit - decompile error
 
         atomicreference.set(s0);
+        // Gale start - server thread priority environment variable
+        if (SERVER_THREAD_PRIORITY > 0) {
+            thread.setPriority(SERVER_THREAD_PRIORITY);
+        }
+        // Gale end - server thread priority environment variable
         thread.start();
         return s0;
     }
