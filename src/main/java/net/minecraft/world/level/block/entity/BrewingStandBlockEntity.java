@@ -6,6 +6,7 @@ import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
@@ -49,6 +50,7 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
     public static final int DATA_BREW_TIME = 0;
     public static final int DATA_FUEL_USES = 1;
     public static final int NUM_DATA_VALUES = 2;
+    private static final String[] INGREDIENT_NBT_KEYS = {"Gale.Ingredient", "Mirai.ingredient"}; // Gale - Mirai - fix MC-26304
     private NonNullList<ItemStack> items;
     public int brewTime;
     private boolean[] lastPotionCount;
@@ -301,6 +303,22 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
         ContainerHelper.loadAllItems(nbt, this.items);
         this.brewTime = nbt.getShort("BrewTime");
         this.fuel = nbt.getByte("Fuel");
+        // Gale start - Mirai - fix MC-26304
+        if (this.ingredient == null || this.ingredient == Items.AIR) {
+            for (String nbtKey : INGREDIENT_NBT_KEYS) {
+                try {
+                    if (nbt.contains(nbtKey)) {
+                        this.ingredient = BuiltInRegistries.ITEM.get(new net.minecraft.resources.ResourceLocation(nbt.getString(nbtKey)));
+                        if (this.ingredient != null && this.ingredient != Items.AIR) {
+                            break;
+                        }
+                    }
+                } catch (Throwable ignored) {
+                    // Cannot be helped
+                }
+            }
+        }
+        // Gale end - Mirai - fix MC-26304
     }
 
     @Override
@@ -309,6 +327,18 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
         nbt.putShort("BrewTime", (short) this.brewTime);
         ContainerHelper.saveAllItems(nbt, this.items);
         nbt.putByte("Fuel", (byte) this.fuel);
+        // Gale start - Mirai - fix MC-26304
+        if (this.ingredient != null && this.ingredient != Items.AIR) {
+            try {
+                String value = BuiltInRegistries.ITEM.getKey(this.ingredient).toString();
+                for (String nbtKey : INGREDIENT_NBT_KEYS) {
+                    nbt.putString(nbtKey, value);
+                }
+            } catch (Throwable ignored) {
+                // Cannot be helped
+            }
+        }
+        // Gale end - Mirai - fix MC-26304
     }
 
     @Override
