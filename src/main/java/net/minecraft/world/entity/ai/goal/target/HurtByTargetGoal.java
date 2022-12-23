@@ -114,6 +114,11 @@ public class HurtByTargetGoal extends TargetGoal {
     }
 
     protected void alertOther(Mob mob, LivingEntity target) {
+        // Gale start - Mirai - fix MC-110386
+        if (mob == target && mob.level().galeConfig().gameplayMechanics.fixes.mc110386) {
+            return;
+        }
+        // Gale end - Mirai - fix MC-110386
         mob.setTarget(target, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY, true); // CraftBukkit - reason
     }
 }

@@ -111,6 +111,11 @@ public class GaleWorldConfiguration extends ConfigurationPart {
             public boolean mc121706 = false;
             // Gale end - Purpur - fix MC-121706
 
+            // Gale start - Mirai - fix MC-110386
+            @Setting("mc-110386")
+            public boolean mc110386 = true;
+            // Gale end - Mirai - fix MC-110386
+
         }
 
         public double entityWakeUpDurationRatioStandardDeviation = 0.2; // Gale - variable entity wake-up duration
