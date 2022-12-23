@@ -1737,7 +1737,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
     @Override
     public void destroyBlockProgress(int entityId, BlockPos pos, int progress) {
-        Iterator iterator = this.server.getPlayerList().getPlayers().iterator();
+
+        // Gale start - SportPaper - reduce block destruction packet allocations
+        var players = this.server.getPlayerList().getPlayers();
+        if (players.isEmpty()) {
+            return;
+        }
+
+        ClientboundBlockDestructionPacket packet = new ClientboundBlockDestructionPacket(entityId, pos, progress);
+
+        Iterator iterator = players.iterator();
+        // Gale end - SportPaper - reduce block destruction packet allocations
 
         // CraftBukkit start
         Player entityhuman = null;
@@ -1760,7 +1770,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 // CraftBukkit end
 
                 if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0D) {
-                    entityplayer.connection.send(new ClientboundBlockDestructionPacket(entityId, pos, progress));
+                    entityplayer.connection.send(packet); // Gale - SportPaper - reduce block destruction packet allocations
                 }
             }
         }
