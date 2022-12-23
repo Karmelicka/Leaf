@@ -34,6 +34,7 @@ public class GaleWorldConfiguration extends ConfigurationPart {
     public class SmallOptimizations extends ConfigurationPart {
 
         public boolean saveFireworks = true; // Gale - EMC - make saving fireworks configurable
+        public boolean useOptimizedSheepOffspringColor = true; // Gale - carpet-fixes - optimize sheep offspring color
 
         // Gale start - Airplane - reduce projectile chunk loading
         public MaxProjectileChunkLoads maxProjectileChunkLoads;

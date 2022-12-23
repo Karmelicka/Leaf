@@ -418,7 +418,59 @@ public class Sheep extends Animal implements Shearable {
         return super.finalizeSpawn(world, difficulty, spawnReason, entityData, entityNbt);
     }
 
+    // Gale start - carpet-fixes - optimize sheep offspring color
+    private static DyeColor properDye(DyeColor firstColor, DyeColor secondColor) {
+        if (firstColor.equals(secondColor)) return firstColor;
+        switch(firstColor) {
+            case WHITE -> {
+                switch(secondColor) {
+                    case BLUE -> {return DyeColor.LIGHT_BLUE;}
+                    case GRAY -> {return DyeColor.LIGHT_GRAY;}
+                    case BLACK -> {return DyeColor.GRAY;}
+                    case GREEN -> {return DyeColor.LIME;}
+                    case RED -> {return DyeColor.PINK;}
+                }
+            }
+            case BLUE -> {
+                switch(secondColor) {
+                    case WHITE -> {return DyeColor.LIGHT_BLUE;}
+                    case GREEN -> {return DyeColor.CYAN;}
+                    case RED -> {return DyeColor.PURPLE;}
+                }
+            }
+            case RED -> {
+                switch(secondColor) {
+                    case YELLOW -> {return DyeColor.ORANGE;}
+                    case WHITE -> {return DyeColor.PINK;}
+                    case BLUE -> {return DyeColor.PURPLE;}
+                }
+            }
+            case GREEN -> {
+                switch(secondColor) {
+                    case BLUE -> {return DyeColor.CYAN;}
+                    case WHITE -> {return DyeColor.LIME;}
+                }
+            }
+            case YELLOW -> {if (secondColor.equals(DyeColor.RED)) return DyeColor.ORANGE;}
+            case PURPLE -> {if (secondColor.equals(DyeColor.PINK)) return DyeColor.MAGENTA;}
+            case PINK -> {if (secondColor.equals(DyeColor.PURPLE)) return DyeColor.MAGENTA;}
+            case GRAY -> {if (secondColor.equals(DyeColor.WHITE)) return DyeColor.LIGHT_GRAY;}
+            case BLACK -> {if (secondColor.equals(DyeColor.WHITE)) return DyeColor.GRAY;}
+        }
+        return null;
+    }
+    // Gale end - carpet-fixes - optimize sheep offspring color
+
     private DyeColor getOffspringColor(Animal firstParent, Animal secondParent) {
+        // Gale start - carpet-fixes - optimize sheep offspring color
+        if (firstParent.level() != null && firstParent.level().galeConfig().smallOptimizations.useOptimizedSheepOffspringColor) {
+            DyeColor firstColor = ((Sheep)firstParent).getColor();
+            DyeColor secondColor = ((Sheep)secondParent).getColor();
+            DyeColor col = properDye(firstColor,secondColor);
+            if (col == null) col = this.level().random.nextBoolean() ? firstColor : secondColor;
+            return col;
+        }
+        // Gale end - carpet-fixes - optimize sheep offspring color
         DyeColor enumcolor = ((Sheep) firstParent).getColor();
         DyeColor enumcolor1 = ((Sheep) secondParent).getColor();
         CraftingContainer inventorycrafting = Sheep.makeContainer(enumcolor, enumcolor1);
