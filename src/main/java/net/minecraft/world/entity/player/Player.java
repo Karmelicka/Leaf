@@ -1875,6 +1875,11 @@ public abstract class Player extends LivingEntity {
     }
 
     public void causeFoodExhaustion(float f, EntityExhaustionEvent.ExhaustionReason reason) {
+        // Gale start - Mirai - fix MC-31819
+        if (this.level().galeConfig().gameplayMechanics.fixes.mc31819 && this.level().getDifficulty() == Difficulty.PEACEFUL) {
+            return;
+        }
+        // Gale end - Mirai - fix MC-31819
         // CraftBukkit end
         if (!this.abilities.invulnerable) {
             if (!this.level().isClientSide) {
