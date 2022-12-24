@@ -1504,7 +1504,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
 
     public void tickServer(BooleanSupplier shouldKeepTicking) {
-        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
+        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTimingFullServerTick(); // Paper // Gale - final timings calls
         long i = Util.getNanos();
 
         // Paper start - move oversleep into full server tick
@@ -1576,7 +1576,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         this.logTickTime(l - i);
         this.profiler.pop();
         org.spigotmc.WatchdogThread.tick(); // Spigot
-        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
+        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTimingFullServerTick(); // Paper // Gale - final timings calls
     }
 
     private int computeNextAutosaveInterval() {
