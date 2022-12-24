@@ -67,6 +67,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
     public final Difficulty difficulty;
     public final GameType gamemode;
     public final String levelName;
+    public final String levelSeed; // Gale - include server.properties in timings
     public final int serverPort;
     @Nullable
     public final Boolean announcePlayerAchievements;
@@ -99,13 +100,14 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
     public final boolean hideOnlinePlayers;
     public final int entityBroadcastRangePercentage;
     public final String textFilteringConfig;
+    public final String resourcePackPrompt; // Gale - include server.properties in timings
     public final Optional<MinecraftServer.ServerResourcePackInfo> serverResourcePackInfo;
     public final DataPackConfig initialDataPackConfiguration;
     public final Settings<DedicatedServerProperties>.MutableValue<Integer> playerIdleTimeout;
     public final Settings<DedicatedServerProperties>.MutableValue<Boolean> whiteList;
     public final boolean enforceSecureProfile;
     public final boolean logIPs;
-    private final DedicatedServerProperties.WorldDimensionData worldDimensionData;
+    public final DedicatedServerProperties.WorldDimensionData worldDimensionData; // Gale - include server.properties in timings - private -> public
     public final WorldOptions worldOptions;
 
     public final String rconIp; // Paper - Configurable rcon ip
@@ -157,6 +159,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
         this.enforceSecureProfile = this.get("enforce-secure-profile", true);
         this.logIPs = this.get("log-ips", true);
         String s = this.get("level-seed", "");
+        this.levelSeed = s; // Gale - include server.properties in timings
         boolean flag = this.get("generate-structures", true);
         long i = WorldOptions.parseSeed(s).orElse(WorldOptions.randomSeed());
 
@@ -166,7 +169,10 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
         }, new JsonObject()), (String) this.get("level-type", (s1) -> {
             return s1.toLowerCase(Locale.ROOT);
         }, WorldPresets.NORMAL.location().toString()));
-        this.serverResourcePackInfo = DedicatedServerProperties.getServerPackInfo(this.get("resource-pack-id", ""), this.get("resource-pack", ""), this.get("resource-pack-sha1", ""), this.getLegacyString("resource-pack-hash"), this.get("require-resource-pack", false), this.get("resource-pack-prompt", ""));
+        // Gale start - include server.properties in timings
+        this.resourcePackPrompt = this.get("resource-pack-prompt", "");
+        this.serverResourcePackInfo = DedicatedServerProperties.getServerPackInfo(this.get("resource-pack-id", ""), this.get("resource-pack", ""), this.get("resource-pack-sha1", ""), this.getLegacyString("resource-pack-hash"), this.get("require-resource-pack", false), this.resourcePackPrompt);
+        // Gale end - include server.properties in timings
         this.initialDataPackConfiguration = DedicatedServerProperties.getDatapackConfig(this.get("initial-enabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getEnabled())), this.get("initial-disabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getDisabled())));
         // Paper start - Configurable rcon ip
         final String rconIp = this.getStringRaw("rcon.ip");

@@ -35,6 +35,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.entity.EntityType;
+import org.galemc.gale.configuration.timingsexport.VanillaServerPropertiesTimingsExport;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import oshi.SystemInfo;
@@ -238,6 +239,7 @@ public class TimingsExport extends Thread {
         // Information on the users Config
 
         parent.put("config", createObject(
+            pair("server.properties", VanillaServerPropertiesTimingsExport.get()), // Gale - include server.properties in timings
             pair("spigot", mapAsJSON(Bukkit.spigot().getSpigotConfig(), null)),
             pair("bukkit", mapAsJSON(Bukkit.spigot().getBukkitConfig(), null)),
             // Gale start - Gale configuration - include in timings
