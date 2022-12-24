@@ -52,6 +52,7 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
     public class Misc extends ConfigurationPart {
 
         public boolean verifyChatOrder = true; // Gale - Pufferfish - make chat order verification configurable
+        public int premiumAccountSlowLoginTimeout = -1; // Gale - make slow login timeout configurable
 
         public IncludeInTimingsReport includeInTimingsReport;
 

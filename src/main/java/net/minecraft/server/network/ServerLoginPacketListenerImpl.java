@@ -94,7 +94,10 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
             this.finishLoginAndWaitForClient(this.authenticatedProfile);
         }
 
-        if (this.tick++ == 600) {
+        // Gale start - make slow login timeout configurable
+        int slowLoginTimeout = GaleGlobalConfiguration.get().misc.premiumAccountSlowLoginTimeout;
+        if (this.tick++ >= (slowLoginTimeout < 1 ? MAX_TICKS_BEFORE_LOGIN : slowLoginTimeout)) {
+            // Gale end - make slow login timeout configurable
             this.disconnect(Component.translatable("multiplayer.disconnect.slow_login"));
         }
 
