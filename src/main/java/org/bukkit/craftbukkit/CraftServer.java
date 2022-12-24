@@ -43,6 +43,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 // import jline.console.ConsoleReader;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -281,6 +284,7 @@ public final class CraftServer implements Server {
     protected final DedicatedServer console;
     protected final DedicatedPlayerList playerList;
     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
+    private final Object2ObjectMap<UUID, World> worldsByUUID = new Object2ObjectOpenHashMap<>(); // Gale - MultiPaper - CraftBukkit UUID to world map
     private final Map<Class<?>, Registry<?>> registries = new HashMap<>();
     private YamlConfiguration configuration;
     private YamlConfiguration commandsConfiguration;
@@ -1464,6 +1468,7 @@ public final class CraftServer implements Server {
             this.getLogger().log(Level.SEVERE, null, ex);
         }
 
+        this.worldsByUUID.remove(world.getUID()); // Gale - MultiPaper - CraftBukkit UUID to world map
         this.worlds.remove(world.getName().toLowerCase(java.util.Locale.ENGLISH));
         this.console.removeLevel(handle);
         return true;
@@ -1482,12 +1487,7 @@ public final class CraftServer implements Server {
 
     @Override
     public World getWorld(UUID uid) {
-        for (World world : this.worlds.values()) {
-            if (world.getUID().equals(uid)) {
-                return world;
-            }
-        }
-        return null;
+        return this.worldsByUUID.get(uid); // Gale - MultiPaper - CraftBukkit UUID to world map
     }
 
     // Paper start
@@ -1505,6 +1505,7 @@ public final class CraftServer implements Server {
             System.out.println("World " + world.getName() + " is a duplicate of another world and has been prevented from loading. Please delete the uid.dat file from " + world.getName() + "'s world directory if you want to be able to load the duplicate world.");
             return;
         }
+        this.worldsByUUID.put(world.getUID(), world); // Gale - MultiPaper - CraftBukkit UUID to world map
         this.worlds.put(world.getName().toLowerCase(java.util.Locale.ENGLISH), world);
     }
 
