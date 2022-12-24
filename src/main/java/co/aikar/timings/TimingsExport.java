@@ -35,6 +35,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.entity.EntityType;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.galemc.gale.configuration.timingsexport.VanillaServerPropertiesTimingsExport;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -51,6 +52,8 @@ import java.lang.management.RuntimeMXBean;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -135,6 +138,59 @@ public class TimingsExport extends Thread {
 
         HardwareAbstractionLayer hardwareInfo = new SystemInfo().getHardware();
 
+        // Gale start - include hardware specs in timings
+        var processor = hardwareInfo.getProcessor();
+        var processorIdentifier = processor.getProcessorIdentifier();
+        var memory = hardwareInfo.getMemory();
+
+        Map<String, Object> hardwareSpecsMap = new LinkedHashMap<>();
+        if (GaleGlobalConfiguration.get().misc.includeInTimingsReport.hardwareSpecs.cpu) {
+            hardwareSpecsMap.put("cpu", createObject(
+                pair("logicalprocessorcount", processor.getLogicalProcessorCount()),
+                pair("physicalprocessorcount", processor.getPhysicalProcessorCount()),
+                pair("physicalpackagecount", processor.getPhysicalPackageCount()),
+                pair("contextswitches", processor.getContextSwitches()),
+                pair("interrupts", processor.getInterrupts()),
+                pair("maxfreq", processor.getMaxFreq()),
+                pair("currentfreq", Arrays.toString(processor.getCurrentFreq())),
+                pair("identifier", createObject(
+                    pair("vendor", String.valueOf(processorIdentifier.getVendor()).trim()),
+                    pair("name", String.valueOf(processorIdentifier.getName()).trim()),
+                    pair("family", String.valueOf(processorIdentifier.getFamily()).trim()),
+                    pair("model", String.valueOf(processorIdentifier.getModel()).trim()),
+                    pair("vendor", String.valueOf(processorIdentifier.getVendor()).trim()),
+                    pair("cpu64bit", processorIdentifier.isCpu64bit()),
+                    pair("vendorfreq", processorIdentifier.getVendorFreq()),
+                    pair("microarchitecture", String.valueOf(processorIdentifier.getMicroarchitecture()).trim())
+                ))
+            ));
+        }
+        if (GaleGlobalConfiguration.get().misc.includeInTimingsReport.hardwareSpecs.disks) {
+            hardwareSpecsMap.put("diskstores", toArrayMapper(hardwareInfo.getDiskStores(), disk -> createObject(
+                pair("name", String.valueOf(disk.getName()).trim()),
+                pair("model", String.valueOf(disk.getModel()).trim()),
+                pair("serial", String.valueOf(disk.getSerial()).trim()),
+                pair("size", disk.getSize())
+            )));
+        }
+        if (GaleGlobalConfiguration.get().misc.includeInTimingsReport.hardwareSpecs.gpus) {
+            hardwareSpecsMap.put("gpus", toArrayMapper(hardwareInfo.getGraphicsCards(), gpu -> createObject(
+                pair("name", String.valueOf(gpu.getName()).trim()),
+                pair("deviceid", String.valueOf(gpu.getDeviceId()).trim()),
+                pair("vendor", String.valueOf(gpu.getVendor()).trim()),
+                pair("versioninfo", String.valueOf(gpu.getVersionInfo()).trim()),
+                pair("vram", gpu.getVRam())
+            )));
+        }
+        if (GaleGlobalConfiguration.get().misc.includeInTimingsReport.hardwareSpecs.memory) {
+            hardwareSpecsMap.put("memory", createObject(
+                pair("total", memory.getTotal()),
+                pair("available", memory.getAvailable()),
+                pair("pagesize", memory.getPageSize())
+            ));
+        }
+        // Gale end - include hardware specs in timings
+
         parent.put("system", createObject(
                 pair("timingcost", getCost()),
                 pair("loadavg", osInfo.getSystemLoadAverage()),
@@ -152,6 +208,7 @@ public class TimingsExport extends Thread {
                 )),
                 pair("cpu", runtime.availableProcessors()),
                 pair("cpuname", hardwareInfo.getProcessor().getProcessorIdentifier().getName().trim()),
+                pair("hardwarespecs", hardwareSpecsMap), // Gale - include hardware specs in timings
                 pair("runtime", runtimeBean.getUptime()),
                 pair("flags", StringUtils.join(runtimeBean.getInputArguments(), " ")),
                 pair("gc", toObjectMapper(ManagementFactory.getGarbageCollectorMXBeans(), input -> pair(input.getName(), toArray(input.getCollectionCount(), input.getCollectionTime()))))

@@ -32,7 +32,7 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
 
         public IncludeInTimingsReport includeInTimingsReport;
         public class IncludeInTimingsReport extends ConfigurationPart {
-            
+
             // Gale start - include server.properties in timings
             public ServerProperties serverProperties;
             public class ServerProperties extends ConfigurationPart {
@@ -51,6 +51,16 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
                 public boolean textFilteringConfig = false;
             }
             // Gale end - include server.properties in timings
+
+            // Gale start - include hardware specs in timings
+            public HardwareSpecs hardwareSpecs;
+            public class HardwareSpecs extends ConfigurationPart {
+                public boolean cpu = true;
+                public boolean disks = true;
+                public boolean gpus = true;
+                public boolean memory = true;
+            }
+            // Gale end - include hardware specs in timings
 
         }
 
