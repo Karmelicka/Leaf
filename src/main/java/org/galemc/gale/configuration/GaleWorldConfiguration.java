@@ -9,6 +9,7 @@ import io.papermc.paper.configuration.PaperConfigurations;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.spigotmc.SpigotWorldConfig;
+import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
 @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
@@ -129,6 +130,16 @@ public class GaleWorldConfiguration extends ConfigurationPart {
         public double entityWakeUpDurationRatioStandardDeviation = 0.2; // Gale - variable entity wake-up duration
         public boolean hideFlamesOnEntitiesWithFireResistance = false; // Gale - Slice - hide flames on entities with fire resistance
         public boolean tryRespawnEnderDragonAfterEndCrystalPlace = true; // Gale - Pufferfish - make ender dragon respawn attempt after placing end crystals configurable
+
+        // Gale start - make max interaction distance configurable
+        public double playerMaxInteractionDistance = -1.0;
+        public transient double playerMaxInteractionDistanceSquared;
+        // Gale end - make max interaction distance configurable
+
+        @PostProcess
+        public void postProcess() {
+            this.playerMaxInteractionDistanceSquared = this.playerMaxInteractionDistance * this.playerMaxInteractionDistance; // Gale - make max interaction distance configurable
+        }
 
     }
 

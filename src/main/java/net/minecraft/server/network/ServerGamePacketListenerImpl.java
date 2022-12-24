@@ -250,7 +250,7 @@ import org.bukkit.inventory.SmithingInventory;
 public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerGamePacketListener, ServerPlayerConnection, TickablePacketListener {
 
     static final Logger LOGGER = LogUtils.getLogger();
-    public static final double MAX_INTERACTION_DISTANCE = Mth.square(6.0D);
+    public static final double DEFAULT_MAX_INTERACTION_DISTANCE_SQUARED = Mth.square(6.0D); // Gale - make max interaction distance configurable
     private static final int NO_BLOCK_UPDATES_TO_ACK = -1;
     private static final int TRACKED_MESSAGE_DISCONNECT_THRESHOLD = 4096;
     private static final Component CHAT_VALIDATION_FAILED = Component.translatable("multiplayer.disconnect.chat_validation_failed");
@@ -327,6 +327,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
     private float lastYaw = Float.MAX_VALUE;
     private boolean justTeleported = false;
     // CraftBukkit end
+
+    // Gale start - make max interaction distance configurable
+    public static double getMaxInteractionDistanceSquared(Level level) {
+        var config = level.galeConfig().gameplayMechanics;
+        return config.playerMaxInteractionDistance < 0 ? ServerGamePacketListenerImpl.DEFAULT_MAX_INTERACTION_DISTANCE_SQUARED : config.playerMaxInteractionDistanceSquared;
+    }
+    // Gale end - make max interaction distance configurable
 
     @Override
     public void tick() {
@@ -1928,7 +1935,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
             BlockPos blockposition = movingobjectpositionblock.getBlockPos();
             Vec3 vec3d1 = Vec3.atCenterOf(blockposition);
 
-            if (this.player.getEyePosition().distanceToSqr(vec3d1) <= ServerGamePacketListenerImpl.MAX_INTERACTION_DISTANCE) {
+            if (this.player.getEyePosition().distanceToSqr(vec3d1) <= ServerGamePacketListenerImpl.getMaxInteractionDistanceSquared(this.player.level())) { // Gale - make max interaction distance configurable
                 Vec3 vec3d2 = vec3d.subtract(vec3d1);
                 double d0 = 1.0000001D;
 
@@ -2720,7 +2727,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
 
             AABB axisalignedbb = entity.getBoundingBox();
 
-            if (axisalignedbb.distanceToSqr(this.player.getEyePosition()) < ServerGamePacketListenerImpl.MAX_INTERACTION_DISTANCE) {
+            if (axisalignedbb.distanceToSqr(this.player.getEyePosition()) < ServerGamePacketListenerImpl.getMaxInteractionDistanceSquared(this.player.level())) { // Gale - make max interaction distance configurable
                 packet.dispatch(new ServerboundInteractPacket.Handler() {
                     private void performInteraction(InteractionHand enumhand, ServerGamePacketListenerImpl.EntityInteraction playerconnection_a, PlayerInteractEntityEvent event) { // CraftBukkit
                         ItemStack itemstack = ServerGamePacketListenerImpl.this.player.getItemInHand(enumhand);

@@ -174,7 +174,7 @@ public class ServerPlayerGameMode {
     private void debugLogging(BlockPos pos, boolean success, int sequence, String reason) {}
 
     public void handleBlockBreakAction(BlockPos pos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, int sequence) {
-        if (this.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > ServerGamePacketListenerImpl.MAX_INTERACTION_DISTANCE) {
+        if (this.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > ServerGamePacketListenerImpl.getMaxInteractionDistanceSquared(this.player.level())) { // Gale - make max interaction distance configurable
             if (true) return; // Paper - Don't allow digging into unloaded chunks; Don't notify if unreasonably far away
             this.debugLogging(pos, false, sequence, "too far");
         } else if (pos.getY() >= worldHeight) {

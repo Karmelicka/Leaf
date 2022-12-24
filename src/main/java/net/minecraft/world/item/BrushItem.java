@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -110,7 +111,7 @@ public class BrushItem extends Item {
     private HitResult calculateHitResult(Player user) {
         return ProjectileUtil.getHitResultOnViewVector(user, (entity) -> {
             return !entity.isSpectator() && entity.isPickable();
-        }, (double)Player.getPickRange(user.isCreative()));
+        }, Math.sqrt(ServerGamePacketListenerImpl.getMaxInteractionDistanceSquared(user.level())) - 1.0D); // Gale - make max interaction distance configurable
     }
 
     private void spawnDustParticles(Level world, BlockHitResult hitResult, BlockState state, Vec3 userRotation, HumanoidArm arm) {
