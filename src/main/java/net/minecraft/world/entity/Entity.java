@@ -4624,6 +4624,16 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
         return this.feetBlockState;
     }
 
+    // Gale start - don't load chunks to activate climbing entities
+    public @Nullable BlockState getFeetBlockStateIfLoaded() {
+        if (this.feetBlockState == null) {
+            this.feetBlockState = this.level.getBlockStateIfLoaded(this.blockPosition());
+        }
+
+        return this.feetBlockState;
+    }
+    // Gale end - don't load chunks to activate climbing entities
+
     public ChunkPos chunkPosition() {
         return this.chunkPosition;
     }

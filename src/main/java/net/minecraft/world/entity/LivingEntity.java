@@ -2038,19 +2038,43 @@ public abstract class LivingEntity extends Entity implements Attackable {
 
     public boolean onClimbableCached() {
         if (!this.blockPosition().equals(this.lastClimbingPosition)) {
-            this.cachedOnClimbable = this.onClimbable();
-            this.lastClimbingPosition = this.blockPosition();
+            // Gale start - don't load chunks to activate climbing entities
+            Boolean onClimbableIfLoaded = this.onClimbable(this.level().galeConfig().smallOptimizations.loadChunks.toActivateClimbingEntities);
+            if (onClimbableIfLoaded != null) {
+                this.cachedOnClimbable = onClimbableIfLoaded;
+                this.lastClimbingPosition = this.blockPosition();
+            } else {
+                this.cachedOnClimbable = false;
+                this.lastClimbingPosition = null;
+            }
+            // Gale end - don't load chunks to activate climbing entities
         }
         return this.cachedOnClimbable;
     }
     // Gale end - Airplane - cache on climbable check
 
     public boolean onClimbable() {
+        // Gale start - don't load chunks to activate climbing entities
+        return onClimbable(true);
+    }
+
+    public Boolean onClimbable(boolean loadChunk) {
+        // Gale end - don't load chunks to activate climbing entities
         if (this.isSpectator()) {
             return false;
         } else {
             BlockPos blockposition = this.blockPosition();
-            BlockState iblockdata = this.getFeetBlockState();
+            // Gale start - don't load chunks to activate climbing entities
+            BlockState iblockdata;
+            if (loadChunk) {
+                iblockdata = this.getFeetBlockState();
+            } else {
+                iblockdata = this.getFeetBlockStateIfLoaded();
+                if (iblockdata == null) {
+                    return null;
+                }
+            }
+            // Gale end - don't load chunks to activate climbing entities
 
             if (iblockdata.is(BlockTags.CLIMBABLE)) {
                 this.lastClimbablePos = Optional.of(blockposition);
