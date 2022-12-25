@@ -277,6 +277,13 @@ public abstract class PlayerList {
         org.spigotmc.event.player.PlayerSpawnLocationEvent ev = new com.destroystokyo.paper.event.player.PlayerInitialSpawnEvent(spawnPlayer, spawnPlayer.getLocation()); // Paper use our duplicate event
         this.cserver.getPluginManager().callEvent(ev);
 
+        // Gale start - MultiPaper - do not place player in world if kicked before being spawned in
+        if (!connection.isConnected() || player.quitReason != null) {
+            /*pendingPlayers.remove(player.getUUID(), player);*/ // Gale - MultiPaper - do not place player in world if kicked before being spawned in - this patch was removed from Paper but might be useful later
+            return;
+        }
+        // Gale end - MultiPaper - do not place player in world if kicked before being spawned in
+
         Location loc = ev.getSpawnLocation();
         worldserver1 = ((CraftWorld) loc.getWorld()).getHandle();
 
