@@ -1,9 +1,8 @@
 package net.minecraft.world.entity.ai.behavior;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import java.util.Set;
-import java.util.stream.Collectors;
+
+import java.util.Arrays;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EntityType;
@@ -15,11 +14,16 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TradeWithVillager extends Behavior<Villager> {
     private static final int INTERACT_DIST_SQR = 5;
     private static final float SPEED_MODIFIER = 0.5F;
-    private Set<Item> trades = ImmutableSet.of();
+    // Gale start - optimize villager data storage
+    private static final Item[] WHEAT_SINGLETON_ARRAY = {Items.WHEAT};
+    private @NotNull Item @Nullable [] trades = null;
+    // Gale end - optimize villager data storage
 
     public TradeWithVillager() {
         super(ImmutableMap.of(MemoryModuleType.INTERACTION_TARGET, MemoryStatus.VALUE_PRESENT, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryStatus.VALUE_PRESENT));
@@ -49,15 +53,17 @@ public class TradeWithVillager extends Behavior<Villager> {
             BehaviorUtils.lockGazeAndWalkToEachOther(entity, villager, 0.5F);
             entity.gossip(world, villager, time);
             if (entity.hasExcessFood() && (entity.getVillagerData().getProfession() == VillagerProfession.FARMER || villager.wantsMoreFood())) {
-                throwHalfStack(entity, Villager.FOOD_POINTS.keySet(), villager);
+                throwHalfStack(entity, Villager.FOOD_POINTS_KEY_ARRAY, villager); // Gale - optimize villager data storage
             }
 
             if (villager.getVillagerData().getProfession() == VillagerProfession.FARMER && entity.getInventory().countItem(Items.WHEAT) > Items.WHEAT.getMaxStackSize() / 2) {
-                throwHalfStack(entity, ImmutableSet.of(Items.WHEAT), villager);
+                throwHalfStack(entity, WHEAT_SINGLETON_ARRAY, villager); // Gale - optimize villager data storage
             }
 
-            if (!this.trades.isEmpty() && entity.getInventory().hasAnyOf(this.trades)) {
+            // Gale start - optimize villager data storage
+            if (this.trades != null && entity.getInventory().hasAnyOf(this.trades)) {
                 throwHalfStack(entity, this.trades, villager);
+                // Gale end - optimize villager data storage
             }
 
         }
@@ -68,15 +74,35 @@ public class TradeWithVillager extends Behavior<Villager> {
         villager.getBrain().eraseMemory(MemoryModuleType.INTERACTION_TARGET);
     }
 
-    private static Set<Item> figureOutWhatIAmWillingToTrade(Villager entity, Villager target) {
-        ImmutableSet<Item> immutableSet = target.getVillagerData().getProfession().requestedItems();
-        ImmutableSet<Item> immutableSet2 = entity.getVillagerData().getProfession().requestedItems();
-        return immutableSet.stream().filter((item) -> {
-            return !immutableSet2.contains(item);
-        }).collect(Collectors.toSet());
+    // Gale start - optimize villager data storage
+    private static @NotNull Item @Nullable [] figureOutWhatIAmWillingToTrade(Villager entity, Villager target) {
+        @NotNull Item @Nullable [] immutableSet = target.getVillagerData().getProfession().requestedItems();
+        if (immutableSet == null) {
+            return null;
+        }
+        @NotNull Item @Nullable [] immutableSet2 = entity.getVillagerData().getProfession().requestedItems();
+        if (immutableSet2 == null) {
+            return immutableSet;
+        }
+        if (immutableSet == immutableSet2) {
+            return null;
+        }
+        Item[] willingToTrade = new Item[immutableSet.length];
+        int willingToTradeSize = 0;
+        forImmutableSet: for (Item item : immutableSet) {
+            for (Item item2 : immutableSet2) {
+                if (item == item2) {
+                    continue forImmutableSet;
+                }
+            }
+            willingToTrade[willingToTradeSize] = item;
+            willingToTradeSize++;
+        }
+        return Arrays.copyOf(willingToTrade, willingToTradeSize);
+        // Gale end - optimize villager data storage
     }
 
-    private static void throwHalfStack(Villager villager, Set<Item> validItems, LivingEntity target) {
+    private static void throwHalfStack(Villager villager, @NotNull Item @NotNull [] validItems, LivingEntity target) { // Gale - optimize villager data storage
         SimpleContainer simpleContainer = villager.getInventory();
         ItemStack itemStack = ItemStack.EMPTY;
         int i = 0;
@@ -89,7 +115,16 @@ public class TradeWithVillager extends Behavior<Villager> {
                 itemStack2 = simpleContainer.getItem(i);
                 if (!itemStack2.isEmpty()) {
                     item = itemStack2.getItem();
-                    if (validItems.contains(item)) {
+                    // Gale start - optimize villager data storage
+                    boolean inValidItems = false;
+                    for (Item validItem : validItems) {
+                        if (validItem == item) {
+                            inValidItems = true;
+                            break;
+                        }
+                    }
+                    if (inValidItems) {
+                        // Gale end - optimize villager data storage
                         if (itemStack2.getCount() > itemStack2.getMaxStackSize() / 2) {
                             j = itemStack2.getCount() / 2;
                             break label28;

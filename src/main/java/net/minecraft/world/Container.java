@@ -127,6 +127,20 @@ public interface Container extends Clearable {
         });
     }
 
+    // Gale start - optimize villager data storage
+    default boolean hasAnyOf(Item[] items) {
+        for (int i = 0; i < this.getContainerSize(); ++i) {
+            ItemStack itemstack = this.getItem(i);
+            for (Item item : items) {
+                if (itemstack.is(item)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    // Gale end - optimize villager data storage
+
     default boolean hasAnyMatching(Predicate<ItemStack> predicate) {
         for (int i = 0; i < this.getContainerSize(); ++i) {
             ItemStack itemstack = this.getItem(i);

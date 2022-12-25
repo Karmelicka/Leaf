@@ -90,6 +90,7 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.AABB;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 // CraftBukkit start
@@ -106,8 +107,9 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
     private static final EntityDataAccessor<VillagerData> DATA_VILLAGER_DATA = SynchedEntityData.defineId(Villager.class, EntityDataSerializers.VILLAGER_DATA);
     public static final int BREEDING_FOOD_THRESHOLD = 12;
     public static final Map<Item, Integer> FOOD_POINTS = ImmutableMap.of(Items.BREAD, 4, Items.POTATO, 1, Items.CARROT, 1, Items.BEETROOT, 1);
+    public static final Item[] FOOD_POINTS_KEY_ARRAY = FOOD_POINTS.keySet().toArray(Item[]::new); // Gale - optimize villager data storage
     private static final int TRADES_PER_LEVEL = 2;
-    private static final Set<Item> WANTED_ITEMS = ImmutableSet.of(Items.BREAD, Items.POTATO, Items.CARROT, Items.WHEAT, Items.WHEAT_SEEDS, Items.BEETROOT, new Item[]{Items.BEETROOT_SEEDS, Items.TORCHFLOWER_SEEDS, Items.PITCHER_POD});
+    private static final Item[] WANTED_ITEMS = {Items.BREAD, Items.POTATO, Items.CARROT, Items.WHEAT, Items.WHEAT_SEEDS, Items.BEETROOT, Items.BEETROOT_SEEDS, Items.TORCHFLOWER_SEEDS, Items.PITCHER_POD}; // Gale - optimize villager data storage
     private static final int MAX_GOSSIP_TOPICS = 10;
     private static final int GOSSIP_COOLDOWN = 1200;
     private static final int GOSSIP_DECAY_INTERVAL = 24000;
@@ -916,7 +918,28 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
     public boolean wantsToPickUp(ItemStack stack) {
         Item item = stack.getItem();
 
-        return (Villager.WANTED_ITEMS.contains(item) || this.getVillagerData().getProfession().requestedItems().contains(item)) && this.getInventory().canAddItem(stack);
+        // Gale start - optimize villager data storage
+        boolean isDesired = false;
+        for (Item wantedItem : WANTED_ITEMS) {
+            if (wantedItem == item) {
+                isDesired = true;
+                break;
+            }
+        }
+        if (!isDesired) {
+            var requestedItems = this.getVillagerData().getProfession().requestedItems();
+            if (requestedItems == null) {
+                return false;
+            }
+            for (Item requestedItem : requestedItems) {
+                if (requestedItem == item) {
+                    isDesired = true;
+                    break;
+                }
+            }
+        }
+        return isDesired && this.getInventory().canAddItem(stack);
+        // Gale end - optimize villager data storage
     }
 
     public boolean hasExcessFood() {

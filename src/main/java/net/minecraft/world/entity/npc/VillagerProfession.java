@@ -1,8 +1,6 @@
 package net.minecraft.world.entity.npc;
 
-import com.google.common.collect.ImmutableSet;
 import java.util.function.Predicate;
-import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -17,8 +15,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public record VillagerProfession(String name, Predicate<Holder<PoiType>> heldJobSite, Predicate<Holder<PoiType>> acquirableJobSite, ImmutableSet<Item> requestedItems, ImmutableSet<Block> secondaryPoi, @Nullable SoundEvent workSound) {
+public record VillagerProfession(String name, Predicate<Holder<PoiType>> heldJobSite, Predicate<Holder<PoiType>> acquirableJobSite, @NotNull Item @Nullable [] requestedItems, @Nullable Block secondaryPoi, @Nullable SoundEvent workSound) { // Gale - optimize villager data storage
     public static final Predicate<Holder<PoiType>> ALL_ACQUIRABLE_JOBS = (poiType) -> {
         return poiType.is(PoiTypeTags.ACQUIRABLE_JOB_SITE);
     };
@@ -27,7 +27,7 @@ public record VillagerProfession(String name, Predicate<Holder<PoiType>> heldJob
     public static final VillagerProfession BUTCHER = register("butcher", PoiTypes.BUTCHER, SoundEvents.VILLAGER_WORK_BUTCHER);
     public static final VillagerProfession CARTOGRAPHER = register("cartographer", PoiTypes.CARTOGRAPHER, SoundEvents.VILLAGER_WORK_CARTOGRAPHER);
     public static final VillagerProfession CLERIC = register("cleric", PoiTypes.CLERIC, SoundEvents.VILLAGER_WORK_CLERIC);
-    public static final VillagerProfession FARMER = register("farmer", PoiTypes.FARMER, ImmutableSet.of(Items.WHEAT, Items.WHEAT_SEEDS, Items.BEETROOT_SEEDS, Items.BONE_MEAL), ImmutableSet.of(Blocks.FARMLAND), SoundEvents.VILLAGER_WORK_FARMER);
+    public static final VillagerProfession FARMER = register("farmer", PoiTypes.FARMER, new Item[] {Items.WHEAT, Items.WHEAT_SEEDS, Items.BEETROOT_SEEDS, Items.BONE_MEAL}, Blocks.FARMLAND, SoundEvents.VILLAGER_WORK_FARMER); // Gale - optimize villager data storage
     public static final VillagerProfession FISHERMAN = register("fisherman", PoiTypes.FISHERMAN, SoundEvents.VILLAGER_WORK_FISHERMAN);
     public static final VillagerProfession FLETCHER = register("fletcher", PoiTypes.FLETCHER, SoundEvents.VILLAGER_WORK_FLETCHER);
     public static final VillagerProfession LEATHERWORKER = register("leatherworker", PoiTypes.LEATHERWORKER, SoundEvents.VILLAGER_WORK_LEATHERWORKER);
@@ -52,18 +52,20 @@ public record VillagerProfession(String name, Predicate<Holder<PoiType>> heldJob
     }
 
     private static VillagerProfession register(String id, Predicate<Holder<PoiType>> heldWorkstation, Predicate<Holder<PoiType>> acquirableWorkstation, @Nullable SoundEvent workSound) {
-        return register(id, heldWorkstation, acquirableWorkstation, ImmutableSet.of(), ImmutableSet.of(), workSound);
+        return register(id, heldWorkstation, acquirableWorkstation, null, null, workSound); // Gale - optimize villager data storage
     }
 
-    private static VillagerProfession register(String id, ResourceKey<PoiType> heldWorkstation, ImmutableSet<Item> gatherableItems, ImmutableSet<Block> secondaryJobSites, @Nullable SoundEvent workSound) {
+    private static VillagerProfession register(String id, ResourceKey<PoiType> heldWorkstation, @NotNull Item @Nullable [] gatherableItems, @Nullable Block secondaryJobSite, @Nullable SoundEvent workSound) { // Gale - optimize villager data storage
         return register(id, (entry) -> {
             return entry.is(heldWorkstation);
         }, (entry) -> {
             return entry.is(heldWorkstation);
-        }, gatherableItems, secondaryJobSites, workSound);
+        }, gatherableItems, secondaryJobSite, workSound); // Gale - optimize villager data storage
     }
 
-    private static VillagerProfession register(String id, Predicate<Holder<PoiType>> heldWorkstation, Predicate<Holder<PoiType>> acquirableWorkstation, ImmutableSet<Item> gatherableItems, ImmutableSet<Block> secondaryJobSites, @Nullable SoundEvent workSound) {
-        return Registry.register(BuiltInRegistries.VILLAGER_PROFESSION, new ResourceLocation(id), new VillagerProfession(id, heldWorkstation, acquirableWorkstation, gatherableItems, secondaryJobSites, workSound));
+    // Gale start - optimize villager data storage
+    private static VillagerProfession register(String id, Predicate<Holder<PoiType>> heldWorkstation, Predicate<Holder<PoiType>> acquirableWorkstation, @NotNull Item @Nullable [] gatherableItems, @Nullable Block secondaryJobSite, @Nullable SoundEvent workSound) {
+        return Registry.register(BuiltInRegistries.VILLAGER_PROFESSION, new ResourceLocation(id), new VillagerProfession(id, heldWorkstation, acquirableWorkstation, gatherableItems != null && gatherableItems.length == 0 ? null : gatherableItems, secondaryJobSite, workSound));
+        // Gale end - optimize villager data storage
     }
 }
