@@ -784,15 +784,15 @@ public final class ItemStack {
     }
 
     public static boolean matches(ItemStack left, ItemStack right) {
-        return left == right ? true : (left.getCount() != right.getCount() ? false : ItemStack.isSameItemSameTags(left, right));
+        return left == right || (left.getCount() == right.getCount() && ItemStack.isSameItemSameTags(left, right)); // Gale - optimize identical item checks
     }
 
     public static boolean isSameItem(ItemStack left, ItemStack right) {
-        return left.is(right.getItem());
+        return left == right || left.is(right.getItem()); // Gale - optimize identical item checks
     }
 
     public static boolean isSameItemSameTags(ItemStack stack, ItemStack otherStack) {
-        return !stack.is(otherStack.getItem()) ? false : (stack.isEmpty() && otherStack.isEmpty() ? true : Objects.equals(stack.tag, otherStack.tag));
+        return stack == otherStack || (stack.is(otherStack.getItem()) && (stack.isEmpty() && otherStack.isEmpty() || Objects.equals(stack.tag, otherStack.tag))); // Gale - optimize identical item checks
     }
 
     public String getDescriptionId() {
