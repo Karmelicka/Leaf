@@ -53,6 +53,7 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
 
         public boolean verifyChatOrder = true; // Gale - Pufferfish - make chat order verification configurable
         public int premiumAccountSlowLoginTimeout = -1; // Gale - make slow login timeout configurable
+        public boolean ignoreNullLegacyStructureData = false; // Gale - MultiPaper - ignore null legacy structure data
 
         public IncludeInTimingsReport includeInTimingsReport;
 

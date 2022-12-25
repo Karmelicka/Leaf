@@ -20,6 +20,7 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.storage.DimensionDataStorage;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 
 public class LegacyStructureDataHandler {
 
@@ -172,6 +173,7 @@ public class LegacyStructureDataHandler {
 
     private void populateCaches(@Nullable DimensionDataStorage persistentStateManager) {
         if (persistentStateManager != null) {
+            boolean ignoreNullLegacyStructureData = GaleGlobalConfiguration.get().misc.ignoreNullLegacyStructureData; // Gale - MultiPaper - ignore null legacy structure data
             Iterator iterator = this.legacyKeys.iterator();
 
             while (iterator.hasNext()) {
@@ -179,7 +181,11 @@ public class LegacyStructureDataHandler {
                 CompoundTag nbttagcompound = new CompoundTag();
 
                 try {
-                    nbttagcompound = persistentStateManager.readTagFromDisk(s, DataFixTypes.SAVED_DATA_STRUCTURE_FEATURE_INDICES, 1493).getCompound("data").getCompound("Features");
+                    // Gale start - MultiPaper - ignore null legacy structure data
+                    CompoundTag tag = persistentStateManager.readTagFromDisk(s, DataFixTypes.SAVED_DATA_STRUCTURE_FEATURE_INDICES, 1493);
+                    if (ignoreNullLegacyStructureData && tag == null) continue;
+                    nbttagcompound = tag.getCompound("data").getCompound("Features");
+                    // Gale end - MultiPaper - ignore null legacy structure data
                     if (nbttagcompound.isEmpty()) {
                         continue;
                     }
