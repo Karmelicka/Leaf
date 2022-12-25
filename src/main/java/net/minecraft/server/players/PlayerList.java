@@ -490,7 +490,13 @@ public abstract class PlayerList {
             scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
         }
         // Paper end - Configurable player collision
+        if (GaleGlobalConfiguration.get().logToConsole.playerLoginLocations) { // Gale - JettPack - make logging login location configurable
         PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
+        // Gale start - JettPack - make logging login location configurable
+        } else {
+            PlayerList.LOGGER.info("{}[{}] logged in with entity id {}", player.getName().getString(), s1, player.getId());
+        }
+        // Gale end - JettPack - make logging login location configurable
     }
 
     public void updateEntireScoreboard(ServerScoreboard scoreboard, ServerPlayer player) {

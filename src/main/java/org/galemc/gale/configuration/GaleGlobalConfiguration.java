@@ -99,6 +99,7 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
         public boolean unrecognizedRecipes = false; // Gale - Purpur - do not log unrecognized recipes
         public boolean legacyMaterialInitialization = false; // Gale - Purpur - do not log legacy Material initialization
         public boolean nullIdDisconnections = true; // Gale - Pufferfish - do not log disconnections with null id
+        public boolean playerLoginLocations = true; // Gale - JettPack - make logging login location configurable
 
         public Chat chat;
         public class Chat extends ConfigurationPart {
