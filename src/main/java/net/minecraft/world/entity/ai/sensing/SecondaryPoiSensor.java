@@ -22,6 +22,13 @@ public class SecondaryPoiSensor extends Sensor<Villager> {
 
     @Override
     protected void doTick(ServerLevel world, Villager entity) {
+        // Gale start - Lithium - skip secondary POI sensor if absent
+        var secondaryPoi = entity.getVillagerData().getProfession().secondaryPoi();
+        if (secondaryPoi.isEmpty()) {
+            entity.getBrain().eraseMemory(MemoryModuleType.SECONDARY_JOB_SITE);
+            return;
+        }
+        // Gale end - Lithium - skip secondary POI sensor if absent
         ResourceKey<Level> resourceKey = world.dimension();
         BlockPos blockPos = entity.blockPosition();
         List<GlobalPos> list = Lists.newArrayList();
