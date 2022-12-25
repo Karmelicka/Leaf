@@ -71,7 +71,15 @@ public class PhantomSpawner implements CustomSpawner {
 
                                     if (randomsource.nextInt(j) >= world.paperConfig().entities.behavior.playerInsomniaStartTicks) { // Paper - Ability to control player's insomnia and phantoms
                                         BlockPos blockposition1 = blockposition.above(20 + randomsource.nextInt(15)).east(-10 + randomsource.nextInt(21)).south(-10 + randomsource.nextInt(21));
-                                        BlockState iblockdata = world.getBlockState(blockposition1);
+                                        // Gale start - MultiPaper - don't load chunks to spawn phantoms
+                                        BlockState iblockdata;
+                                        if (world.galeConfig().smallOptimizations.loadChunks.toSpawnPhantoms) {
+                                            iblockdata = world.getBlockState(blockposition1);
+                                        } else {
+                                            iblockdata = world.getBlockStateIfLoaded(blockposition1);
+                                            if (iblockdata == null) continue;
+                                        }
+                                        // Gale end - MultiPaper - don't load chunks to spawn phantoms
                                         FluidState fluid = world.getFluidState(blockposition1);
 
                                         if (NaturalSpawner.isValidEmptySpawnBlock(world, blockposition1, iblockdata, fluid, EntityType.PHANTOM)) {

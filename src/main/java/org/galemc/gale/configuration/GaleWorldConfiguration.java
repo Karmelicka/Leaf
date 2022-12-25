@@ -93,6 +93,11 @@ public class GaleWorldConfiguration extends ConfigurationPart {
 
         }
 
+        public LoadChunks loadChunks;
+        public class LoadChunks extends ConfigurationPart {
+            public boolean toSpawnPhantoms = false; // Gale - MultiPaper - don't load chunks to spawn phantoms
+        }
+
     }
 
     public GameplayMechanics gameplayMechanics;
