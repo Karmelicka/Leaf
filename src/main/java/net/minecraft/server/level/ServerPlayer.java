@@ -2018,12 +2018,18 @@ public class ServerPlayer extends Player {
 
     @Override
     public void crit(Entity target) {
-        this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(target, 4));
+        // Gale start - MultiPaper - broadcast crit animations as the entity being critted
+        var level = this.serverLevel();
+        level.getChunkSource().broadcastAndSend(level.galeConfig().gameplayMechanics.fixes.broadcastCritAnimationsAsTheEntityBeingCritted ? target : this, new ClientboundAnimatePacket(target, 4));
+        // Gale end - MultiPaper - broadcast crit animations as the entity being critted
     }
 
     @Override
     public void magicCrit(Entity target) {
-        this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(target, 5));
+        // Gale start - MultiPaper - broadcast crit animations as the entity being critted
+        var level = this.serverLevel();
+        level.getChunkSource().broadcastAndSend(level.galeConfig().gameplayMechanics.fixes.broadcastCritAnimationsAsTheEntityBeingCritted ? target : this, new ClientboundAnimatePacket(target, 5));
+        // Gale end - MultiPaper - broadcast crit animations as the entity being critted
     }
 
     @Override
