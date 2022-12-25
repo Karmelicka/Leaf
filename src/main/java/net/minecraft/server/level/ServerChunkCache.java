@@ -499,11 +499,16 @@ public class ServerChunkCache extends ChunkSource {
 
             this.level.resetIceAndSnowTick(); // Gale - Airplane - optimize random calls in chunk ticking - reset ice & snow tick random
             if (this.level.getServer().tickRateManager().runsNormally()) {
+                // Gale start - MultiPaper - skip unnecessary mob spawning computations
+                NaturalSpawner.SpawnState spawnercreature_d; // moved down
+                final boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
+                boolean flagAndHasNaturalSpawn = flag && this.anySpawnCategoryIsSpawnedThisTick();
+                if (flagAndHasNaturalSpawn) {
+                // Gale end - MultiPaper - skip unnecessary mob spawning computations
                 this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
                 int k = this.distanceManager.getNaturalSpawnChunkCount();
                 // Paper start - Optional per player mob spawns
                 int naturalSpawnChunkCount = k;
-                NaturalSpawner.SpawnState spawnercreature_d; // moved down
                 if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
                     // re-set mob counts
                     for (ServerPlayer player : this.level.players) {
@@ -527,7 +532,11 @@ public class ServerChunkCache extends ChunkSource {
                 this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
 
                 this.lastSpawnState = spawnercreature_d;
-                boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
+                // Gale start - MultiPaper - skip unnecessary mob spawning computations
+                } else {
+                    spawnercreature_d = null;
+                }
+                // Gale end - MultiPaper - skip unnecessary mob spawning computations
 
                 // Paper start - optimise chunk tick iteration
                 ChunkMap playerChunkMap = this.chunkMap;
@@ -615,7 +624,7 @@ public class ServerChunkCache extends ChunkSource {
                     if (tick && chunk1.chunkStatus.isOrAfter(net.minecraft.server.level.FullChunkStatus.ENTITY_TICKING)) {
                         // Paper end - optimise chunk tick iteration
                         chunk1.incrementInhabitedTime(j);
-                        if (spawn && flag && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair)) { // Spigot // Paper - optimise chunk tick iteration
+                        if (spawn && flagAndHasNaturalSpawn && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair)) { // Spigot // Paper - optimise chunk tick iteration // Gale - MultiPaper - skip unnecessary mob spawning computations
                             NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                         }
 
@@ -660,6 +669,20 @@ public class ServerChunkCache extends ChunkSource {
             // Paper - optimise chunk tick iteration
         }
     }
+
+    // Gale start - MultiPaper - skip unnecessary mob spawning computations
+    public boolean anySpawnCategoryIsSpawnedThisTick() {
+        long gameTime = this.level.getLevelData().getGameTime();
+
+        for (long ticksForSpawnCategory : this.level.ticksPerSpawnCategory.values()) {
+            if (ticksForSpawnCategory != 0L && gameTime % ticksForSpawnCategory == 0L) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    // Gale end - MultiPaper - skip unnecessary mob spawning computations
 
     private void getFullChunk(long pos, Consumer<LevelChunk> chunkConsumer) {
         ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
