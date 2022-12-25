@@ -3712,6 +3712,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                 Entity entity = this.getType().create(worldserver);
 
                 if (entity != null) {
+                    // Gale start - MultiPaper - load portal destination chunk before entity teleport
+                    if (entity.level.galeConfig().gameplayMechanics.technical.loadPortalDestinationChunkBeforeEntityTeleport) {
+                        BlockPos pos = BlockPos.containing(position);
+                        worldserver.getChunkSource().addRegionTicket(TicketType.PORTAL, new ChunkPos(pos), 1, pos);
+                        worldserver.getChunkAt(pos);
+                    }
+                    // Gale end - MultiPaper - load portal destination chunk before entity teleport
                     entity.restoreFrom(this);
                     entity.moveTo(position.x, position.y, position.z, yaw, pitch); // Paper - EntityPortalExitEvent
                     entity.setDeltaMovement(velocity); // Paper - EntityPortalExitEvent

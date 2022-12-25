@@ -126,6 +126,11 @@ public class GaleWorldConfiguration extends ConfigurationPart {
 
         }
 
+        public Technical technical;
+        public class Technical extends ConfigurationPart {
+            public boolean loadPortalDestinationChunkBeforeEntityTeleport = false; // Gale - MultiPaper - load portal destination chunk before entity teleport
+        }
+
         public boolean arrowMovementResetsDespawnCounter = true; // Gale - Purpur - make arrow movement resetting despawn counter configurable
         public double entityWakeUpDurationRatioStandardDeviation = 0.2; // Gale - variable entity wake-up duration
         public boolean hideFlamesOnEntitiesWithFireResistance = false; // Gale - Slice - hide flames on entities with fire resistance
