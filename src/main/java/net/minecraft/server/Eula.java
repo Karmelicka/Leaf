@@ -16,17 +16,40 @@ public class Eula {
 
     public Eula(Path eulaFile) {
         this.file = eulaFile;
-        this.agreed = SharedConstants.IS_RUNNING_IN_IDE || this.readFile();
+        this.agreed = SharedConstants.IS_RUNNING_IN_IDE || this.readGlobalFile() || this.readFile(); // Gale - YAPFA - global EULA file
     }
 
     private boolean readFile() {
-        try (InputStream inputStream = Files.newInputStream(this.file)) {
-            Properties properties = new Properties();
-            properties.load(inputStream);
-            return Boolean.parseBoolean(properties.getProperty("eula", "false"));
+        // Gale start - YAPFA - global EULA file
+        return readFile(this.file);
+    }
+
+    private boolean readGlobalFile() {
+        try {
+            Path globalFile = Path.of(System.getProperty("user.home"), "eula.txt");
+            if (globalFile.toFile().exists()) {
+                return readFile(globalFile);
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    private boolean readFile(Path file) {
+        // Gale end - YAPFA - global EULA file
+        try {
+            boolean var3;
+            try (InputStream inputStream = Files.newInputStream(file)) { // Gale - YAPFA - global EULA file
+                Properties properties = new Properties();
+                properties.load(inputStream);
+                var3 = Boolean.parseBoolean(properties.getProperty("eula", "false"));
+            }
+
+            return var3;
         } catch (Exception var6) {
+            if (file == this.file) { // Gale - YAPFA - global EULA file
             LOGGER.warn("Failed to load {}", (Object)this.file);
             this.saveDefaults();
+            } // Gale - YAPFA - global EULA file
             return false;
         }
     }
