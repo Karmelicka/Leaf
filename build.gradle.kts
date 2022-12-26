@@ -87,7 +87,7 @@ tasks.jar {
         attributes(
             "Main-Class" to "org.bukkit.craftbukkit.Main",
             "Implementation-Title" to "CraftBukkit",
-            "Implementation-Version" to "git-Paper-$implementationVersion",
+            "Implementation-Version" to "git-Gale-$implementationVersion", // Gale - branding changes
             "Implementation-Vendor" to date, // Paper
             "Specification-Title" to "Bukkit",
             "Specification-Version" to project.version,
@@ -232,3 +232,22 @@ tasks.registerRunTask("runDev") {
     classpath(runtimeClasspathForRunDev)
     jvmArgs("-DPaper.isRunDev=true")
 }
+
+// Gale start - package license into jar
+tasks.register<Copy>("copyLicense") {
+    from(layout.projectDirectory.file("LICENSE.txt"))
+    into(layout.buildDirectory.dir("tmp/copiedlicense"))
+}
+
+tasks.processResources {
+    dependsOn("copyLicense")
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir(layout.buildDirectory.dir("tmp/copiedlicense"))
+        }
+    }
+}
+// Gale end - package license into jar

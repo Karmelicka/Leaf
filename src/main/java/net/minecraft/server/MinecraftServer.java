@@ -952,7 +952,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         shutdownThread = Thread.currentThread();
         org.spigotmc.WatchdogThread.doStop(); // Paper
         if (!isSameThread()) {
-            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PAPER)");
+            // Gale start - branding changes
+            /*
+            We do not want people to report thread issues to Paper,
+            but we do want people to report thread issues to Gale.
+             */
+            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PAPER - If you think this is a Gale bug, please report it at https://github.com/GaleMC/Gale/issues )");
+            // Gale end - branding changes
             while (this.getRunningThread().isAlive()) {
                 this.getRunningThread().stop();
                 try {
@@ -1855,7 +1861,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
     @DontObfuscate
     public String getServerModName() {
-        return "Paper"; // Paper
+        return "Gale"; // Paper // Gale - branding changes
     }
 
     public SystemReport fillSystemReport(SystemReport details) {
