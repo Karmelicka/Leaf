@@ -43,7 +43,7 @@ public final class ChunkTaskScheduler {
 
     private static final Logger LOGGER = LogUtils.getClassLogger();
 
-    static int newChunkSystemIOThreads;
+    public static int newChunkSystemIOThreads; // Gale - metrics - chunk system IO threads - package-private -> public
     static int newChunkSystemWorkerThreads;
     static int newChunkSystemGenParallelism;
     static int newChunkSystemLoadParallelism;
