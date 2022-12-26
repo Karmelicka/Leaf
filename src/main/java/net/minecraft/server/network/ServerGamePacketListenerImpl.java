@@ -186,6 +186,8 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.bukkit.craftbukkit.util.permissions.CraftDefaultPermissions;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
 // CraftBukkit start
@@ -1135,6 +1137,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
 
     @Override
     public void handleEditBook(ServerboundEditBookPacket packet) {
+        // Gale start - Pufferfish - make book writing configurable
+        if (!(GaleGlobalConfiguration.get().gameplayMechanics.enableBookWriting || this.player.getBukkitEntity().hasPermission(CraftDefaultPermissions.writeBooks) || this.player.getBukkitEntity().hasPermission("pufferfish.usebooks"))) {
+            return;
+        }
+        // Gale end - Pufferfish - make book writing configurable
         // Paper start - Book size limits
         if (!this.cserver.isPrimaryThread()) {
             List<String> pageList = packet.getPages();

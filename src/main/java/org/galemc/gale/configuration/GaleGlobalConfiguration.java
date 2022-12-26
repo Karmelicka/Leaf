@@ -35,6 +35,13 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
 
     }
 
+    public GameplayMechanics gameplayMechanics;
+    public class GameplayMechanics extends ConfigurationPart {
+
+        public boolean enableBookWriting = true; // Gale - Pufferfish - make book writing configurable
+
+    }
+
     public Misc misc;
     public class Misc extends ConfigurationPart {
 
