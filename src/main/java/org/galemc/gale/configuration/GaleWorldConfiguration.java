@@ -33,6 +33,8 @@ public class GaleWorldConfiguration extends ConfigurationPart {
     public SmallOptimizations smallOptimizations;
     public class SmallOptimizations extends ConfigurationPart {
 
+        public boolean saveFireworks = true; // Gale - EMC - make saving fireworks configurable
+
         // Gale start - Airplane - reduce projectile chunk loading
         public MaxProjectileChunkLoads maxProjectileChunkLoads;
         public class MaxProjectileChunkLoads extends ConfigurationPart {

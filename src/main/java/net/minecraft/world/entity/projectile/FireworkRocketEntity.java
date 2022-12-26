@@ -355,4 +355,12 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
     public boolean isAttackable() {
         return false;
     }
+
+    // Gale start - EMC - make saving fireworks configurable
+    @Override
+    public boolean shouldBeSaved() {
+        return this.level().galeConfig().smallOptimizations.saveFireworks;
+    }
+    // Gale end - EMC - make saving fireworks configurable
+
 }
