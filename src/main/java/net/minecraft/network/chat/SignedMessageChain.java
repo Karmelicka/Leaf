@@ -9,6 +9,7 @@ import net.minecraft.util.SignatureUpdater;
 import net.minecraft.util.SignatureValidator;
 import net.minecraft.util.Signer;
 import net.minecraft.world.entity.player.ProfilePublicKey;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 
 public class SignedMessageChain {
@@ -38,7 +39,7 @@ public class SignedMessageChain {
                 throw new SignedMessageChain.DecodeException(Component.translatable("chat.disabled.chain_broken"), false); // Paper - diff on change (if disconnects, need a new kick event cause)
             } else if (playerPublicKey.data().hasExpired()) {
                 throw new SignedMessageChain.DecodeException(Component.translatable("chat.disabled.expiredProfileKey"), false, org.bukkit.event.player.PlayerKickEvent.Cause.EXPIRED_PROFILE_PUBLIC_KEY); // Paper - kick event causes
-            } else if (body.timeStamp().isBefore(this.lastTimeStamp)) {
+            } else if (body.timeStamp().isBefore(this.lastTimeStamp) && GaleGlobalConfiguration.get().misc.verifyChatOrder) { // Gale - Pufferfish - make chat order verification configurable
                 throw new SignedMessageChain.DecodeException(Component.translatable("multiplayer.disconnect.out_of_order_chat"), true, org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event causes
             } else {
                 this.lastTimeStamp = body.timeStamp();

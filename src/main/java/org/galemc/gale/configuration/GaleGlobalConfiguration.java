@@ -45,6 +45,8 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
     public Misc misc;
     public class Misc extends ConfigurationPart {
 
+        public boolean verifyChatOrder = true; // Gale - Pufferfish - make chat order verification configurable
+
         public IncludeInTimingsReport includeInTimingsReport;
         public class IncludeInTimingsReport extends ConfigurationPart {
 
