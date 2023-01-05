@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 import me.titaniumtown.ArrayConstants;
+import io.papermc.paper.util.MCUtil;
 import net.minecraft.Util;
 import net.minecraft.util.GsonHelper;
 import org.slf4j.Logger;
@@ -104,6 +105,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
     }
 
     public void save() throws IOException {
+        Runnable saveTask = () -> {// Leaf - Akarin - Save json list async
         this.removeExpired(); // Paper - remove expired values before saving
         JsonArray jsonarray = new JsonArray();
         Stream<JsonObject> stream = this.map.values().stream().map((jsonlistentry) -> { // CraftBukkit - decompile error
@@ -115,6 +117,8 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
 
         Objects.requireNonNull(jsonarray);
         stream.forEach(jsonarray::add);
+
+        try {// Leaf - Akarin - Save json list async
         BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8);
 
         try {
@@ -135,6 +139,13 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
             bufferedwriter.close();
         }
 
+        // Leaf start - Akarin - Save json list async
+        } catch (Exception e) {
+            StoredUserList.LOGGER.warn("Failed to async save " + this.file, e);
+        }
+        };
+        MCUtil.scheduleAsyncTask(saveTask);
+        // Leaf end - Akarin
     }
 
     public void load() throws IOException {
