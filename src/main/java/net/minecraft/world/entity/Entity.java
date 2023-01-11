@@ -419,6 +419,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     @javax.annotation.Nullable
     private UUID originWorld;
     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+    public boolean fixedPose = false; // Paper - Expand Pose API
 
     public void setOrigin(@javax.annotation.Nonnull Location location) {
         this.origin = location.toVector();
@@ -631,6 +632,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     public void onClientRemoval() {}
 
     public void setPose(net.minecraft.world.entity.Pose pose) {
+        if (this.fixedPose) return; // Paper - Expand Pose API
         // CraftBukkit start
         if (pose == this.getPose()) {
             return;
