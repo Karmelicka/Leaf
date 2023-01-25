@@ -18,4 +18,7 @@ public class ProtocolSupport implements IConfigModule {
 
     @ConfigInfo(baseName = "jade-protocol")
     public static boolean jadeProtocol = false;
+
+    @ConfigInfo(baseName = "appleskin-protocol")
+    public static boolean appleskinProtocol = false;
 }
