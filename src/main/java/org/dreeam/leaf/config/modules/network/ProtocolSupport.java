@@ -4,6 +4,8 @@ import org.dreeam.leaf.config.ConfigInfo;
 import org.dreeam.leaf.config.EnumConfigCategory;
 import org.dreeam.leaf.config.IConfigModule;
 
+import java.util.Random;
+
 public class ProtocolSupport implements IConfigModule {
 
     @Override
@@ -21,4 +23,9 @@ public class ProtocolSupport implements IConfigModule {
 
     @ConfigInfo(baseName = "appleskin-protocol")
     public static boolean appleskinProtocol = false;
+
+    @ConfigInfo(baseName = "xaero-map-protocol")
+    public static boolean xaeroMapProtocol = false;
+    @ConfigInfo(baseName = "xaero-map-server-id")
+    public static int xaeroMapServerID = new Random().nextInt();
 }
