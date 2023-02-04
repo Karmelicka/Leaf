@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -23,6 +24,26 @@ public class Main {
         System.setProperty("java.util.logging.manager", "io.papermc.paper.log.CustomLogManager");
     }
     // Paper end - Reset loggers after shutdown
+
+    // Gale start - include time in startup logs
+    private static final DateFormat startupDateFormat = new SimpleDateFormat("hh:mm:ss");
+
+    private static void printlnStartupToSystemOut(String type, String line) {
+        System.out.println("[" + startupDateFormat.format(new Date()) + " " + type + "]: " + line);
+    }
+
+    public static void printlnStartupInfoToSystemOut(String line) {
+        printlnStartupToSystemOut("INFO", line);
+    }
+
+    public static void printlnStartupWarningToSystemOut(String line) {
+        printlnStartupToSystemOut("WARN", line);
+    }
+
+    public static void printlnStartupErrorToSystemOut(String line) {
+        printlnStartupToSystemOut("ERROR", line);
+    }
+    // Gale end - include time in startup logs
 
     public static void main(String[] args) {
         // Paper start
@@ -315,14 +336,14 @@ public class Main {
                     String javaInfo = "Java " + runtimeMX.getSpecVersion() + " (" + runtimeMX.getVmName() + " " + runtimeMX.getVmVersion() + ")";
                     String osInfo = "Host: " + osMX.getName() + " " + osMX.getVersion() + " (" + osMX.getArch() + ")";
 
-                    System.out.println("System Info: " + javaInfo + " " + osInfo);
+                    printlnStartupInfoToSystemOut("System Info: " + javaInfo + " " + osInfo); // Gale - include time in startup logs
                 } else {
-                    System.out.println("Unable to read system info");
+                    printlnStartupInfoToSystemOut("Unable to read system info"); // Gale - include time in startup logs
                 }
                 // Paper end - Log Java and OS versioning to help with debugging plugin issues
 
                 System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
-                System.out.println("Loading libraries, please wait...");
+                printlnStartupInfoToSystemOut("Loading libraries, please wait..."); // Gale - include time in startup logs
                 net.minecraft.server.Main.main(options);
             } catch (Throwable t) {
                 t.printStackTrace();
