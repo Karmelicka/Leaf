@@ -48,6 +48,15 @@ public final class DummyServer {
                 return registers.computeIfAbsent(aClass, key -> CraftRegistry.createRegistry(aClass, AbstractTestingBase.REGISTRY_CUSTOM));
             });
 
+            // Paper start - testing additions
+            final Thread currentThread = Thread.currentThread();
+            when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
+
+            final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
+            when(instance.getPluginManager()).thenReturn(pluginManager);
+            when(instance.getTag(anyString(), any(org.bukkit.NamespacedKey.class), any())).thenAnswer(ignored -> new io.papermc.paper.util.EmptyTag());
+            // paper end - testing additions
+
             Bukkit.setServer(instance);
         } catch (Throwable t) {
             throw new Error(t);

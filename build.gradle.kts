@@ -23,6 +23,7 @@ dependencies {
     testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation("org.mockito:mockito-core:5.5.0")
     testImplementation("org.ow2.asm:asm-tree:9.5")
+    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
 }
 
 val craftbukkitPackageVersion = "1_20_R3" // Paper
@@ -57,6 +58,12 @@ tasks.compileJava {
     // incremental compilation is currently broken due to patched files having compiled counterparts already on the compile classpath
     options.setIncremental(false)
 }
+
+// Paper start - compile tests with -parameters for better junit parameterized test names
+tasks.compileTestJava {
+    options.compilerArgs.add("-parameters")
+}
+// Paper end
 
 publishing {
     publications.create<MavenPublication>("maven") {
