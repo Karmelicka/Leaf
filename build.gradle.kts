@@ -195,6 +195,7 @@ fun TaskContainer.registerRunTask(
     val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
     minHeapSize = "${memoryGb}G"
     maxHeapSize = "${memoryGb}G"
+    jvmArgs("--enable-preview") // Gale - enable preview features for development runs
 
     doFirst {
         workingDir.mkdirs()
