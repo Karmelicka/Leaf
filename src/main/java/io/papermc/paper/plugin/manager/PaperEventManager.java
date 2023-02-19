@@ -35,10 +35,16 @@ class PaperEventManager {
 
     // SimplePluginManager
     public void callEvent(@NotNull Event event) {
-        if (event.isAsynchronous() && this.server.isPrimaryThread()) {
+        // KTP start - Optimise spigot event bus
+        if (event.asynchronous() != net.kyori.adventure.util.TriState.NOT_SET) {
+        final boolean onPrimaryThread = this.server.isPrimaryThread();
+        final boolean isAsync = event.isAsynchronous();
+        if (isAsync && onPrimaryThread) {
             throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
-        } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
+        } else if (!isAsync && !onPrimaryThread && !this.server.isStopping()) {
             throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+        }
+        // KTP stop - Optimise spigot event bus
         }
 
         HandlerList handlers = event.getHandlers();
