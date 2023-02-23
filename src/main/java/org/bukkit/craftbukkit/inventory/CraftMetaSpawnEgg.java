@@ -219,6 +219,30 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     public void setSpawnedType(EntityType type) {
         throw new UnsupportedOperationException("Must change item type to set spawned type");
     }
+    // Paper start
+    @Override
+    public EntityType getCustomSpawnedType() {
+        return java.util.Optional.ofNullable(this.entityTag)
+            .map(tag -> tag.getString(ENTITY_ID.NBT))
+            .flatMap(net.minecraft.world.entity.EntityType::byString)
+            .map(org.bukkit.craftbukkit.util.CraftMagicNumbers::getEntityType)
+            .orElse(null);
+    }
+
+    @Override
+    public void setCustomSpawnedType(final EntityType type) {
+        if (type == null) {
+            if (this.entityTag != null) {
+                this.entityTag.remove(ENTITY_ID.NBT);
+            }
+        } else {
+            if (this.entityTag == null) {
+                this.entityTag = new CompoundTag();
+            }
+            this.entityTag.putString(ENTITY_ID.NBT, type.key().toString());
+        }
+    }
+    // Paper end
 
     @Override
     public EntitySnapshot getSpawnedEntity() {
