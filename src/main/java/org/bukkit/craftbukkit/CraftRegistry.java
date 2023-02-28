@@ -119,6 +119,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         if (bukkitClass == DamageType.class) {
             return new CraftRegistry<>(DamageType.class, registryHolder.registryOrThrow(Registries.DAMAGE_TYPE), CraftDamageType::new);
         }
+        // TODO registry modification API
 
         return null;
     }
