@@ -84,8 +84,8 @@ public class BeehiveBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
-        super.playerDestroy(world, player, pos, state, blockEntity, tool);
+    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
+        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
         if (!world.isClientSide && blockEntity instanceof BeehiveBlockEntity) {
             BeehiveBlockEntity tileentitybeehive = (BeehiveBlockEntity) blockEntity;
 
