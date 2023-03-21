@@ -96,6 +96,7 @@ public class GaleWorldConfiguration extends ConfigurationPart {
     public GameplayMechanics gameplayMechanics;
     public class GameplayMechanics extends ConfigurationPart {
 
+        public double entityWakeUpDurationRatioStandardDeviation = 0.2; // Gale - variable entity wake-up duration
         public boolean tryRespawnEnderDragonAfterEndCrystalPlace = true; // Gale - Pufferfish - make ender dragon respawn attempt after placing end crystals configurable
 
     }

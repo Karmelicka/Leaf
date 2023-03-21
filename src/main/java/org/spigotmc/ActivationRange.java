@@ -38,6 +38,7 @@ import co.aikar.timings.MinecraftTimings;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import org.galemc.gale.configuration.GaleWorldConfiguration;
 
 public class ActivationRange
 {
@@ -70,27 +71,40 @@ public class ActivationRange
         if (entity.activationType == ActivationType.VILLAGER) {
             if (inactiveFor > config.wakeUpInactiveVillagersEvery && world.wakeupInactiveRemainingVillagers > 0) {
                 world.wakeupInactiveRemainingVillagers--;
-                return config.wakeUpInactiveVillagersFor;
+                return getWakeUpDurationWithVariance(entity, config.wakeUpInactiveVillagersFor); // Gale - variable entity wake-up duration
             }
         } else if (entity.activationType == ActivationType.ANIMAL) {
             if (inactiveFor > config.wakeUpInactiveAnimalsEvery && world.wakeupInactiveRemainingAnimals > 0) {
                 world.wakeupInactiveRemainingAnimals--;
-                return config.wakeUpInactiveAnimalsFor;
+                return getWakeUpDurationWithVariance(entity, config.wakeUpInactiveAnimalsFor); // Gale - variable entity wake-up duration
             }
         } else if (entity.activationType == ActivationType.FLYING_MONSTER) {
             if (inactiveFor > config.wakeUpInactiveFlyingEvery && world.wakeupInactiveRemainingFlying > 0) {
                 world.wakeupInactiveRemainingFlying--;
-                return config.wakeUpInactiveFlyingFor;
+                return getWakeUpDurationWithVariance(entity, config.wakeUpInactiveFlyingFor); // Gale - variable entity wake-up duration
             }
         } else if (entity.activationType == ActivationType.MONSTER || entity.activationType == ActivationType.RAIDER) {
             if (inactiveFor > config.wakeUpInactiveMonstersEvery && world.wakeupInactiveRemainingMonsters > 0) {
                 world.wakeupInactiveRemainingMonsters--;
-                return config.wakeUpInactiveMonstersFor;
+                return getWakeUpDurationWithVariance(entity, config.wakeUpInactiveMonstersFor); // Gale - variable entity wake-up duration
             }
         }
         return -1;
     }
     // Paper end
+
+    // Gale start - variable entity wake-up duration
+    private static final java.util.Random wakeUpDurationRandom = new java.util.Random();
+
+    private static int getWakeUpDurationWithVariance(Entity entity, int wakeUpDuration) {
+        GaleWorldConfiguration config = entity.level().galeConfig();
+        double deviation = config.gameplayMechanics.entityWakeUpDurationRatioStandardDeviation;
+        if (deviation <= 0) {
+            return wakeUpDuration;
+        }
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(1, Math.round(wakeUpDuration * wakeUpDurationRandom.nextGaussian(1, deviation))));
+    }
+    // Gale end - variable entity wake-up duration
 
     static AABB maxBB = new AABB( 0, 0, 0, 0, 0, 0 );
 
