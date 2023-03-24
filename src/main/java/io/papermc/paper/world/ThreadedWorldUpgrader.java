@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -88,7 +89,12 @@ public class ThreadedWorldUpgrader {
                 new ChunkStorage(regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey);
 
         long expectedChunks = (long)regionFiles.length * (32L * 32L);
+        // Gale start - instantly continue on world upgrade finish
+        final long[] finalExpectedChunks = {-1L};
 
+        var finishLock = new java.util.concurrent.locks.ReentrantLock();
+        var finishCondition = finishLock.newCondition();
+        // Gale end - instantly continue on world upgrade finish
         for (final File regionFile : regionFiles) {
             final ChunkPos regionPos = RegionFileStorage.getRegionFileCoordinates(regionFile.toPath());
             if (regionPos == null) {
@@ -96,7 +102,23 @@ public class ThreadedWorldUpgrader {
                 continue;
             }
 
-            this.threadPool.execute(new ConvertTask(info, regionPos.x >> 5, regionPos.z >> 5));
+            // Gale start - instantly continue on world upgrade finish
+            Runnable taskWithNotification = () -> {
+                new ConvertTask(info, regionPos.x >> 5, regionPos.z >> 5).run();
+                final long current = info.convertedChunks.get();
+                if (current == finalExpectedChunks[0]) {
+                    while (!finishLock.tryLock()) {
+                        Thread.onSpinWait();
+                    }
+                    try {
+                        finishCondition.signal();
+                    } finally {
+                        finishLock.unlock();
+                    }
+                }
+            };
+            this.threadPool.execute(taskWithNotification);
+            // Gale end - instantly continue on world upgrade finish
             // Paper start - Write SavedData IO async
             this.threadPool.execute(() -> {
                 try {
@@ -107,6 +129,7 @@ public class ThreadedWorldUpgrader {
             });
             // Paper end - Write SavedData IO async
         }
+        finalExpectedChunks[0] = expectedChunks; // Gale - instantly continue on world upgrade finish
         this.threadPool.shutdown();
 
         final DecimalFormat format = new DecimalFormat("#0.00");
@@ -118,9 +141,16 @@ public class ThreadedWorldUpgrader {
 
             LOGGER.info("{}% completed ({} / {} chunks)...", format.format((double)current / (double)expectedChunks * 100.0), current, expectedChunks);
 
+            // Gale start - instantly continue on world upgrade finish
+            while (!finishLock.tryLock()) {
+                Thread.onSpinWait();
+            }
             try {
-                Thread.sleep(1000L);
-            } catch (final InterruptedException ignore) {}
+                finishCondition.await(1000L, TimeUnit.MILLISECONDS);
+            } catch (final InterruptedException ignore) {} finally {
+                finishLock.unlock();
+            }
+            // Gale end - instantly continue on world upgrade finish
         }
 
         final long end = System.nanoTime();
