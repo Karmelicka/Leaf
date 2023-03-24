@@ -43,7 +43,7 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
 
     public ChestBoat(EntityType<? extends Boat> type, Level world) {
         super(type, world);
-        this.itemStacks = NonNullList.withSize(27, ItemStack.EMPTY);
+        this.itemStacks = NonNullList.withSize(org.purpurmc.purpur.PurpurConfig.chestBoatRows * 9, ItemStack.EMPTY); // Plazma
     }
 
     public ChestBoat(Level world, double d0, double d1, double d2) {
@@ -170,7 +170,7 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
 
     @Override
     public int getContainerSize() {
-        return 27;
+        return org.purpurmc.purpur.PurpurConfig.chestBoatRows * 9; // Plazma
     }
 
     @Override

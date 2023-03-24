@@ -137,6 +137,23 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
     public float getJumpPower() {
         return (getRider() != null && isControllable()) ? level().purpurConfig.frogRidableJumpHeight * this.getBlockJumpFactor() : super.getJumpPower();
     }
+
+    // Plazma start
+    @Override
+    public boolean isSensitiveToWater() {
+        return level().purpurConfig.frogTakeDamageFromWater;
+    }
+
+    @Override
+    public boolean isAlwaysExperienceDropper() {
+        return level().purpurConfig.frogAlwaysDropExp;
+    }
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(level().purpurConfig.frogMaxHealth);
+    }
+    // Plazma end
     // Purpur end
 
     public int getPurpurBreedTime() {

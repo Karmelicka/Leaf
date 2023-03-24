@@ -106,6 +106,18 @@ public class Sniffer extends Animal {
     public boolean isControllable() {
         return level().purpurConfig.snifferControllable;
     }
+
+    // Plazma start
+    @Override
+    public boolean isSensitiveToWater() {
+        return level().purpurConfig.snifferTakeDamageFromWater;
+    }
+
+    @Override
+    public boolean isAlwaysExperienceDropper() {
+        return level().purpurConfig.snifferAlwaysDropExp;
+    }
+    // Plazma end
     // Purpur end
 
     @Override

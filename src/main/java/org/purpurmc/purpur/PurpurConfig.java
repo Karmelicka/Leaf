@@ -336,6 +336,7 @@ public class PurpurConfig {
     }
 
     public static int barrelRows = 3;
+    public static int chestBoatRows = 3; // Plazma
     public static boolean enderChestSixRows = false;
     public static boolean enderChestPermissionRows = false;
     public static boolean cryingObsidianValidForPortalFrame = false;
@@ -376,6 +377,7 @@ public class PurpurConfig {
             case 1 -> 9;
             default -> 27;
         });
+        chestBoatRows = getInt("settings.blocks.chest_boat.rows", chestBoatRows); // Plazma
         enderChestSixRows = getBoolean("settings.blocks.ender_chest.six-rows", enderChestSixRows);
         org.bukkit.event.inventory.InventoryType.ENDER_CHEST.setDefaultSize(enderChestSixRows ? 54 : 27);
         enderChestPermissionRows = getBoolean("settings.blocks.ender_chest.use-permissions-for-rows", enderChestPermissionRows);

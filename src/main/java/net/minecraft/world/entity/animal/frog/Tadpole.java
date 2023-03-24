@@ -90,6 +90,23 @@ public class Tadpole extends AbstractFish {
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
     }
+
+    // Plazma start
+    @Override
+    public boolean isSensitiveToWater() {
+        return level().purpurConfig.tadpoleTakeDamageFromWater;
+    }
+
+    @Override
+    public boolean isAlwaysExperienceDropper() {
+        return level().purpurConfig.tadpoleAlwaysDropExp;
+    }
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(level().purpurConfig.tadpoleMaxHealth);
+    }
+    // Plazma end
     // Purpur end
 
     @Override

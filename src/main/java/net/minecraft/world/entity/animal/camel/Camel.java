@@ -97,6 +97,18 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
     public int getPurpurBreedTime() {
         return this.level().purpurConfig.camelBreedingTicks;
     }
+
+    // Plazma start
+    @Override
+    public boolean isSensitiveToWater() {
+        return level().purpurConfig.camelTakeDamageFromWater;
+    }
+
+    @Override
+    public boolean isAlwaysExperienceDropper() {
+        return level().purpurConfig.camelAlwaysDropExp;
+    }
+    // Plazma end
     // Purpur end
 
     @Override
