@@ -494,13 +494,7 @@ public final class ItemStack {
                         if (tileentity instanceof JukeboxBlockEntity) {
                             JukeboxBlockEntity tileentityjukebox = (JukeboxBlockEntity) tileentity;
 
-                            // There can only be one
-                            ItemStack record = this.copy();
-                            if (!record.isEmpty()) {
-                                record.setCount(1);
-                            }
-
-                            tileentityjukebox.setTheItem(record);
+                            tileentityjukebox.setTheItem(this.copy()); // Paper - Fix block place logic; sync this with record item, jukebox has now an inventory
                             world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entityhuman, world.getBlockState(blockposition)));
                         }
 
