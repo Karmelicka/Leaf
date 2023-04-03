@@ -96,7 +96,13 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
         INITIALIZE_CHAT((serialized, buf) -> {
             serialized.chatSession = buf.readNullable(RemoteChatSession.Data::read);
         }, (buf, entry) -> {
-            buf.writeNullable(entry.chatSession, RemoteChatSession.Data::write);
+            // Paper start - Prevent causing expired keys from impacting new joins
+            RemoteChatSession.Data chatSession = entry.chatSession;
+            if (chatSession != null && chatSession.profilePublicKey().hasExpired()) {
+                chatSession = null;
+            }
+            buf.writeNullable(chatSession, RemoteChatSession.Data::write);
+            // Paper end - Prevent causing expired keys from impacting new joins
         }),
         UPDATE_GAME_MODE((serialized, buf) -> {
             serialized.gameMode = GameType.byId(buf.readVarInt());
