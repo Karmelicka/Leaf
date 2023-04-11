@@ -170,4 +170,11 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
         this.getHandle().setAggressive(aggressive);
     }
     // Paper end
+
+    // Paper start
+    @Override
+    public int getPossibleExperienceReward() {
+        return getHandle().getExperienceReward();
+    }
+    // Paper end
 }
