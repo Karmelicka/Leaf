@@ -1698,7 +1698,11 @@ public abstract class Mob extends LivingEntity implements Targeting {
             float f = 0.25F + (float) EnchantmentHelper.getBlockEfficiency(this) * 0.05F;
 
             if (this.random.nextFloat() < f) {
-                player.getCooldowns().addCooldown(Items.SHIELD, 100);
+                // Paper start - Add PlayerShieldDisableEvent
+                final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) player.getBukkitEntity(), getBukkitEntity(), 100);
+                if (!shieldDisableEvent.callEvent()) return;
+                player.getCooldowns().addCooldown(Items.SHIELD, shieldDisableEvent.getCooldown());
+                // Paper end - Add PlayerShieldDisableEvent
                 this.level().broadcastEntityEvent(player, (byte) 30);
             }
         }

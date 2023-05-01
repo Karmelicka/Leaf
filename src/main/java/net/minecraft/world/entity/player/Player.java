@@ -973,7 +973,7 @@ public abstract class Player extends LivingEntity {
     protected void blockUsingShield(LivingEntity attacker) {
         super.blockUsingShield(attacker);
         if (attacker.canDisableShield()) {
-            this.disableShield(true);
+            this.disableShield(true, attacker); // Paper - Add PlayerShieldDisableEvent
         }
 
     }
@@ -1456,7 +1456,14 @@ public abstract class Player extends LivingEntity {
         this.attack(target);
     }
 
+    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - Add PlayerShieldDisableEvent
     public void disableShield(boolean sprinting) {
+        // Paper start - Add PlayerShieldDisableEvent
+        disableShield(sprinting, null);
+    }
+
+    public void disableShield(boolean sprinting, @Nullable LivingEntity attacker) {
+        // Paper end - Add PlayerShieldDisableEvent
         float f = 0.25F + (float) EnchantmentHelper.getBlockEfficiency(this) * 0.05F;
 
         if (sprinting) {
@@ -1464,7 +1471,16 @@ public abstract class Player extends LivingEntity {
         }
 
         if (this.random.nextFloat() < f) {
-            this.getCooldowns().addCooldown(Items.SHIELD, 100);
+            // Paper start - Add PlayerShieldDisableEvent
+            final org.bukkit.entity.Entity finalAttacker = attacker != null ? attacker.getBukkitEntity() : null;
+            if (finalAttacker != null) {
+                final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) getBukkitEntity(), finalAttacker, 100);
+                if (!shieldDisableEvent.callEvent()) return;
+                this.getCooldowns().addCooldown(Items.SHIELD, shieldDisableEvent.getCooldown());
+            } else {
+                this.getCooldowns().addCooldown(Items.SHIELD, 100);
+            }
+            // Paper end - Add PlayerShieldDisableEvent
             this.stopUsingItem();
             this.level().broadcastEntityEvent(this, (byte) 30);
         }
