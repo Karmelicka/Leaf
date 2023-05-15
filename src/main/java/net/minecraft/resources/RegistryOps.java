@@ -19,11 +19,14 @@ public class RegistryOps<T> extends DelegatingOps<T> {
 
     private static RegistryOps.RegistryInfoLookup memoizeLookup(final RegistryOps.RegistryInfoLookup registryInfoGetter) {
         return new RegistryOps.RegistryInfoLookup() {
-            private final Map<ResourceKey<? extends Registry<?>>, Optional<? extends RegistryOps.RegistryInfo<?>>> lookups = new HashMap<>();
+            // The concurrent access occurs on the Netty IO threads when serializing packets.
+            // Thus, it seems it was an oversight of the implementator of this function as there
+            // are typically more than one Netty IO thread.
+            private final Map<ResourceKey<? extends Registry<?>>, Optional<? extends RegistryOps.RegistryInfo<?>>> lookups = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - fix concurrent access to lookups field
 
             @Override
             public <T> Optional<RegistryOps.RegistryInfo<T>> lookup(ResourceKey<? extends Registry<? extends T>> registryRef) {
-                return this.lookups.computeIfAbsent(registryRef, registryInfoGetter::lookup);
+                return (Optional<RegistryOps.RegistryInfo<T>>)this.lookups.computeIfAbsent(registryRef, registryInfoGetter::lookup); // Paper - fix concurrent access to lookups field
             }
         };
     }
