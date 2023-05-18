@@ -310,6 +310,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         Objects.requireNonNull(server);
         this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(uuid, server::enforceSecureProfile);
         this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
+        this.exchangeTarget = new top.leavesmc.leaves.protocol.syncmatica.exchange.ExchangeTarget(this); // Leaves - Syncmatica Protocol
     }
 
     // CraftBukkit start - add fields
@@ -348,6 +349,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                     }
             );
     // Purpur end
+
+    public final top.leavesmc.leaves.protocol.syncmatica.exchange.ExchangeTarget exchangeTarget; // Leaves - Syncmatica Protocol
 
     @Override
     public void tick() {

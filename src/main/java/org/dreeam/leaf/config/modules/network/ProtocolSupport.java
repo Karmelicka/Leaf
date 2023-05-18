@@ -1,5 +1,6 @@
 package org.dreeam.leaf.config.modules.network;
 
+import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import org.dreeam.leaf.config.ConfigInfo;
 import org.dreeam.leaf.config.EnumConfigCategory;
 import org.dreeam.leaf.config.IConfigModule;
@@ -28,4 +29,18 @@ public class ProtocolSupport implements IConfigModule {
     public static boolean xaeroMapProtocol = false;
     @ConfigInfo(baseName = "xaero-map-server-id")
     public static int xaeroMapServerID = new Random().nextInt();
+
+    @ConfigInfo(baseName = "syncmatica-enabled")
+    public static boolean syncmaticaProtocol = false;
+    @ConfigInfo(baseName = "syncmatica-quota")
+    public static boolean syncmaticaQuota = false;
+    @ConfigInfo(baseName = "syncmatica-quota-limit")
+    public static int syncmaticaQuotaLimit = 40000000;
+
+    @Override
+    public void onLoaded(CommentedFileConfig config) {
+        if (syncmaticaProtocol) {
+            top.leavesmc.leaves.protocol.syncmatica.SyncmaticaProtocol.init();
+        }
+    }
 }
