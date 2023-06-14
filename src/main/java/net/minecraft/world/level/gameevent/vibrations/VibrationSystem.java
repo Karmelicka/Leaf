@@ -347,7 +347,7 @@ public interface VibrationSystem {
         public static Codec<VibrationSystem.Data> CODEC = RecordCodecBuilder.create((instance) -> {
             return instance.group(VibrationInfo.CODEC.optionalFieldOf("event").forGetter((vibrationsystem_a) -> {
                 return Optional.ofNullable(vibrationsystem_a.currentVibration);
-            }), VibrationSelector.CODEC.fieldOf("selector").forGetter(VibrationSystem.Data::getSelectionStrategy), ExtraCodecs.NON_NEGATIVE_INT.fieldOf("event_delay").orElse(0).forGetter(VibrationSystem.Data::getTravelTimeInTicks)).apply(instance, (optional, vibrationselector, integer) -> {
+            }), Codec.optionalField("selector", VibrationSelector.CODEC).xmap(o -> o.orElseGet(VibrationSelector::new), Optional::of).forGetter(VibrationSystem.Data::getSelectionStrategy), ExtraCodecs.NON_NEGATIVE_INT.fieldOf("event_delay").orElse(0).forGetter(VibrationSystem.Data::getTravelTimeInTicks)).apply(instance, (optional, vibrationselector, integer) -> { // Paper - fix MapLike spam for missing "selector" in 1.19.2
                 return new VibrationSystem.Data((VibrationInfo) optional.orElse(null), vibrationselector, integer, true); // CraftBukkit - decompile error
             });
         });
