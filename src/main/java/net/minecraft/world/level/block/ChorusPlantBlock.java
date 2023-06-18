@@ -29,6 +29,7 @@ public class ChorusPlantBlock extends PipeBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableChorusPlantUpdates) return this.defaultBlockState(); // Paper - add option to disable block updates
         return getStateWithConnections(ctx.getLevel(), ctx.getClickedPos(), this.defaultBlockState());
     }
 
@@ -45,6 +46,7 @@ public class ChorusPlantBlock extends PipeBlock {
 
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableChorusPlantUpdates) return state; // Paper - add option to disable block updates
         if (!state.canSurvive(world, pos)) {
             world.scheduleTick(pos, this, 1);
             return super.updateShape(state, direction, neighborState, world, pos, neighborPos);
@@ -56,6 +58,7 @@ public class ChorusPlantBlock extends PipeBlock {
 
     @Override
     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableChorusPlantUpdates) return; // Paper - add option to disable block updates
         if (!state.canSurvive(world, pos)) {
             world.destroyBlock(pos, true);
         }
@@ -64,6 +67,7 @@ public class ChorusPlantBlock extends PipeBlock {
 
     @Override
     public boolean canSurvive(BlockState state, LevelReader world, BlockPos pos) {
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableChorusPlantUpdates) return true; // Paper - add option to disable block updates
         BlockState blockState = world.getBlockState(pos.below());
         boolean bl = !world.getBlockState(pos.above()).isAir() && !blockState.isAir();
 
