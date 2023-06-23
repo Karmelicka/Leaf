@@ -66,13 +66,18 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
     }
 
     public boolean isFacingFrontText(net.minecraft.world.entity.player.Player player) {
+        // Paper start - Add Sign#getInteractableSideFor
+        return this.isFacingFrontText(player.getX(), player.getZ());
+    }
+    public boolean isFacingFrontText(double x, double z) {
+        // Paper end - Add Sign#getInteractableSideFor
         Block block = this.getBlockState().getBlock();
 
         if (block instanceof SignBlock) {
             SignBlock blocksign = (SignBlock) block;
             Vec3 vec3d = blocksign.getSignHitboxCenterPosition(this.getBlockState());
-            double d0 = player.getX() - ((double) this.getBlockPos().getX() + vec3d.x);
-            double d1 = player.getZ() - ((double) this.getBlockPos().getZ() + vec3d.z);
+            double d0 = x - ((double) this.getBlockPos().getX() + vec3d.x); // Paper - Add Sign#getInteractableSideFor
+            double d1 = z - ((double) this.getBlockPos().getZ() + vec3d.z); // Paper - Add Sign#getInteractableSideFor
             float f = blocksign.getYRotationDegrees(this.getBlockState());
             float f1 = (float) (Mth.atan2(d1, d0) * 57.2957763671875D) - 90.0F;
 

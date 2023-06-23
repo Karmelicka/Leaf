@@ -192,6 +192,14 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     }
     // Paper end
 
+    // Paper start - side facing API
+    @Override
+    public Side getInteractableSideFor(final double x, final double z) {
+        this.requirePlaced();
+        return this.getSnapshot().isFacingFrontText(x, z) ? Side.FRONT : Side.BACK;
+    }
+    // Paper end
+
     public static Component[] sanitizeLines(String[] lines) {
         Component[] components = new Component[4];
 
