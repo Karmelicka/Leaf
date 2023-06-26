@@ -69,4 +69,10 @@ public interface Recipe<C extends Container> {
     }
 
     org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id); // CraftBukkit
+
+    // Paper start - improved exact choice recipes
+    default boolean hasExactIngredients() {
+        return false;
+    }
+    // Paper end
 }

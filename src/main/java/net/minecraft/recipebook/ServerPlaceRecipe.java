@@ -34,6 +34,7 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
             this.inventory = entity.getInventory();
             if (this.testClearGrid() || entity.isCreative()) {
                 this.stackedContents.clear();
+                this.stackedContents.initialize(recipe.value()); // Paper - Improve exact choice recipe ingredients
                 entity.getInventory().fillStackedContents(this.stackedContents);
                 this.menu.fillCraftSlotsStackedContents(this.stackedContents);
                 if (this.stackedContents.canCraft(recipe.value(), (IntList)null)) {
@@ -80,7 +81,7 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
             int l = k;
 
             for(int m : intList) {
-                int n = StackedContents.fromStackingIndex(m).getMaxStackSize();
+                int n = StackedContents.maxStackSizeFromStackingIndex(m, this.stackedContents); // Paper - Improve exact choice recipe ingredients
                 if (n < l) {
                     l = n;
                 }
@@ -97,10 +98,21 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
     @Override
     public void addItemToSlot(Iterator<Integer> inputs, int slot, int amount, int gridX, int gridY) {
         Slot slot2 = this.menu.getSlot(slot);
-        ItemStack itemStack = StackedContents.fromStackingIndex(inputs.next());
+        // Paper start - Improve exact choice recipe ingredients
+        final int itemId = inputs.next();
+        ItemStack itemStack = null;
+        boolean isExact = false;
+        if (this.stackedContents.extrasMap != null && itemId >= net.minecraft.core.registries.BuiltInRegistries.ITEM.size()) {
+            itemStack = StackedContents.fromStackingIndexExtras(itemId, this.stackedContents.extrasMap).copy();
+            isExact = true;
+        }
+        if (itemStack == null) {
+            itemStack = StackedContents.fromStackingIndex(itemId);
+        }
+        // Paper end - Improve exact choice recipe ingredients
         if (!itemStack.isEmpty()) {
             for(int i = 0; i < amount; ++i) {
-                this.moveItemToGrid(slot2, itemStack);
+                this.moveItemToGrid(slot2, itemStack, isExact); // Paper - Improve exact choice recipe ingredients
             }
         }
 
@@ -130,8 +142,14 @@ public class ServerPlaceRecipe<C extends Container> implements PlaceRecipe<Integ
         return i;
     }
 
+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Improve exact choice recipe ingredients
     protected void moveItemToGrid(Slot slot, ItemStack stack) {
-        int i = this.inventory.findSlotMatchingUnusedItem(stack);
+        // Paper start - Improve exact choice recipe ingredients
+        this.moveItemToGrid(slot, stack, false);
+    }
+    protected void moveItemToGrid(Slot slot, ItemStack stack, final boolean isExact) {
+        int i = isExact ? this.inventory.findSlotMatchingItem(stack) : this.inventory.findSlotMatchingUnusedItem(stack);
+        // Paper end - Improve exact choice recipe ingredients
         if (i != -1) {
             ItemStack itemStack = this.inventory.getItem(i);
             if (!itemStack.isEmpty()) {

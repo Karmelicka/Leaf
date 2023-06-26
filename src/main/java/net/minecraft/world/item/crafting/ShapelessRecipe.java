@@ -20,7 +20,7 @@ import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 // CraftBukkit end
 
-public class ShapelessRecipe implements CraftingRecipe {
+public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<CraftingContainer> implements CraftingRecipe { // Paper - improve exact recipe choices
 
     final String group;
     final CraftingBookCategory category;
@@ -32,6 +32,7 @@ public class ShapelessRecipe implements CraftingRecipe {
         this.category = category;
         this.result = result;
         this.ingredients = ingredients;
+        this.checkExactIngredients(); // Paper - improve exact recipe choices
     }
 
     // CraftBukkit start
@@ -77,6 +78,7 @@ public class ShapelessRecipe implements CraftingRecipe {
 
     public boolean matches(CraftingContainer inventory, Level world) {
         StackedContents autorecipestackmanager = new StackedContents();
+        autorecipestackmanager.initialize(this); // Paper - better exact choice recipes
         int i = 0;
 
         for (int j = 0; j < inventory.getContainerSize(); ++j) {
