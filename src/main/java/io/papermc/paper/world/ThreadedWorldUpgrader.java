@@ -97,6 +97,15 @@ public class ThreadedWorldUpgrader {
             }
 
             this.threadPool.execute(new ConvertTask(info, regionPos.x >> 5, regionPos.z >> 5));
+            // Paper start - Write SavedData IO async
+            this.threadPool.execute(() -> {
+                try {
+                    worldPersistentData.close();
+                } catch (IOException exception) {
+                    LOGGER.error("Failed to close persistent world data", exception);
+                }
+            });
+            // Paper end - Write SavedData IO async
         }
         this.threadPool.shutdown();
 

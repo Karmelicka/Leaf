@@ -224,7 +224,13 @@ public class WorldUpgrader {
                 }
             }
 
-            this.overworldDataStorage.save();
+            // Paper start - Write SavedData IO async
+            try {
+                this.overworldDataStorage.close();
+            } catch (IOException exception) {
+                LOGGER.error("Failed to close persistent world data", exception);
+            }
+            // Paper end - Write SavedData IO async
             i = Util.getMillis() - i;
             WorldUpgrader.LOGGER.info("World optimizaton finished after {} ms", i);
             this.finished = true;

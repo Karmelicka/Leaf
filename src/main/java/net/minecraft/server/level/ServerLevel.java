@@ -1318,7 +1318,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
         try (co.aikar.timings.Timing ignored = this.timings.worldSave.startTiming()) {
             if (doFull) {
-                this.saveLevelData();
+                this.saveLevelData(true); // Paper - Write SavedData IO async
             }
 
             this.timings.worldSaveChunks.startTiming(); // Paper
@@ -1354,7 +1354,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
             }
 
-            this.saveLevelData();
+            this.saveLevelData(!close); // Paper - Write SavedData IO async
             if (progressListener != null) {
                 progressListener.progressStage(Component.translatable("menu.savingChunks"));
             }
@@ -1377,12 +1377,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
         // CraftBukkit end
     }
 
-    private void saveLevelData() {
+    private void saveLevelData(boolean async) { // Paper - Write SavedData IO async
         if (this.dragonFight != null) {
             this.serverLevelData.setEndDragonFightData(this.dragonFight.saveData()); // CraftBukkit
         }
 
-        this.getChunkSource().getDataStorage().save();
+        this.getChunkSource().getDataStorage().save(async); // Paper - Write SavedData IO async
     }
 
     public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> filter, Predicate<? super T> predicate) {

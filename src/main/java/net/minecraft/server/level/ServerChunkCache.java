@@ -452,6 +452,13 @@ public class ServerChunkCache extends ChunkSource {
 
     public void close(boolean save) { // Paper - rewrite chunk system
         this.level.chunkTaskScheduler.chunkHolderManager.close(save, true); // Paper - rewrite chunk system
+        // Paper start - Write SavedData IO async
+        try {
+            this.dataStorage.close();
+        } catch (IOException exception) {
+            LOGGER.error("Failed to close persistent world data", exception);
+        }
+        // Paper end - Write SavedData IO async
     }
 
     // CraftBukkit start - modelled on below
