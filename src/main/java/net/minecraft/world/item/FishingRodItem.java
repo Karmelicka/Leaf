@@ -29,7 +29,7 @@ public class FishingRodItem extends Item implements Vanishable {
 
         if (user.fishing != null) {
             if (!world.isClientSide) {
-                i = user.fishing.retrieve(itemstack);
+                i = user.fishing.retrieve(hand, itemstack); // Paper - Add hand parameter to PlayerFishEvent
                 itemstack.hurtAndBreak(i, user, (entityhuman1) -> {
                     entityhuman1.broadcastBreakEvent(hand);
                 });

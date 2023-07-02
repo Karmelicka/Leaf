@@ -475,7 +475,15 @@ public class FishingHook extends Projectile {
     @Override
     public void readAdditionalSaveData(CompoundTag nbt) {}
 
+    // Paper start - Add hand parameter to PlayerFishEvent
+    @Deprecated
+    @io.papermc.paper.annotation.DoNotUse
     public int retrieve(ItemStack usedItem) {
+        return this.retrieve(net.minecraft.world.InteractionHand.MAIN_HAND, usedItem);
+    }
+
+    public int retrieve(net.minecraft.world.InteractionHand hand, ItemStack usedItem) {
+        // Paper end - Add hand parameter to PlayerFishEvent
         net.minecraft.world.entity.player.Player entityhuman = this.getPlayerOwner();
 
         if (!this.level().isClientSide && entityhuman != null && !this.shouldStopFishing(entityhuman)) {
@@ -483,7 +491,7 @@ public class FishingHook extends Projectile {
 
             if (this.hookedIn != null) {
                 // CraftBukkit start
-                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), this.hookedIn.getBukkitEntity(), (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_ENTITY);
+                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), this.hookedIn.getBukkitEntity(), (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.CAUGHT_ENTITY); // Paper - Add hand parameter to PlayerFishEvent
                 this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 
                 if (playerFishEvent.isCancelled()) {
@@ -512,7 +520,7 @@ public class FishingHook extends Projectile {
                     }
                     // Paper end
                     // CraftBukkit start
-                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem != null ? entityitem.getBukkitEntity() : null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_FISH); // Paper - entityitem may be null
+                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem != null ? entityitem.getBukkitEntity() : null, (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.CAUGHT_FISH); // Paper - entityitem may be null // Paper - Add hand parameter to PlayerFishEvent
                     playerFishEvent.setExpToDrop(this.random.nextInt(6) + 1);
                     this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 
@@ -546,7 +554,7 @@ public class FishingHook extends Projectile {
 
             if (this.onGround()) {
                 // CraftBukkit start
-                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.IN_GROUND);
+                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.IN_GROUND); // Paper - Add hand parameter to PlayerFishEvent
                 this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
 
                 if (playerFishEvent.isCancelled()) {
@@ -557,7 +565,7 @@ public class FishingHook extends Projectile {
             }
             // CraftBukkit start
             if (i == 0) {
-                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.REEL_IN);
+                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.REEL_IN); // Paper - Add hand parameter to PlayerFishEvent
                 this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
                 if (playerFishEvent.isCancelled()) {
                     return 0;
