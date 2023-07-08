@@ -34,6 +34,11 @@ public class SynchedEntityData {
     private final Int2ObjectMap<SynchedEntityData.DataItem<?>> itemsById = new Int2ObjectOpenHashMap();
     // private final ReadWriteLock lock = new ReentrantReadWriteLock(); // Spigot - not required
     private boolean isDirty;
+    // Paper start - Perf: array backed synched entity data
+    private static final int DEFAULT_ENTRY_COUNT = 10;
+    private static final int GROW_FACTOR = 8;
+    private SynchedEntityData.DataItem<?>[] itemsArray = new SynchedEntityData.DataItem<?>[DEFAULT_ENTRY_COUNT];
+    // Paper end - Perf: array backed synched entity data
 
     public SynchedEntityData(Entity trackedEntity) {
         this.entity = trackedEntity;
@@ -103,6 +108,15 @@ public class SynchedEntityData {
         // this.lock.writeLock().lock(); // Spigot - not required
         this.itemsById.put(key.getId(), datawatcher_item);
         // this.lock.writeLock().unlock(); // Spigot - not required
+        // Paper start - Perf: array backed synched entity data
+        if (this.itemsArray.length <= key.getId()) {
+            final int newSize = Math.min(key.getId() + GROW_FACTOR, MAX_ID_VALUE);
+
+            this.itemsArray = java.util.Arrays.copyOf(this.itemsArray, newSize);
+        }
+
+        this.itemsArray[key.getId()] = datawatcher_item;
+        // Paper end - Perf: array backed synched entity data
     }
 
     public <T> boolean hasItem(EntityDataAccessor<T> key) {
@@ -130,7 +144,15 @@ public class SynchedEntityData {
 
         return datawatcher_item;
         */
-        return (SynchedEntityData.DataItem) this.itemsById.get(key.getId());
+        // Paper start - Perf: array backed synched entity data
+        final int id = key.getId();
+
+        if (id < 0 || id >= this.itemsArray.length) {
+            return null;
+        }
+
+        return (DataItem<T>) this.itemsArray[id];
+        // Paper end - Perf: array backed synched entity data
         // Spigot end
     }
 
