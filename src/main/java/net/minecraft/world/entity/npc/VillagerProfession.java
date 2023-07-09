@@ -26,7 +26,7 @@ public record VillagerProfession(String name, Predicate<Holder<PoiType>> heldJob
     public static final VillagerProfession ARMORER = register("armorer", PoiTypes.ARMORER, SoundEvents.VILLAGER_WORK_ARMORER);
     public static final VillagerProfession BUTCHER = register("butcher", PoiTypes.BUTCHER, SoundEvents.VILLAGER_WORK_BUTCHER);
     public static final VillagerProfession CARTOGRAPHER = register("cartographer", PoiTypes.CARTOGRAPHER, SoundEvents.VILLAGER_WORK_CARTOGRAPHER);
-    public static final VillagerProfession CLERIC = register("cleric", PoiTypes.CLERIC, ImmutableSet.of(Items.NETHER_WART), ImmutableSet.of(Blocks.SOUL_SAND), SoundEvents.VILLAGER_WORK_CLERIC); // Purpur
+    public static final VillagerProfession CLERIC = register("cleric", PoiTypes.CLERIC, new Item[] {Items.NETHER_WART}, Blocks.SOUL_SAND, SoundEvents.VILLAGER_WORK_CLERIC); // Purpur // Leaf - sync with Gale's Optimize-villager-data-storage.patch
     public static final VillagerProfession FARMER = register("farmer", PoiTypes.FARMER, new Item[] {Items.WHEAT, Items.WHEAT_SEEDS, Items.BEETROOT_SEEDS, Items.BONE_MEAL}, Blocks.FARMLAND, SoundEvents.VILLAGER_WORK_FARMER); // Gale - optimize villager data storage
     public static final VillagerProfession FISHERMAN = register("fisherman", PoiTypes.FISHERMAN, SoundEvents.VILLAGER_WORK_FISHERMAN);
     public static final VillagerProfession FLETCHER = register("fletcher", PoiTypes.FLETCHER, SoundEvents.VILLAGER_WORK_FLETCHER);

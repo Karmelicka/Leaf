@@ -22,6 +22,7 @@ public class TradeWithVillager extends Behavior<Villager> {
     private static final float SPEED_MODIFIER = 0.5F;
     // Gale start - optimize villager data storage
     private static final Item[] WHEAT_SINGLETON_ARRAY = {Items.WHEAT};
+    private static final Item[] NETHER_WART_SINGLETON_ARRAY = {Items.NETHER_WART}; // Leaf - sync with Gale's Optimize-villager-data-storage.patch
     private @NotNull Item @Nullable [] trades = null;
     // Gale end - optimize villager data storage
 
@@ -62,7 +63,7 @@ public class TradeWithVillager extends Behavior<Villager> {
 
             // Purpur start
             if (world.purpurConfig.villagerClericsFarmWarts && world.purpurConfig.villagerClericFarmersThrowWarts && entity.getVillagerData().getProfession() == VillagerProfession.CLERIC && entity.getInventory().countItem(Items.NETHER_WART) > Items.NETHER_WART.getMaxStackSize() / 2) {
-                throwHalfStack(entity, ImmutableSet.of(Items.NETHER_WART), villager);
+                throwHalfStack(entity, NETHER_WART_SINGLETON_ARRAY, villager); // Leaf - sync with Gale's Optimize-villager-data-storage.patch
             }
             // Purpur end
 
