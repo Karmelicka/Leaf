@@ -357,6 +357,7 @@ public final class CraftItemFactory implements ItemFactory {
         case COD_BUCKET:
         case PUFFERFISH_BUCKET:
         case SALMON_BUCKET:
+        case TADPOLE_BUCKET: // Paper
         case ITEM_FRAME:
         case GLOW_ITEM_FRAME:
         case PAINTING:
