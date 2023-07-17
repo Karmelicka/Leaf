@@ -1845,7 +1845,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
     @DontObfuscate
     public String getServerModName() {
-        return "Gale"; // Paper // Gale - branding changes
+        return org.dreeam.leaf.config.modules.misc.ServerBrand.serverModName; // Paper // Gale - branding changes // Leaf - Configurable server mod name
     }
 
     public SystemReport fillSystemReport(SystemReport details) {
