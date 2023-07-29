@@ -39,6 +39,7 @@ import net.minecraft.util.CryptException;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import org.apache.commons.lang3.Validate;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.slf4j.Logger;
 import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
@@ -127,6 +128,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
 
     @Override
     public void onDisconnect(Component reason) {
+        // Gale start - Pufferfish - do not log disconnections with null id
+        if (!GaleGlobalConfiguration.get().logToConsole.nullIdDisconnections && this.authenticatedProfile != null && this.authenticatedProfile.getId() == null) {
+            var reasonString = reason.getString();
+            if ("Disconnected".equals(reasonString) || Component.translatable("multiplayer.disconnect.generic").getString().equals(reasonString)) {
+                return;
+            }
+        }
+        // Gale end - Pufferfish - do not log disconnections with null id
         ServerLoginPacketListenerImpl.LOGGER.info("{} lost connection: {}", this.getUserName(), reason.getString());
     }
 
