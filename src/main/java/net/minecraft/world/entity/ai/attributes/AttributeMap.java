@@ -1,6 +1,7 @@
 package net.minecraft.world.entity.ai.attributes;
 
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets; // Leaf
 import com.mojang.logging.LogUtils;
 import java.util.Collection;
 import java.util.Map;
@@ -10,7 +11,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -23,7 +23,7 @@ public class AttributeMap {
     private static final Logger LOGGER = LogUtils.getLogger();
     // Gale start - Lithium - replace AI attributes with optimized collections
     private final Map<Attribute, AttributeInstance> attributes = new Reference2ReferenceOpenHashMap<>(0);
-    private final Set<AttributeInstance> dirtyAttributes = new ReferenceOpenHashSet<>(0);
+    private final Set<AttributeInstance> dirtyAttributes = Sets.newConcurrentHashSet(); // Leaf - Fix tracker NPE
     // Gale end - Lithium - replace AI attributes with optimized collections
     private final AttributeSupplier supplier;
     private final java.util.function.Function<Attribute, AttributeInstance> createInstance; // Gale - Airplane - reduce entity allocations

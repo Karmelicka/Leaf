@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ArrayList; // Leaf
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -642,7 +643,7 @@ public class ServerChunkCache extends ChunkSource {
             // Paper - optimise chunk tick iteration
             // Paper start - optimise chunk tick iteration
             if (!this.chunkMap.needsChangeBroadcasting.isEmpty()) {
-                it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<ChunkHolder> copy = this.chunkMap.needsChangeBroadcasting.clone();
+                List<ChunkHolder> copy = new ArrayList<>(this.chunkMap.needsChangeBroadcasting); // Leaf - Fix tracker NPE
                 this.chunkMap.needsChangeBroadcasting.clear();
                 for (ChunkHolder holder : copy) {
                     holder.broadcastChanges(holder.getFullChunkNowUnchecked()); // LevelChunks are NEVER unloaded

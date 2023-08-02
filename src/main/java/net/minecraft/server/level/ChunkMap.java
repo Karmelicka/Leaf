@@ -241,7 +241,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     public final io.papermc.paper.util.player.NearbyPlayers nearbyPlayers;
     // Paper end
     // Paper start - optimise chunk tick iteration
-    public final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<ChunkHolder> needsChangeBroadcasting = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
+    public final Set<ChunkHolder> needsChangeBroadcasting = Sets.newConcurrentHashSet(); // Leaf - Fix tracker NPE
     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobSpawnMap = new gg.pufferfish.pufferfish.util.AsyncPlayerAreaMap(this.pooledLinkedPlayerHashSets); // Pufferfish
     // Paper end - optimise chunk tick iteration
 
