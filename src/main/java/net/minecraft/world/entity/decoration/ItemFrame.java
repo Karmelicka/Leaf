@@ -50,6 +50,7 @@ public class ItemFrame extends HangingEntity {
     public static final int NUM_ROTATIONS = 8;
     public float dropChance;
     public boolean fixed;
+    public Integer cachedMapId; // Paper - Perf: Cache map ids on item frames
 
     public ItemFrame(EntityType<? extends ItemFrame> type, Level world) {
         super(type, world);
@@ -388,6 +389,7 @@ public class ItemFrame extends HangingEntity {
     }
 
     private void onItemChanged(ItemStack stack) {
+        this.cachedMapId = MapItem.getMapId(stack); // Paper - Perf: Cache map ids on item frames
         if (!stack.isEmpty() && stack.getFrame() != this) {
             stack.setEntityRepresentation(this);
         }
