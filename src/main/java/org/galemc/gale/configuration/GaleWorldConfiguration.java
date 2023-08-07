@@ -59,4 +59,11 @@ public class GaleWorldConfiguration extends ConfigurationPart {
 
     }
 
+    public GameplayMechanics gameplayMechanics;
+    public class GameplayMechanics extends ConfigurationPart {
+
+        public boolean tryRespawnEnderDragonAfterEndCrystalPlace = true; // Gale - Pufferfish - make ender dragon respawn attempt after placing end crystals configurable
+
+    }
+
 }

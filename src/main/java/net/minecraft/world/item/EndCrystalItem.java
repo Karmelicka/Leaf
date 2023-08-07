@@ -53,11 +53,13 @@ public class EndCrystalItem extends Item {
                         // CraftBukkit end
                         world.addFreshEntity(entityendercrystal);
                         world.gameEvent((Entity) context.getPlayer(), GameEvent.ENTITY_PLACE, blockposition1);
+                        if (world.galeConfig().gameplayMechanics.tryRespawnEnderDragonAfterEndCrystalPlace) { // Gale - Pufferfish - make ender dragon respawn attempt after placing end crystals configurable
                         EndDragonFight enderdragonbattle = ((ServerLevel) world).getDragonFight();
 
                         if (enderdragonbattle != null) {
                             enderdragonbattle.tryRespawn(aboveBlockPosition); // Paper - Perf: Do crystal-portal proximity check before entity lookup
                         }
+                        } // Gale - Pufferfish - make ender dragon respawn attempt after placing end crystals configurable
                     }
 
                     context.getItemInHand().shrink(1);
