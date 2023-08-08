@@ -4,6 +4,8 @@ package org.galemc.gale.configuration;
 
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
+import org.bukkit.plugin.java.JavaPluginLoader;
+import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
@@ -97,6 +99,24 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
         public class Chat extends ConfigurationPart {
             public boolean emptyMessageWarning = false; // Gale - do not log empty message warnings
         }
+
+        // Gale start - Purpur - do not log plugin library loads
+        public PluginLibraryLoader pluginLibraryLoader;
+        public class PluginLibraryLoader extends ConfigurationPart {
+
+            public boolean downloads = true;
+            public boolean startLoadLibrariesForPlugin = true;
+            public boolean libraryLoaded = true;
+
+            @PostProcess
+            public void postProcess() {
+                JavaPluginLoader.logDownloads = this.downloads;
+                JavaPluginLoader.logStartLoadLibrariesForPlugin = this.startLoadLibrariesForPlugin;
+                JavaPluginLoader.logLibraryLoaded = this.libraryLoaded;
+            }
+
+        }
+        // Gale end - Purpur - do not log plugin library loads
 
     }
 
