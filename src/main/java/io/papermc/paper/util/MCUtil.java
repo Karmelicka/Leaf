@@ -168,13 +168,11 @@ public final class MCUtil {
     }
 
     public static int fastFloor(double x) {
-        int truncated = (int)x;
-        return x < (double)truncated ? truncated - 1 : truncated;
+        return (int) Math.floor(x); // Gale - use platform math functions
     }
 
     public static int fastFloor(float x) {
-        int truncated = (int)x;
-        return x < (double)truncated ? truncated - 1 : truncated;
+        return (int) Math.floor(x); // Gale - use platform math functions
     }
 
     public static float normalizeYaw(float f) {
@@ -235,11 +233,11 @@ public final class MCUtil {
     }
 
     public static int getChunkCoordinate(final double coordinate) {
-        return MCUtil.fastFloor(coordinate) >> 4;
+        return ((int) Math.floor(coordinate)) >> 4; // Gale - use platform math functions
     }
 
     public static int getBlockCoordinate(final double coordinate) {
-        return MCUtil.fastFloor(coordinate);
+        return (int) Math.floor(coordinate); // Gale - use platform math functions
     }
 
     public static long getBlockKey(final int x, final int y, final int z) {

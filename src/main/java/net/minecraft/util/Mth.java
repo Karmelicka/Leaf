@@ -56,13 +56,11 @@ public class Mth {
     }
 
     public static int floor(float value) {
-        int i = (int)value;
-        return value < (float)i ? i - 1 : i;
+        return (int) Math.floor(value); // Gale - use platform math functions
     }
 
     public static int floor(double value) {
-        int i = (int)value;
-        return value < (double)i ? i - 1 : i;
+        return (int) Math.floor(value); // Gale - use platform math functions
     }
 
     public static long lfloor(double value) {
@@ -79,13 +77,11 @@ public class Mth {
     }
 
     public static int ceil(float value) {
-        int i = (int)value;
-        return value > (float)i ? i + 1 : i;
+        return (int) Math.ceil(value); // Gale - use platform math functions
     }
 
     public static int ceil(double value) {
-        int i = (int)value;
-        return value > (double)i ? i + 1 : i;
+        return (int) Math.ceil(value); // Gale - use platform math functions
     }
 
     public static int clamp(int value, int min, int max) {
@@ -121,15 +117,7 @@ public class Mth {
     }
 
     public static double absMax(double a, double b) {
-        if (a < 0.0D) {
-            a = -a;
-        }
-
-        if (b < 0.0D) {
-            b = -b;
-        }
-
-        return Math.max(a, b);
+        return Math.max(Math.abs(a), Math.abs(b)); // Gale - use platform math functions
     }
 
     public static int floorDiv(int dividend, int divisor) {
