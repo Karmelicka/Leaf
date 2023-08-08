@@ -38,6 +38,7 @@ import co.aikar.timings.MinecraftTimings;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import org.galemc.gale.configuration.GaleGlobalConfiguration;
 import org.galemc.gale.configuration.GaleWorldConfiguration;
 
 public class ActivationRange
@@ -94,7 +95,7 @@ public class ActivationRange
     // Paper end
 
     // Gale start - variable entity wake-up duration
-    private static final java.util.Random wakeUpDurationRandom = new java.util.Random();
+    public static java.util.Random wakeUpDurationRandom; // Gale - xor-shift random - set in GaleGlobalConfiguration
 
     private static int getWakeUpDurationWithVariance(Entity entity, int wakeUpDuration) {
         GaleWorldConfiguration config = entity.level().galeConfig();

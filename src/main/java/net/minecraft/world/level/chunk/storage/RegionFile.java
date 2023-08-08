@@ -108,7 +108,7 @@ public class RegionFile implements AutoCloseable {
     }
 
     private void backupRegionFile() {
-        Path backup = this.regionFile.getParent().resolve(this.regionFile.getFileName() + "." + new java.util.Random().nextLong() + ".backup");
+        Path backup = this.regionFile.getParent().resolve(this.regionFile.getFileName() + "." + new org.galemc.gale.random.XorShiftRandom().nextLong() + ".backup"); // Gale - xor-shift random
         this.backupRegionFile(backup);
     }
 

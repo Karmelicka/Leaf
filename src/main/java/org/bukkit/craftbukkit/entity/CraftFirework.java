@@ -14,7 +14,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
 
 public class CraftFirework extends CraftProjectile implements Firework {
 
-    private final Random random = new Random();
+    private final Random random = org.galemc.gale.configuration.GaleGlobalConfiguration.get().smallOptimizations.useXorShiftRandom.elytraFireworkSpeed ? new org.galemc.gale.random.XorShiftRandom() : new Random(); // Gale - xor-shift random - not thread-safe but it is not really a concern here
     //private CraftItemStack item; // Paper - Remove usage, not accurate representation of current item.
 
     public CraftFirework(CraftServer server, FireworkRocketEntity entity) {

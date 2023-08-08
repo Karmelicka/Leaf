@@ -10,6 +10,7 @@ import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
 import java.util.Locale;
+import java.util.Random;
 import java.util.function.Consumer;
 
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
@@ -41,13 +42,26 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
 
         }
 
-        // Gale start - Pufferfish - SIMD support
-        public Simd simd;
-        public class Simd extends ConfigurationPart {
-            public boolean warnIfDisabled = true;
-            public boolean logVectorSizesToConsole = false;
+        // Gale start - xor-shift random
+        public UseXorShiftRandom useXorShiftRandom;
+        public class UseXorShiftRandom extends ConfigurationPart {
+
+            public boolean autoReplenishLootableRefill = true;
+            public boolean elytraFireworkSpeed = true;
+            public boolean entityWakeUpDuration = true;
+
+            @Setting("generate-tree-with-bukkit-api")
+            public boolean generateTreeWithBukkitAPI = true;
+
+            @PostProcess
+            public void postProcess() {
+                com.destroystokyo.paper.loottable.PaperLootableInventoryData.RANDOM = autoReplenishLootableRefill ? new org.galemc.gale.random.XorShiftRandom() : new Random();
+                org.spigotmc.ActivationRange.wakeUpDurationRandom = entityWakeUpDuration ? new org.galemc.gale.random.XorShiftRandom() : new java.util.Random();
+                org.bukkit.craftbukkit.CraftWorld.rand = generateTreeWithBukkitAPI ? new org.galemc.gale.random.XorShiftRandom() : new Random();
+            }
+
         }
-        // Gale end - Pufferfish - SIMD support
+        // Gale end - xor-shift random
 
     }
 

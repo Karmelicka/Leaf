@@ -243,7 +243,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
     // Paper end
 
-    private static final Random rand = new Random();
+    public static Random rand; // Gale - xor-shift random - set in GaleGlobalConfiguration
 
     public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {
         this.world = world;

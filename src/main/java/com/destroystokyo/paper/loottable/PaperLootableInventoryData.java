@@ -2,7 +2,7 @@ package com.destroystokyo.paper.loottable;
 
 import io.papermc.paper.configuration.WorldConfiguration;
 import io.papermc.paper.configuration.type.DurationOrDisabled;
-import java.time.temporal.ChronoUnit;
+
 import java.util.concurrent.TimeUnit;
 import org.bukkit.entity.Player;
 import org.bukkit.loot.LootTable;
@@ -16,7 +16,7 @@ import java.util.UUID;
 
 public class PaperLootableInventoryData {
 
-    private static final Random RANDOM = new Random();
+    public static Random RANDOM; // Gale - xor-shift random - set in GaleGlobalConfiguration
 
     private long lastFill = -1;
     private long nextRefill = -1;
