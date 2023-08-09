@@ -923,6 +923,16 @@ public class Metrics {
                 }));
                 // Gale end - metrics - runtime max memory
 
+                // Gale start - semantic version - include in metrics
+                Map<String, Map<String, Integer>> semanticVersionMap = new HashMap<>(2);
+                {
+                    Map<String, Integer> entry = new HashMap<>(2);
+                    entry.put(org.galemc.gale.version.GaleSemanticVersion.version, 1);
+                    semanticVersionMap.put(org.galemc.gale.version.GaleSemanticVersion.majorMinorVersion, entry);
+                }
+                metrics.addCustomChart(new Metrics.DrilldownPie("gale_semantic_version", () -> semanticVersionMap));
+                // Gale end - semantic version - include in metrics
+
             }
 
         }
