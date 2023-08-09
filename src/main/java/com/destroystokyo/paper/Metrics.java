@@ -973,6 +973,22 @@ public class Metrics {
                 }));
                 // Gale end - SIMD support - include in metrics
 
+                // Gale start - virtual thread support - include in metrics
+                Map<String, Map<String, Integer>> virtualThreadSupportMap = new HashMap<>(2);
+                {
+                    Map<String, Integer> entry = new HashMap<>(2);
+                    boolean isSupported = org.galemc.gale.virtualthread.VirtualThreadService.isSupported();
+                    try {
+                        int javaMajorVersion = org.galemc.gale.virtualthread.VirtualThreadService.getJavaMajorVersion();
+                        entry.put(isSupported + " (Java " + javaMajorVersion + ")", 1);
+                    } catch (Exception ignored) {
+                        entry.put(String.valueOf(isSupported), 1);
+                    }
+                    virtualThreadSupportMap.put(String.valueOf(isSupported), entry);
+                }
+                metrics.addCustomChart(new Metrics.DrilldownPie("virtual_thread_support", () -> virtualThreadSupportMap));
+                // Gale end - virtual thread support - include in metrics
+
             }
 
         }
