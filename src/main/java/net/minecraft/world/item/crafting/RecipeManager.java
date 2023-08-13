@@ -122,13 +122,16 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
             RecipeHolder<T> recipeholder = (RecipeHolder) map.get(id);
 
             if (recipeholder != null && recipeholder.value().matches(inventory, world)) {
+                inventory.setCurrentRecipe(recipeholder); // Paper - Perf: Improve mass crafting
                 return Optional.of(Pair.of(id, recipeholder));
             }
         }
 
+        inventory.setCurrentRecipe(null); // Paper - Perf: Improve mass crafting;; clear before it might be set again
         return map.entrySet().stream().filter((entry) -> {
             return ((RecipeHolder) entry.getValue()).value().matches(inventory, world);
         }).findFirst().map((entry) -> {
+            inventory.setCurrentRecipe(entry.getValue()); // Paper - Perf: Improve mass crafting
             return Pair.of((ResourceLocation) entry.getKey(), (RecipeHolder) entry.getValue());
         });
     }
@@ -150,7 +153,12 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
     }
 
     public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world) {
-        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, inventory, world);
+        // Paper start - Perf: Improve mass crafting;; check last recipe used first
+        return this.getRemainingItemsFor(type, inventory, world, null);
+    }
+    public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world, @Nullable ResourceLocation firstToCheck) {
+        Optional<RecipeHolder<T>> optional = firstToCheck == null ? this.getRecipeFor(type, inventory, world) : this.getRecipeFor(type, inventory, world, firstToCheck).map(Pair::getSecond);
+        // Paper end - Perf: Improve mass crafting
 
         if (optional.isPresent()) {
             return ((RecipeHolder) optional.get()).value().getRemainingItems(inventory);

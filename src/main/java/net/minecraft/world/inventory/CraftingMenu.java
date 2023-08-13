@@ -76,7 +76,8 @@ public class CraftingMenu extends RecipeBookMenu<CraftingContainer> {
         if (!world.isClientSide) {
             ServerPlayer entityplayer = (ServerPlayer) player;
             ItemStack itemstack = ItemStack.EMPTY;
-            Optional<RecipeHolder<CraftingRecipe>> optional = world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world);
+            final RecipeHolder<?> currentRecipe = craftingInventory.getCurrentRecipe(); // Paper - Perf: Improve mass crafting; check last recipe used first
+            Optional<RecipeHolder<CraftingRecipe>> optional = currentRecipe == null ? world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world) : world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world, currentRecipe.id()).map(com.mojang.datafixers.util.Pair::getSecond); // Paper - Perf: Improve mass crafting; check last recipe used first
 
             if (optional.isPresent()) {
                 RecipeHolder<CraftingRecipe> recipeholder = (RecipeHolder) optional.get();

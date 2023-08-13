@@ -59,7 +59,7 @@ public class ResultSlot extends Slot {
     @Override
     public void onTake(Player player, ItemStack stack) {
         this.checkTakeAchievements(stack);
-        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level());
+        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level(), this.craftSlots.getCurrentRecipe() != null ? this.craftSlots.getCurrentRecipe().id() : null); // Paper - Perf: Improve mass crafting; check last recipe used first
 
         for(int i = 0; i < nonNullList.size(); ++i) {
             ItemStack itemStack = this.craftSlots.getItem(i);
