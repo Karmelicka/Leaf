@@ -67,6 +67,16 @@ public class MapItemSavedData extends SavedData {
     private final Map<String, MapFrame> frameMarkers = Maps.newHashMap();
     private int trackedDecorationCount;
     private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
+    // Paper start - shared between all players tracking this map inside an item frame
+    public boolean dirtyColorData;
+    public int minDirtyX;
+    public int minDirtyY;
+    public int maxDirtyX;
+    public int maxDirtyY;
+    public boolean dirtyFrameDecorations;
+    public boolean hasPluginRenderer;
+    public boolean hasContextualRenderer;
+    // Paper end
     public boolean isExplorerMap; // Purpur
 
     // CraftBukkit start
@@ -333,6 +343,7 @@ public class MapItemSavedData extends SavedData {
         }
 
         this.setDecorationsDirty();
+        if (mapicon != null && mapicon.renderOnFrame()) this.dirtyFrameDecorations = true; // Paper
     }
 
     public static void addTargetDecoration(ItemStack stack, BlockPos pos, String id, MapDecoration.Type type) {
@@ -428,6 +439,7 @@ public class MapItemSavedData extends SavedData {
             }
 
             this.setDecorationsDirty();
+            if (type.isRenderedOnFrame() || (mapicon1 != null && mapicon.type().isRenderedOnFrame())) this.dirtyFrameDecorations = true; // Paper
         }
 
     }
@@ -441,6 +453,20 @@ public class MapItemSavedData extends SavedData {
 
     public void setColorsDirty(int x, int z) {
         this.setDirty();
+        // Paper start
+        if (this.dirtyColorData) {
+            this.minDirtyX = Math.min(this.minDirtyX, x);
+            this.minDirtyY = Math.min(this.minDirtyY, z);
+            this.maxDirtyX = Math.max(this.maxDirtyX, x);
+            this.maxDirtyY = Math.max(this.maxDirtyY, z);
+        } else {
+            this.dirtyColorData = true;
+            this.minDirtyX = x;
+            this.minDirtyY = z;
+            this.maxDirtyX = x;
+            this.maxDirtyY = z;
+        }
+        // Paper end
         Iterator iterator = this.carriedBy.iterator();
 
         while (iterator.hasNext()) {
@@ -523,6 +549,7 @@ public class MapItemSavedData extends SavedData {
     public void removedFromFrame(BlockPos pos, int id) {
         this.removeDecoration("frame-" + id);
         this.frameMarkers.remove(MapFrame.frameId(pos));
+        this.dirtyFrameDecorations = true; // Paper
     }
 
     public boolean updateColor(int x, int z, byte color) {
@@ -579,6 +606,93 @@ public class MapItemSavedData extends SavedData {
     public boolean isTrackedCountOverLimit(int iconCount) {
         return this.trackedDecorationCount >= iconCount;
     }
+
+    // Paper start
+    public final @Nullable Packet<?> framedUpdatePacket(int id, @Nullable Player player) {
+        return createUpdatePacket(id, player, false);
+    }
+
+    public final @Nullable Packet<?> fullUpdatePacket(int id, @Nullable Player player) {
+        return createUpdatePacket(id, player, true);
+    }
+
+    public final @Nullable Packet<?> createUpdatePacket(int id, @Nullable Player player, boolean full) {
+        if (!dirtyColorData && !dirtyFrameDecorations && (player == null || server.getCurrentTick() % 5 != 0) && !full) // Periodically send update packets if a renderer is added
+            return null;
+
+        final org.bukkit.craftbukkit.map.RenderData render = player != null ? this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) player.getBukkitEntity()) : this.vanillaRender;
+
+        final MapPatch patch;
+        if (full) {
+            patch = createPatch(render.buffer, 0, 0, 127, 127);
+        } else if (dirtyColorData) {
+            dirtyColorData = false;
+            patch = createPatch(render.buffer, this.minDirtyX, this.minDirtyY, this.maxDirtyX, this.maxDirtyY);
+        } else {
+            patch = null;
+        }
+
+        Collection<MapDecoration> decorations = null;
+        if (dirtyFrameDecorations || full || hasPluginRenderer) { // Always add decorations when a plugin renderer is added
+            dirtyFrameDecorations = false;
+            decorations = new java.util.ArrayList<>();
+
+            if (player == null) {
+                // We're using the vanilla renderer, add in vanilla decorations
+                for (MapDecoration decoration : this.decorations.values()) {
+                    // Skip sending decorations that aren't rendered, i.e. player decorations.
+                    // Skipping player decorations also allows us to send the same update packet to all tracking players, the only caveat
+                    // being that it causes a slight flicker of the player decoration for anyone holding & looking at the map.
+                    if (decoration.renderOnFrame()) {
+                        decorations.add(decoration);
+                    }
+                }
+            }
+
+            for (final org.bukkit.map.MapCursor cursor : render.cursors) {
+                if (cursor.isVisible()) {
+                    decorations.add(new MapDecoration(MapDecoration.Type.byIcon(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), PaperAdventure.asVanilla(cursor.caption()))); // Paper - Adventure
+                }
+            }
+        }
+
+        return new ClientboundMapItemDataPacket(id, this.scale, this.locked, decorations, patch);
+    }
+
+    private MapPatch createPatch(byte[] buffer, int minDirtyX, int minDirtyY, int maxDirtyX, int maxDirtyY) {
+        int i = minDirtyX;
+        int j = minDirtyY;
+        int k = maxDirtyX + 1 - minDirtyX;
+        int l = maxDirtyY + 1 - minDirtyY;
+        byte[] abyte = new byte[k * l];
+
+        for (int i1 = 0; i1 < k; ++i1) {
+            for (int j1 = 0; j1 < l; ++j1) {
+                abyte[i1 + j1 * k] = buffer[i + i1 + (j + j1) * 128];
+            }
+        }
+
+        return new MapItemSavedData.MapPatch(i, j, k, l, abyte);
+    }
+
+    public void addFrameDecoration(net.minecraft.world.entity.decoration.ItemFrame frame) {
+        if (this.trackedDecorationCount >= frame.level().paperConfig().maps.itemFrameCursorLimit || this.frameMarkers.containsKey(MapFrame.frameId(frame.getPos())))
+            return;
+
+        MapFrame mapFrame = new MapFrame(frame.getPos(), frame.getDirection().get2DDataValue() * 90, frame.getId());
+        this.addDecoration(MapDecoration.Type.FRAME, frame.level(), "frame-" + frame.getId(), frame.getPos().getX(), frame.getPos().getZ(), mapFrame.getRotation(), (Component) null);
+        this.frameMarkers.put(mapFrame.getId(), mapFrame);
+    }
+
+    public void markAllDirty() {
+        this.dirtyColorData = true;
+        this.minDirtyX = 0;
+        this.minDirtyY = 0;
+        this.maxDirtyX = 127;
+        this.maxDirtyY = 127;
+        this.dirtyFrameDecorations = true;
+    }
+    // Paper end
 
     public class HoldingPlayer {
 

@@ -489,6 +489,16 @@ public class ItemFrame extends HangingEntity {
                     }
                     this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
                     // Paper end - Add PlayerItemFrameChangeEvent
+                    // Paper start - add decoration and mark everything dirty for other players who are already tracking this frame
+                    final ItemStack item = this.getItem();
+                    if (item.is(Items.FILLED_MAP)) {
+                        final MapItemSavedData data = MapItem.getSavedData(item, this.level());
+                        if (data != null) {
+                            data.addFrameDecoration(this);
+                            data.markAllDirty();
+                        }
+                    }
+                    // Paper end
                     this.gameEvent(GameEvent.BLOCK_CHANGE, player);
                     if (!player.getAbilities().instabuild) {
                         itemstack.shrink(1);

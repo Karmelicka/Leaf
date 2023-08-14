@@ -111,29 +111,42 @@ public class ServerEntity {
 
         Entity entity = this.entity;
 
-        if (!this.trackedPlayers.isEmpty() && entity instanceof ItemFrame) { // Paper - Perf: Only tick item frames if players can see it
+        if (!this.trackedPlayers.isEmpty() && entity instanceof ItemFrame frame && frame.cachedMapId != null) { // Paper - Perf: Only tick item frames if players can see it // Paper
             ItemFrame entityitemframe = (ItemFrame) entity;
 
             if (true || this.tickCount % 10 == 0) { // CraftBukkit - Moved below, should always enter this block
-                ItemStack itemstack = entityitemframe.getItem();
+                //ItemStack itemstack = entityitemframe.getItem(); // Paper - skip redundant getItem
 
-                if (this.level.paperConfig().maps.itemFrameCursorUpdateInterval > 0 && this.tickCount % this.level.paperConfig().maps.itemFrameCursorUpdateInterval == 0 && itemstack.getItem() instanceof MapItem) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks // Paper - Make item frame map cursor update interval configurable
+                if (this.level.paperConfig().maps.itemFrameCursorUpdateInterval > 0 && this.tickCount % this.level.paperConfig().maps.itemFrameCursorUpdateInterval == 0 /*&& itemstack.getItem() instanceof MapItem*/) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks // Paper - Make item frame map cursor update interval configurable // Paper - skip redundant getItem
                     Integer integer = entityitemframe.cachedMapId; // Paper - Perf: Cache map ids on item frames
                     MapItemSavedData worldmap = MapItem.getSavedData(integer, this.level);
 
                     if (worldmap != null) {
+                        // Paper start - re-use the same update packet when possible
+                        if (!worldmap.hasContextualRenderer) {
+                            // Pass in a "random" player when a non-contextual plugin renderer is added to make sure its called
+                            final Packet<?> updatePacket = worldmap.framedUpdatePacket(integer, worldmap.hasPluginRenderer ? com.google.common.collect.Iterables.getFirst(this.trackedPlayers, null).getPlayer() : null);
+
+                            if (updatePacket != null) {
+                                for (ServerPlayerConnection connection : this.trackedPlayers) {
+                                    connection.send(updatePacket);
+                                }
+                            }
+                        } else {
+                        // Paper end
                         Iterator<ServerPlayerConnection> iterator = this.trackedPlayers.iterator(); // CraftBukkit
 
                         while (iterator.hasNext()) {
                             ServerPlayer entityplayer = iterator.next().getPlayer(); // CraftBukkit
 
-                            worldmap.tickCarriedBy(entityplayer, itemstack);
-                            Packet<?> packet = worldmap.getUpdatePacket(integer, entityplayer);
+                            //worldmap.tickCarriedBy(entityplayer, itemstack); // Paper
+                            Packet<?> packet = worldmap.framedUpdatePacket(integer, entityplayer); // Paper
 
                             if (packet != null) {
                                 entityplayer.connection.send(packet);
                             }
                         }
+                        } // Paper
                     }
                 }
 
@@ -378,6 +391,19 @@ public class ServerEntity {
             }
         }
 
+        // Paper start - send full map when tracked
+        if (this.entity instanceof ItemFrame frame && frame.cachedMapId != null) {
+            MapItemSavedData mapData = MapItem.getSavedData(frame.cachedMapId, this.level);
+
+            if (mapData != null) {
+                mapData.addFrameDecoration(frame);
+
+                final Packet<?> mapPacket = mapData.fullUpdatePacket(frame.cachedMapId, mapData.hasPluginRenderer ? player : null);
+                if (mapPacket != null)
+                    sender.accept((Packet<ClientGamePacketListener>) mapPacket);
+            }
+        }
+        // Paper end
     }
 
     private void sendDirtyEntityData() {

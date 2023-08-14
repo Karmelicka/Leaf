@@ -108,6 +108,10 @@ public final class CraftMapView implements MapView {
             this.renderers.add(renderer);
             this.canvases.put(renderer, new HashMap<CraftPlayer, CraftMapCanvas>());
             renderer.initialize(this);
+            // Paper start
+            this.worldMap.hasPluginRenderer |= !(renderer instanceof CraftMapRenderer);
+            this.worldMap.hasContextualRenderer |= renderer.isContextual();
+            // Paper end
         }
     }
 
@@ -123,6 +127,17 @@ public final class CraftMapView implements MapView {
                 }
             }
             this.canvases.remove(renderer);
+            // Paper start
+            this.worldMap.hasPluginRenderer = !(this.renderers.size() == 1 && this.renderers.get(0) instanceof CraftMapRenderer);
+            if (renderer.isContextual()) {
+                // Re-check all renderers
+                boolean contextualFound = false;
+                for (final MapRenderer mapRenderer : this.renderers) {
+                    contextualFound |= mapRenderer.isContextual();
+                }
+                this.worldMap.hasContextualRenderer = contextualFound;
+            }
+            // Paper end
             return true;
         } else {
             return false;
