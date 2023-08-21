@@ -8,7 +8,22 @@ public class VarLong {
     private static final int CONTINUATION_BIT_MASK = 128;
     private static final int DATA_BITS_PER_BYTE = 7;
 
+    // Gale start - Velocity - pre-compute VarInt and VarLong sizes
+    private static final int[] EXACT_BYTE_LENGTHS = new int[65];
+    static {
+        for (int i = 0; i < 64; ++i) {
+            EXACT_BYTE_LENGTHS[i] = (64 - i + 6) / 7;
+        }
+        EXACT_BYTE_LENGTHS[64] = 1; // Special case for the number 0
+    }
+    // Gale end - Velocity - pre-compute VarInt and VarLong sizes
     public static int getByteSize(long l) {
+        // Gale start - Velocity - pre-compute VarInt and VarLong sizes
+        return EXACT_BYTE_LENGTHS[Long.numberOfLeadingZeros(l)];
+    }
+
+    static int getByteSizeOriginal(long l) { // public -> package-private
+        // Gale end - Velocity - pre-compute VarInt and VarLong sizes
         for(int i = 1; i < 10; ++i) {
             if ((l & -1L << i * 7) == 0L) {
                 return i;
