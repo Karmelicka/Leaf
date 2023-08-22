@@ -2,6 +2,7 @@
 
 package net.minecraft.network;
 
+import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -155,5 +156,47 @@ public class VarIntLongTest {
         });
     }
     // Gale end - Velocity - pre-compute VarInt and VarLong sizes
+
+    // Gale - Velocity - optimized VarInt#write and VarLong#write
+    @Test
+    public void testWriteVarIntComparedToOld() {
+        integerCases.forEach(value -> {
+            // given
+            int capacity = 5;
+            FriendlyByteBuf buf1 = new FriendlyByteBuf(Unpooled.buffer(capacity));
+            FriendlyByteBuf buf2 = new FriendlyByteBuf(Unpooled.buffer(capacity));
+            VarInt.writeOld(buf1, value);
+
+            // when
+            buf2.writeVarInt(value);
+
+            // then
+            Assertions.assertEquals(Float.parseFloat("Writer index of optimized buffer (" + buf2.writerIndex() + ") is not equal to writer index of original buffer (" + buf1.writerIndex() + ") for test case value " + value + " (binary: " + padStringWithLeadingZeros(Integer.toBinaryString(value), 32) + ")"), buf1.writerIndex(), buf2.writerIndex());
+            for (int i = 0; i < capacity; i++) {
+                Assertions.assertEquals(Float.parseFloat("Buffer byte (at index " + i + ") in optimized buffer (" + buf2.getByte(i) + " (binary: " + padStringWithLeadingZeros(Integer.toBinaryString(Byte.toUnsignedInt(buf2.getByte(i))), 8) + ")) is not equal to the same byte in original buffer (" + buf1.getByte(i) + " (binary: " + padStringWithLeadingZeros(Integer.toBinaryString(Byte.toUnsignedInt(buf1.getByte(i))), 8) + ")) for test case value " + value + " (binary: " + padStringWithLeadingZeros(Integer.toBinaryString(value), 32) + ")"), buf1.getByte(i), buf2.getByte(i));
+            }
+        });
+    }
+
+    @Test
+    public void testWriteVarLongComparedToOriginal() {
+        longCases.forEach(value -> {
+            // given
+            int capacity = 10;
+            FriendlyByteBuf buf1 = new FriendlyByteBuf(Unpooled.buffer(capacity));
+            FriendlyByteBuf buf2 = new FriendlyByteBuf(Unpooled.buffer(capacity));
+            VarLong.writeOriginal(buf1, value);
+
+            // when
+            buf2.writeVarLong(value);
+
+            // then
+            Assertions.assertEquals(Float.parseFloat("Writer index of optimized buffer (" + buf2.writerIndex() + ") is not equal to writer index of original buffer (" + buf1.writerIndex() + ") for test case value " + value + " (binary: " + padStringWithLeadingZeros(Long.toBinaryString(value), 64) + ")"), buf1.writerIndex(), buf2.writerIndex());
+            for (int i = 0; i < capacity; i++) {
+                Assertions.assertEquals(Float.parseFloat("Buffer byte (at index " + i + ") in optimized buffer (" + buf2.getByte(i) + " (binary: " + padStringWithLeadingZeros(Integer.toBinaryString(Byte.toUnsignedInt(buf2.getByte(i))), 8) + ")) is not equal to the same byte in original buffer (" + buf1.getByte(i) + " (binary: " + padStringWithLeadingZeros(Integer.toBinaryString(Byte.toUnsignedInt(buf1.getByte(i))), 8) + ")) for test case value " + value + " (binary: " + padStringWithLeadingZeros(Long.toBinaryString(value), 64) + ")"), buf1.getByte(i), buf2.getByte(i));
+            }
+        });
+    }
+    // Gale end - Velocity - optimized VarInt#write and VarLong#write
 
 }
