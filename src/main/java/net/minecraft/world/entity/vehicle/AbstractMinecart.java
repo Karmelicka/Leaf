@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.UnmodifiableIterator;
 import com.mojang.datafixers.util.Pair;
+
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -294,6 +296,15 @@ public abstract class AbstractMinecart extends VehicleEntity {
         return this.flipped ? this.getDirection().getOpposite().getClockWise() : this.getDirection().getClockWise();
     }
 
+    // Leaf start - Cache minecart vehicle collision results
+    private List<Entity> lastCollideCache = new ArrayList<>();
+    private void checkAndUpdateCache(boolean ride) {
+        if (this.tickCount % 30 == 0) {
+            this.lastCollideCache = ride ? this.level().getEntities((Entity) this, this.getBoundingBox().inflate(0.20000000298023224D, 0.0D, 0.20000000298023224D), EntitySelector.pushableBy(this)) : this.level().getEntities(this, this.getBoundingBox().inflate(0.20000000298023224D, 0.0D, 0.20000000298023224D));
+        }
+    }
+    // Leaf end
+
     @Override
     public void tick() {
         // Purpur start
@@ -390,14 +401,13 @@ public abstract class AbstractMinecart extends VehicleEntity {
             }
             // CraftBukkit end
             if (this.getMinecartType() == AbstractMinecart.Type.RIDEABLE && this.getDeltaMovement().horizontalDistanceSqr() > 0.01D) {
-                List<Entity> list = this.level().getEntities((Entity) this, this.getBoundingBox().inflate(0.20000000298023224D, 0.0D, 0.20000000298023224D), EntitySelector.pushableBy(this));
+                // Leaf start - Cache minecart vehicle collision results
+                if (org.dreeam.leaf.config.modules.opt.CacheMinecartCollision.enabled) this.checkAndUpdateCache(true);
+                List<Entity> list = org.dreeam.leaf.config.modules.opt.CacheMinecartCollision.enabled ? this.lastCollideCache : this.level().getEntities((Entity) this, this.getBoundingBox().inflate(0.20000000298023224D, 0.0D, 0.20000000298023224D), EntitySelector.pushableBy(this));; // Leaf - Cache minecart vehicle collision results
 
                 if (!list.isEmpty()) {
-                    Iterator iterator = list.iterator();
 
-                    while (iterator.hasNext()) {
-                        Entity entity = (Entity) iterator.next();
-
+                    for (Entity entity : list) {
                         if (!(entity instanceof Player) && !(entity instanceof IronGolem) && !(entity instanceof AbstractMinecart) && !this.isVehicle() && !entity.isPassenger()) {
                             // CraftBukkit start
                             VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent(vehicle, entity.getBukkitEntity());
@@ -424,11 +434,10 @@ public abstract class AbstractMinecart extends VehicleEntity {
                     }
                 }
             } else {
-                Iterator iterator1 = this.level().getEntities(this, this.getBoundingBox().inflate(0.20000000298023224D, 0.0D, 0.20000000298023224D)).iterator();
+                if (org.dreeam.leaf.config.modules.opt.CacheMinecartCollision.enabled) this.checkAndUpdateCache(false); // Leaf - Cache minecart vehicle collision results
+                List<Entity> list2 = org.dreeam.leaf.config.modules.opt.CacheMinecartCollision.enabled ? this.lastCollideCache : this.level().getEntities(this, this.getBoundingBox().inflate(0.20000000298023224D, 0.0D, 0.20000000298023224D));; // Leaf - Cache minecart vehicle collision results
 
-                while (iterator1.hasNext()) {
-                    Entity entity1 = (Entity) iterator1.next();
-
+                for (Entity entity1 : list2) {
                     if (!this.hasPassenger(entity1) && entity1.isPushable() && entity1 instanceof AbstractMinecart) {
                         // CraftBukkit start
                         VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent(vehicle, entity1.getBukkitEntity());
@@ -442,6 +451,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
                     }
                 }
             }
+            // Leaf end
 
             this.updateInWaterStateAndDoFluidPushing();
             if (this.isInLava()) {
