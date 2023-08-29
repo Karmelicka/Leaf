@@ -148,13 +148,25 @@ public class Mth {
         return Math.floorMod(dividend, divisor);
     }
 
-    public static float positiveModulo(float dividend, float divisor) {
+    public static float positiveModuloForAnyDivisor(float dividend, float divisor) { // Gale - faster floating-point positive modulo
         return (dividend % divisor + divisor) % divisor;
     }
 
-    public static double positiveModulo(double dividend, double divisor) {
+    public static double positiveModuloForAnyDivisor(double dividend, double divisor) { // Gale - faster floating-point positive modulo
         return (dividend % divisor + divisor) % divisor;
     }
+
+    // Gale start - faster floating-point positive modulo
+    public static float positiveModuloForPositiveIntegerDivisor(float dividend, float divisor) {
+        var modulo = dividend % divisor;
+        return modulo < 0 ? modulo + divisor : modulo;
+    }
+
+    public static double positiveModuloForPositiveIntegerDivisor(double dividend, double divisor) {
+        var modulo = dividend % divisor;
+        return modulo < 0 ? modulo + divisor : modulo;
+    }
+    // Gale end - faster floating-point positive modulo
 
     public static boolean isMultipleOf(int a, int b) {
         return a % b == 0;

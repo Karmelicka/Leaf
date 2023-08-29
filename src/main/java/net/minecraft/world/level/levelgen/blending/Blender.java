@@ -141,7 +141,7 @@ public class Blender {
     private static double heightToOffset(double height) {
         double d = 1.0D;
         double e = height + 0.5D;
-        double f = Mth.positiveModulo(e, 8.0D);
+        double f = Mth.positiveModuloForPositiveIntegerDivisor(e, 8.0D); // Gale - faster floating-point positive modulo
         return 1.0D * (32.0D * (e - 128.0D) - 3.0D * (e - 120.0D) * f + 3.0D * f * f) / (128.0D * (32.0D - 3.0D * f));
     }
 
