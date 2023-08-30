@@ -7,8 +7,10 @@ import net.minecraft.world.entity.Mob;
 
 public class Sensing {
     private final Mob mob;
-    private final IntSet seen = new IntOpenHashSet();
-    private final IntSet unseen = new IntOpenHashSet();
+    // Gale start - initialize line of sight cache with low capacity
+    private final IntSet seen = new IntOpenHashSet(2);
+    private final IntSet unseen = new IntOpenHashSet(2);
+    // Gale end - initialize line of sight cache with low capacity
 
     public Sensing(Mob owner) {
         this.mob = owner;
