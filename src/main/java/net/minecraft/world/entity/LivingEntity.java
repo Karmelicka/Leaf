@@ -1032,10 +1032,9 @@ public abstract class LivingEntity extends Entity implements Attackable {
         }
 
         if (entity != null) {
-            ItemStack itemstack = this.getItemBySlot(EquipmentSlot.HEAD);
             EntityType<?> entitytypes = entity.getType();
 
-            if (entitytypes == EntityType.SKELETON && itemstack.is(Items.SKELETON_SKULL) || entitytypes == EntityType.ZOMBIE && itemstack.is(Items.ZOMBIE_HEAD) || entitytypes == EntityType.PIGLIN && itemstack.is(Items.PIGLIN_HEAD) || entitytypes == EntityType.PIGLIN_BRUTE && itemstack.is(Items.PIGLIN_HEAD) || entitytypes == EntityType.CREEPER && itemstack.is(Items.CREEPER_HEAD)) {
+            if (entitytypes == EntityType.SKELETON && this.getItemBySlot(EquipmentSlot.HEAD).is(Items.SKELETON_SKULL) || entitytypes == EntityType.ZOMBIE && this.getItemBySlot(EquipmentSlot.HEAD).is(Items.ZOMBIE_HEAD) || entitytypes == EntityType.PIGLIN && this.getItemBySlot(EquipmentSlot.HEAD).is(Items.PIGLIN_HEAD) || entitytypes == EntityType.PIGLIN_BRUTE && this.getItemBySlot(EquipmentSlot.HEAD).is(Items.PIGLIN_HEAD) || entitytypes == EntityType.CREEPER && this.getItemBySlot(EquipmentSlot.HEAD).is(Items.CREEPER_HEAD)) { // Gale - Petal - reduce skull ItemStack lookups for reduced visibility
                 d0 *= 0.5D;
             }
         }
