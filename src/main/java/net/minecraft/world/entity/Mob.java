@@ -1047,13 +1047,20 @@ public abstract class Mob extends LivingEntity implements Targeting {
 
     @Override
     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+        // Paper start - Fix silent equipment change
+        setItemSlot(slot, stack, false);
+    }
+
+    @Override
+    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) {
+        // Paper end - Fix silent equipment change
         this.verifyEquippedItem(stack);
         switch (slot.getType()) {
             case HAND:
-                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack);
+                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
                 break;
             case ARMOR:
-                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack);
+                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
         }
 
     }
