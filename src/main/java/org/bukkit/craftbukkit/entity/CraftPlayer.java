@@ -555,6 +555,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
         }
         OfflinePlayer other = (OfflinePlayer) obj;
+        if (this == obj) return true; // Leaf - reduce canSee work
         if ((this.getUniqueId() == null) || (other.getUniqueId() == null)) {
             return false;
         }

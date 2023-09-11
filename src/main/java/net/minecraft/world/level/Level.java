@@ -392,15 +392,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         for (int i = 0, len = entities.size(); i < len; ++i) {
             Entity entity = entities.get(i);
 
-            if (checkCanSee && source instanceof net.minecraft.server.level.ServerPlayer && entity instanceof net.minecraft.server.level.ServerPlayer
-                && !((net.minecraft.server.level.ServerPlayer) source).getBukkitEntity().canSee(((net.minecraft.server.level.ServerPlayer) entity).getBukkitEntity())) {
-                continue;
-            }
-
+            // Leaf - move up
             // !entity1.dead && entity1.i && (entity == null || !entity1.x(entity));
             // elide the last check since vanilla calls with entity = null
             // only we care about the source for the canSee check
             if (entity.isRemoved() || !entity.blocksBuilding) {
+                continue;
+            }
+            // Leaf end
+
+            if (checkCanSee && source instanceof net.minecraft.server.level.ServerPlayer && entity instanceof net.minecraft.server.level.ServerPlayer
+                && !((net.minecraft.server.level.ServerPlayer) source).getBukkitEntity().canSee(((net.minecraft.server.level.ServerPlayer) entity).getBukkitEntity())) {
                 continue;
             }
 
