@@ -20,11 +20,17 @@ public class ExplosionDamageCalculator {
         return true;
     }
 
+    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper
     public float getEntityDamageAmount(Explosion explosion, Entity entity) {
+        // Paper start - actually optimise explosions
+        return this.getEntityDamageAmount(explosion, entity, Explosion.getSeenPercent(explosion.center(), entity));
+    }
+    public float getEntityDamageAmount(Explosion explosion, Entity entity, double seenPercent) {
+        // Paper end - actually optimise explosions
         float f = explosion.radius() * 2.0F;
         Vec3 vec3 = explosion.center();
         double d = Math.sqrt(entity.distanceToSqr(vec3)) / (double)f;
-        double e = (1.0D - d) * (double)Explosion.getSeenPercent(vec3, entity);
+        double e = (1.0D - d) * seenPercent; // Paper - actually optimise explosions
         return (float)((e * e + e) / 2.0D * 7.0D * (double)f + 1.0D);
     }
 }
