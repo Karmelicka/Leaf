@@ -126,6 +126,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     protected float oThunderLevel;
     public float thunderLevel;
     public final RandomSource random = RandomSource.create();
+    public final RandomSource randomFaster = RandomSource.createFaster(); // Leaf - Generate random seed faster
     /** @deprecated */
     @Deprecated
     private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();

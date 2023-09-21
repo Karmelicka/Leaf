@@ -5,6 +5,7 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.primitives.Longs;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class RandomSupport {
@@ -42,6 +43,12 @@ public final class RandomSupport {
             return seedUniquifier * 1181783497276652981L;
         }) ^ System.nanoTime();
     }
+
+    // Leaf start - Generate random seed faster
+    public static long generateFasterSeed() {
+        return SEED_UNIQUIFIER.updateAndGet((seedUniquifier) -> seedUniquifier * 1181783497276652981L)^ ThreadLocalRandom.current().nextLong();
+    }
+    // Leaf end
 
     public static record Seed128bit(long seedLo, long seedHi) {
         public RandomSupport.Seed128bit xor(long seedLo, long seedHi) {

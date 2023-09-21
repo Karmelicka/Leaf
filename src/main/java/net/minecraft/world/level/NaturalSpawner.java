@@ -422,12 +422,12 @@ public final class NaturalSpawner {
 
     private static BlockPos getRandomPosWithin(ServerLevel world, LevelChunk chunk) { // Gale - Airplane - Use ThreadUnsafeRandom for mob spawning - accept ServerLevel
         ChunkPos chunkcoordintpair = chunk.getPos();
-        // Gale start - Airplane - Use ThreadUnsafeRandom for mob spawning - use ThreadUnsafeRandom
-        int i = chunkcoordintpair.getMinBlockX() + world.randomTickRandom.nextInt(16);
-        int j = chunkcoordintpair.getMinBlockZ() + world.randomTickRandom.nextInt(16);
+        // Gale start - Airplane - Use ThreadUnsafeRandom for mob spawning - use ThreadUnsafeRandom // Leaf start - Generate random seed faster
+        int i = chunkcoordintpair.getMinBlockX() + world.randomFaster.nextInt(16);
+        int j = chunkcoordintpair.getMinBlockZ() + world.randomFaster.nextInt(16);
         // Gale end - Airplane - Use ThreadUnsafeRandom for mob spawning - use ThreadUnsafeRandom
         int k = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, i, j) + 1;
-        int l = Mth.randomBetweenInclusive(world.randomTickRandom, world.getMinBuildHeight(), k);  // Gale - Airplane - Use ThreadUnsafeRandom for mob spawning - use ThreadUnsafeRandom
+        int l = Mth.randomBetweenInclusive(world.randomFaster, world.getMinBuildHeight(), k);  // Gale - Airplane - Use ThreadUnsafeRandom for mob spawning - use ThreadUnsafeRandom // Leaf end
         return new BlockPos(i, l, j);
     }
 

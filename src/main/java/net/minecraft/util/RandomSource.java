@@ -16,6 +16,12 @@ public interface RandomSource {
         return create(RandomSupport.generateUniqueSeed());
     }
 
+    // Leaf start - Generate random seed faster
+    static RandomSource createFaster() {
+        return create(RandomSupport.generateFasterSeed());
+    }
+    // Leaf end
+
     /** @deprecated */
     @Deprecated
     static RandomSource createThreadSafe() {
