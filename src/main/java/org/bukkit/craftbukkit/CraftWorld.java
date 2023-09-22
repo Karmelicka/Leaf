@@ -573,7 +573,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                 world.getChunk(x, z); // make sure we're at ticket level 32 or lower
                 return true;
             }
-            net.minecraft.world.level.chunk.storage.RegionFile file;
+            org.purpurmc.purpur.region.AbstractRegionFile file; // LinearPurpur
             try {
                 file = world.getChunkSource().chunkMap.regionFileCache.getRegionFile(chunkPos, false);
             } catch (java.io.IOException ex) {

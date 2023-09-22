@@ -61,7 +61,7 @@ public class WorldUpgrader {
     private volatile int skipped;
     private final Reference2FloatMap<ResourceKey<Level>> progressMap = Reference2FloatMaps.synchronize(new Reference2FloatOpenHashMap());
     private volatile Component status = Component.translatable("optimizeWorld.stage.counting");
-    public static final Pattern REGEX = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
+    public static Pattern REGEX = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.(linear | mca)$"); // LinearPurpur
     private final DimensionDataStorage overworldDataStorage;
 
     public WorldUpgrader(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, Registry<LevelStem> dimensionOptionsRegistry, boolean eraseCache) {
@@ -116,7 +116,13 @@ public class WorldUpgrader {
                 ResourceKey<Level> resourcekey1 = (ResourceKey) iterator1.next();
                 Path path = this.levelStorage.getDimensionPath(resourcekey1);
 
-                builder1.put(resourcekey1, new ChunkStorage(path.resolve("region"), this.dataFixer, true));
+                // LinearPurpur start
+                String worldName = this.levelStorage.getLevelId();
+                org.purpurmc.purpur.region.RegionFileFormat formatName = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(worldName)).getHandle().purpurConfig.regionFormatName;
+                int linearCompression = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(worldName)).getHandle().purpurConfig.regionFormatLinearCompressionLevel;
+                boolean linearCrashOnBrokenSymlink = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(worldName)).getHandle().purpurConfig.linearCrashOnBrokenSymlink;
+                builder1.put(resourcekey1, new ChunkStorage(formatName, linearCompression, linearCrashOnBrokenSymlink, path.resolve("region"), this.dataFixer, true));
+                // LinearPurpur end
             }
 
             ImmutableMap<ResourceKey<Level>, ChunkStorage> immutablemap1 = builder1.build();
@@ -241,7 +247,7 @@ public class WorldUpgrader {
         File file = this.levelStorage.getDimensionPath(world).toFile();
         File file1 = new File(file, "region");
         File[] afile = file1.listFiles((file2, s) -> {
-            return s.endsWith(".mca");
+            return s.endsWith(".mca") || s.endsWith(".linear"); // LinearPurpur
         });
 
         if (afile == null) {
@@ -260,7 +266,11 @@ public class WorldUpgrader {
                     int l = Integer.parseInt(matcher.group(2)) << 5;
 
                     try {
-                        RegionFile regionfile = new RegionFile(file2.toPath(), file1.toPath(), true);
+                        // LinearPurpur start
+                        String worldName = this.levelStorage.getLevelId();
+                        int linearCompression = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(worldName)).getHandle().purpurConfig.regionFormatLinearCompressionLevel;
+                        org.purpurmc.purpur.region.AbstractRegionFile regionfile = org.purpurmc.purpur.region.AbstractRegionFileFactory.getAbstractRegionFile(linearCompression, file2.toPath(), file1.toPath(), true);
+                        // LinearPurpur end
 
                         try {
                             for (int i1 = 0; i1 < 32; ++i1) {

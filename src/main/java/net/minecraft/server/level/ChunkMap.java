@@ -246,7 +246,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     // Paper end - optimise chunk tick iteration
 
     public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
-        super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
+        super(world.getLevel().purpurConfig.regionFormatName, world.getLevel().purpurConfig.regionFormatLinearCompressionLevel, world.getLevel().purpurConfig.linearCrashOnBrokenSymlink, session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync); // LinearPurpur
         // Paper - rewrite chunk system
         this.tickingGenerated = new AtomicInteger();
         this.playerMap = new PlayerMap();
@@ -291,7 +291,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         this.lightEngine = new ThreadedLevelLightEngine(chunkProvider, this, this.level.dimensionType().hasSkyLight(), null, null); // Paper - rewrite chunk system
         this.distanceManager = new ChunkMap.ChunkDistanceManager(executor, mainThreadExecutor);
         this.overworldDataStorage = persistentStateManagerFactory;
-        this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
+        this.poiManager = new PoiManager(this.level.purpurConfig.regionFormatName, this.level.purpurConfig.regionFormatLinearCompressionLevel, this.level.purpurConfig.linearCrashOnBrokenSymlink, path.resolve("poi"), dataFixer, dsync, iregistrycustom, world); // LinearPurpur
         this.setServerViewDistance(viewDistance);
         // Paper start
         this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
@@ -861,13 +861,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     }
 
     public ChunkStatus getChunkStatusOnDiskIfCached(ChunkPos chunkPos) {
-        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFileIfLoaded(chunkPos);
+        org.purpurmc.purpur.region.AbstractRegionFile regionFile = regionFileCache.getRegionFileIfLoaded(chunkPos); // LinearPurpur
 
         return regionFile == null ? null : regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
     }
 
     public ChunkStatus getChunkStatusOnDisk(ChunkPos chunkPos) throws IOException {
-        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFile(chunkPos, true);
+        org.purpurmc.purpur.region.AbstractRegionFile regionFile = regionFileCache.getRegionFile(chunkPos, true); // LinearPurpur
 
         if (regionFile == null || !regionFileCache.chunkExists(chunkPos)) {
             return null;
@@ -885,7 +885,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     }
 
     public void updateChunkStatusOnDisk(ChunkPos chunkPos, @Nullable CompoundTag compound) throws IOException {
-        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFile(chunkPos, false);
+        org.purpurmc.purpur.region.AbstractRegionFile regionFile = regionFileCache.getRegionFile(chunkPos, false); // LinearPurpur
 
         regionFile.setStatus(chunkPos.x, chunkPos.z, ChunkSerializer.getStatus(compound));
     }

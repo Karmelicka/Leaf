@@ -419,8 +419,8 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
     private static final class EntityRegionFileStorage extends net.minecraft.world.level.chunk.storage.RegionFileStorage {
 
-        public EntityRegionFileStorage(Path directory, boolean dsync) {
-            super(directory, dsync);
+        public EntityRegionFileStorage(org.purpurmc.purpur.region.RegionFileFormat format, int linearCompression, boolean linearCrashOnBrokenSymlink, Path directory, boolean dsync) { // LinearPurpur
+            super(format, linearCompression, linearCrashOnBrokenSymlink, directory, dsync); // LinearPurpur
         }
 
         protected void write(ChunkPos pos, net.minecraft.nbt.CompoundTag nbt) throws IOException {
@@ -748,7 +748,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
         // CraftBukkit end
         boolean flag2 = minecraftserver.forceSynchronousWrites();
         DataFixer datafixer = minecraftserver.getFixerUpper();
-        this.entityStorage = new EntityRegionFileStorage(convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system  //EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver);
+        this.entityStorage = new EntityRegionFileStorage(this.getLevel().purpurConfig.regionFormatName, this.getLevel().purpurConfig.regionFormatLinearCompressionLevel, this.getLevel().purpurConfig.linearCrashOnBrokenSymlink, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system  //EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver); // LinearPurpur
 
         // this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage, this.entitySliceManager); // Paper // Paper - rewrite chunk system
         StructureTemplateManager structuretemplatemanager = minecraftserver.getStructureManager();

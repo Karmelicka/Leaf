@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import static org.purpurmc.purpur.PurpurConfig.log;
+import org.purpurmc.purpur.region.RegionFileFormat;
 
 @SuppressWarnings("unused")
 public class PurpurWorldConfig {
@@ -117,6 +118,27 @@ public class PurpurWorldConfig {
     private void arrowSettings() {
         arrowMovementResetsDespawnCounter = getBoolean("gameplay-mechanics.arrow.movement-resets-despawn-counter", arrowMovementResetsDespawnCounter);
     }
+
+    // LinearPurpur start - region format configuration
+    public RegionFileFormat regionFormatName = RegionFileFormat.ANVIL;
+    public boolean linearCrashOnBrokenSymlink = true;
+    public int regionFormatLinearCompressionLevel = 1;
+    private void regionFormatSettings() {
+        regionFormatName = RegionFileFormat.fromString(getString("region-format.format", regionFormatName.name()));
+        if (regionFormatName.equals(RegionFileFormat.INVALID)) {
+            log(Level.SEVERE, "Unknown region format in purpur.yml: " + regionFormatName);
+            log(Level.SEVERE, "Falling back to ANVIL region file format.");
+            regionFormatName = RegionFileFormat.ANVIL;
+        }
+        regionFormatLinearCompressionLevel = getInt("region-format.linear.compression-level", regionFormatLinearCompressionLevel);
+        if (regionFormatLinearCompressionLevel > 23 || regionFormatLinearCompressionLevel < 1) {
+            log(Level.SEVERE, "Linear region compression level should be between 1 and 22 in purpur.yml: " + regionFormatLinearCompressionLevel);
+            log(Level.SEVERE, "Falling back to compression level 1.");
+            regionFormatLinearCompressionLevel = 1;
+        }
+        linearCrashOnBrokenSymlink = getBoolean("region-format.linear.crash-on-broken-symlink", linearCrashOnBrokenSymlink);
+    }
+    // LinearPurpur end
 
     public boolean useBetterMending = false;
     public double mendingMultiplier = 1.0;

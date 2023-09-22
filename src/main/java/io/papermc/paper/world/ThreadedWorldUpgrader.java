@@ -85,8 +85,15 @@ public class ThreadedWorldUpgrader {
         LOGGER.info("Found " + regionFiles.length + " regionfiles to convert");
         LOGGER.info("Starting conversion now for world " + this.worldName);
 
+        // LinearPurpur start
+        org.purpurmc.purpur.region.RegionFileFormat formatName = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(worldName)).getHandle().purpurConfig.regionFormatName;
+        int linearCompression = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(worldName)).getHandle().purpurConfig.regionFormatLinearCompressionLevel;
+        boolean linearCrashOnBrokenSymlink = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(worldName)).getHandle().purpurConfig.linearCrashOnBrokenSymlink;
+        LOGGER.info("Using format " + formatName + " (" + linearCompression + ")");
+        // LinearPurpur end
+
         final WorldInfo info = new WorldInfo(() -> worldPersistentData,
-                new ChunkStorage(regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey);
+            new ChunkStorage(formatName, linearCompression, linearCrashOnBrokenSymlink, regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey); // LinearPurpur
 
         long expectedChunks = (long)regionFiles.length * (32L * 32L);
         // Gale start - instantly continue on world upgrade finish

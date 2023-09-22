@@ -241,6 +241,19 @@ public class PurpurConfig {
         laggingThreshold = getDouble("settings.lagging-threshold", laggingThreshold);
     }
 
+    // LinearPurpur start - region format configuration
+    public static int linearFlushFrequency = 10;
+    public static int linearFlushThreads = 1;
+    private static void regionFormatSettings() {
+        linearFlushFrequency = getInt("region-format.linear.flush-frequency", linearFlushFrequency);
+        linearFlushThreads = getInt("region-format.linear.flush-max-threads", linearFlushThreads);
+        if (linearFlushThreads < 0)
+            linearFlushThreads = Math.max(Runtime.getRuntime().availableProcessors() + linearFlushThreads, 1);
+        else
+            linearFlushThreads = Math.max(linearFlushThreads, 1);
+    }
+    // LinearPurpur end
+
     public static boolean disableGiveCommandDrops = false;
     private static void disableGiveCommandDrops() {
         disableGiveCommandDrops = getBoolean("settings.disable-give-dropping", disableGiveCommandDrops);

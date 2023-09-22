@@ -866,7 +866,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             // Paper start - rewrite chunk system
             worldserver.save((ProgressListener) null, flush, worldserver.noSave && !force, close);
             if (flush) {
-                MinecraftServer.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", worldserver.getChunkSource().chunkMap.getStorageName());
+                MinecraftServer.LOGGER.info("ThreadedChunkStorage ({}): All chunks are saved", worldserver.getChunkSource().chunkMap.getStorageName()); // LinearPurpur
             }
             // Paper end - rewrite chunk system
         }
@@ -890,7 +890,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                 //MinecraftServer.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", worldserver2.getChunkSource().chunkMap.getStorageName()); // Paper - move up
             }
 
-            MinecraftServer.LOGGER.info("ThreadedAnvilChunkStorage: All dimensions are saved");
+            MinecraftServer.LOGGER.info("ThreadedChunkStorage: All dimensions are saved"); // LinearPurpur
         }
 
         return flag3;

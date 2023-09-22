@@ -47,8 +47,8 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
     public final RegistryAccess registryAccess; // Paper - rewrite chunk system
     protected final LevelHeightAccessor levelHeightAccessor;
 
-    public SectionStorage(Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, RegistryAccess dynamicRegistryManager, LevelHeightAccessor world) {
-        super(path, dsync); // Paper - remove mojang I/O thread
+    public SectionStorage(org.purpurmc.purpur.region.RegionFileFormat format, int linearCompression, boolean linearCrashOnBrokenSymlink, Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, RegistryAccess dynamicRegistryManager, LevelHeightAccessor world) { // LinearPurpur
+        super(format, linearCompression, linearCrashOnBrokenSymlink, path, dsync); // Paper - remove mojang I/O thread // LinearPurpur
         this.codec = codecFactory;
         this.factory = factory;
         this.fixerUpper = dataFixer;

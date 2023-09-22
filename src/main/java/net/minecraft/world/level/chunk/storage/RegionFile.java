@@ -26,7 +26,7 @@ import net.minecraft.nbt.NbtIo; // Paper
 import net.minecraft.world.level.ChunkPos;
 import org.slf4j.Logger;
 
-public class RegionFile implements AutoCloseable {
+public class RegionFile implements AutoCloseable, org.purpurmc.purpur.region.AbstractRegionFile { // LinearPurpur
 
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final int SECTOR_BYTES = 4096;
@@ -49,6 +49,16 @@ public class RegionFile implements AutoCloseable {
     protected final RegionBitmap usedSectors;
     public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
     public final Path regionFile; // Paper
+
+    // LinearPurpur start - Abstract getters
+    public Path getRegionFile() {
+        return this.regionFile;
+    }
+
+    public java.util.concurrent.locks.ReentrantLock getFileLock() {
+        return this.fileLock;
+    }
+    // LinearPurpur end
 
     // Paper start - Attempt to recalculate regionfile header if it is corrupt
     private static long roundToSectors(long bytes) {
@@ -128,7 +138,7 @@ public class RegionFile implements AutoCloseable {
     }
 
     // note: only call for CHUNK regionfiles
-    boolean recalculateHeader() throws IOException {
+    public boolean recalculateHeader() throws IOException { // LinearPurpur
         if (!this.canRecalcHeader) {
             return false;
         }
@@ -955,10 +965,10 @@ public class RegionFile implements AutoCloseable {
     private static int getChunkIndex(int x, int z) {
         return (x & 31) + (z & 31) * 32;
     }
-    synchronized boolean isOversized(int x, int z) {
+    public synchronized boolean isOversized(int x, int z) { // LinearPurpur
         return this.oversized[getChunkIndex(x, z)] == 1;
     }
-    synchronized void setOversized(int x, int z, boolean oversized) throws IOException {
+    public synchronized void setOversized(int x, int z, boolean oversized) throws IOException { // LinearPurpur
         final int offset = getChunkIndex(x, z);
         boolean previous = this.oversized[offset] == 1;
         this.oversized[offset] = (byte) (oversized ? 1 : 0);
@@ -997,7 +1007,7 @@ public class RegionFile implements AutoCloseable {
         return this.regionFile.getParent().resolve(this.regionFile.getFileName().toString().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
     }
 
-    synchronized CompoundTag getOversizedData(int x, int z) throws IOException {
+    public synchronized CompoundTag getOversizedData(int x, int z) throws IOException { // LinearPurpur
         Path file = getOversizedFile(x, z);
         try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new InflaterInputStream(Files.newInputStream(file))))) {
             return NbtIo.read((java.io.DataInput) out);

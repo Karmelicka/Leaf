@@ -57,8 +57,8 @@ public class PoiManager extends SectionStorage<PoiSection> {
     // Paper end - rewrite chunk system
 
 
-    public PoiManager(Path path, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world) {
-        super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, registryManager, world);
+    public PoiManager(org.purpurmc.purpur.region.RegionFileFormat formatName, int linearCompression, boolean linearCrashOnBrokenSymlink, Path path, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world) { // LinearPurpur
+        super(formatName, linearCompression, linearCrashOnBrokenSymlink, path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, registryManager, world); // LinearPurpur
         this.world = (net.minecraft.server.level.ServerLevel)world; // Paper - rewrite chunk system
     }
 

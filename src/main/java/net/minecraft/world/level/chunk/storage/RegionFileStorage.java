@@ -19,11 +19,17 @@ import net.minecraft.world.level.ChunkPos;
 
 public class RegionFileStorage implements AutoCloseable {
 
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // LinearPurpur
     public static final String ANVIL_EXTENSION = ".mca";
     private static final int MAX_CACHE_SIZE = 256;
-    public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap();
+    public final Long2ObjectLinkedOpenHashMap<org.purpurmc.purpur.region.AbstractRegionFile> regionCache = new Long2ObjectLinkedOpenHashMap(); // LinearPurpur
     private final Path folder;
     private final boolean sync;
+    // LinearPurpur start - Per world chunk format
+    public final org.purpurmc.purpur.region.RegionFileFormat format;
+    public final int linearCompression;
+    public final boolean linearCrashOnBrokenSymlink;
+    // LinearPurpur end
     private final boolean isChunkData; // Paper
 
     // Paper start - cache regionfile does not exist state
@@ -55,11 +61,16 @@ public class RegionFileStorage implements AutoCloseable {
     }
     // Paper end - cache regionfile does not exist state
 
-    protected RegionFileStorage(Path directory, boolean dsync) { // Paper - protected constructor
+    protected RegionFileStorage(org.purpurmc.purpur.region.RegionFileFormat format, int linearCompression, boolean linearCrashOnBrokenSymlink, Path directory, boolean dsync) { // Paper - protected constructor // LinearPurpur
         // Paper start - add isChunkData param
-        this(directory, dsync, false);
+        this(format, linearCompression, linearCrashOnBrokenSymlink, directory, dsync, false);
     }
-    RegionFileStorage(Path directory, boolean dsync, boolean isChunkData) {
+    RegionFileStorage(org.purpurmc.purpur.region.RegionFileFormat format, int linearCompression, boolean linearCrashOnBrokenSymlink, Path directory, boolean dsync, boolean isChunkData) { // LinearPurpur
+        // LinearPurpur start
+        this.format = format;
+        this.linearCompression = linearCompression;
+        this.linearCrashOnBrokenSymlink = linearCrashOnBrokenSymlink;
+        // LinearPurpur end
         this.isChunkData = isChunkData;
         // Paper end - add isChunkData param
         this.folder = directory;
@@ -70,7 +81,7 @@ public class RegionFileStorage implements AutoCloseable {
     @Nullable
     public static ChunkPos getRegionFileCoordinates(Path file) {
         String fileName = file.getFileName().toString();
-        if (!fileName.startsWith("r.") || !fileName.endsWith(".mca")) {
+        if (!fileName.startsWith("r.") || !fileName.endsWith(".mca") || !fileName.endsWith(".linear")) { // LinearPurpur
             return null;
         }
 
@@ -90,29 +101,43 @@ public class RegionFileStorage implements AutoCloseable {
         }
     }
     
-    public synchronized RegionFile getRegionFileIfLoaded(ChunkPos chunkcoordintpair) {
+    public synchronized org.purpurmc.purpur.region.AbstractRegionFile getRegionFileIfLoaded(ChunkPos chunkcoordintpair) { // LinearPurpur
         return this.regionCache.getAndMoveToFirst(ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
     }
 
     public synchronized boolean chunkExists(ChunkPos pos) throws IOException {
-        RegionFile regionfile = getRegionFile(pos, true);
+        org.purpurmc.purpur.region.AbstractRegionFile regionfile = getRegionFile(pos, true); // LinearPurpur
 
         return regionfile != null ? regionfile.hasChunk(pos) : false;
     }
 
-    public synchronized RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+    // LinearPurpur start
+    private void guardAgainstBrokenSymlinks(Path path) throws IOException {
+        if (!linearCrashOnBrokenSymlink) return;
+        if (!this.format.equals("LINEAR")) return;
+        if (!java.nio.file.Files.isSymbolicLink(path)) return;
+        Path link = java.nio.file.Files.readSymbolicLink(path);
+        if (!java.nio.file.Files.exists(link) || !java.nio.file.Files.isReadable(link)) {
+            LOGGER.error("Linear region file {} is a broken symbolic link, crashing to prevent data loss", path);
+            net.minecraft.server.MinecraftServer.getServer().halt(false);
+            throw new IOException("Linear region file " + path + " is a broken symbolic link, crashing to prevent data loss");
+        }
+    }
+    // LinearPurpur end
+
+    public synchronized org.purpurmc.purpur.region.AbstractRegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // LinearPurpur
         return this.getRegionFile(chunkcoordintpair, existingOnly, false);
     }
-    public synchronized RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly, boolean lock) throws IOException {
+    public synchronized org.purpurmc.purpur.region.AbstractRegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly, boolean lock) throws IOException { // LinearPurpur
         // Paper end
         long i = ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()); final long regionPos = i; // Paper - OBFHELPER
-        RegionFile regionfile = (RegionFile) this.regionCache.getAndMoveToFirst(i);
+        org.purpurmc.purpur.region.AbstractRegionFile regionfile = this.regionCache.getAndMoveToFirst(i); // LinearPurpur
 
         if (regionfile != null) {
             // Paper start
             if (lock) {
                 // must be in this synchronized block
-                regionfile.fileLock.lock();
+                regionfile.getFileLock().lock(); // LinearPurpur
             }
             // Paper end
             return regionfile;
@@ -123,28 +148,45 @@ public class RegionFileStorage implements AutoCloseable {
             }
             // Paper end - cache regionfile does not exist state
             if (this.regionCache.size() >= io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize) { // Paper - Sanitise RegionFileCache and make configurable
-                ((RegionFile) this.regionCache.removeLast()).close();
+                this.regionCache.removeLast().close(); // LinearPurpur
             }
 
             // Paper - only create directory if not existing only - moved down
             Path path = this.folder;
             int j = chunkcoordintpair.getRegionX();
-            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca"); // Paper - diff on change
-            if (existingOnly && !java.nio.file.Files.exists(path1)) { // Paper start - cache regionfile does not exist state
-                this.markNonExisting(regionPos);
-                return null; // CraftBukkit
+            // LinearPurpur start - Polyglot
+            Path path1;
+            if (existingOnly) {
+                Path anvil = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
+                Path linear = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".linear");
+                guardAgainstBrokenSymlinks(linear);
+                if (java.nio.file.Files.exists(anvil)) path1 = anvil;
+                else if (java.nio.file.Files.exists(linear)) path1 = linear;
+                else {
+                    this.markNonExisting(regionPos);
+                    return null;
+                }
+            // LinearPurpur end
             } else {
+                // LinearPurpur start - Polyglot
+                String extension = switch (this.format) {
+                    case LINEAR -> "linear";
+                    default -> "mca";
+                };
+                path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + "." + extension);
+                // LinearPurpur end
+                guardAgainstBrokenSymlinks(path1); // LinearPurpur - Crash on broken symlink
                 this.createRegionFile(regionPos);
             }
             // Paper end - cache regionfile does not exist state
             FileUtil.createDirectoriesSafe(this.folder); // Paper - only create directory if not existing only - moved from above
-            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
 
+            org.purpurmc.purpur.region.AbstractRegionFile regionfile1 = org.purpurmc.purpur.region.AbstractRegionFileFactory.getAbstractRegionFile(this.linearCompression, path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header // LinearPurpur
             this.regionCache.putAndMoveToFirst(i, regionfile1);
             // Paper start
             if (lock) {
                 // must be in this synchronized block
-                regionfile1.fileLock.lock();
+                regionfile1.getFileLock().lock(); // LinearPurpur
             }
             // Paper end
             return regionfile1;
@@ -156,7 +198,7 @@ public class RegionFileStorage implements AutoCloseable {
         org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PAPER - You may ask for help on Discord, but do not file an issue. These error messages can not be removed.");
     }
 
-    private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
+    private static CompoundTag readOversizedChunk(org.purpurmc.purpur.region.AbstractRegionFile regionfile, ChunkPos chunkCoordinate) throws IOException { // LinearPurpur
         synchronized (regionfile) {
             try (DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkCoordinate)) {
                 CompoundTag oversizedData = regionfile.getOversizedData(chunkCoordinate.x, chunkCoordinate.z);
@@ -191,14 +233,14 @@ public class RegionFileStorage implements AutoCloseable {
     @Nullable
     public CompoundTag read(ChunkPos pos) throws IOException {
         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-        RegionFile regionfile = this.getRegionFile(pos, true, true); // Paper
+        org.purpurmc.purpur.region.AbstractRegionFile regionfile = this.getRegionFile(pos, true, true); // Paper // LinearPurpur
         if (regionfile == null) {
             return null;
         }
         // Paper start - Add regionfile parameter
         return this.read(pos, regionfile);
     }
-    public CompoundTag read(ChunkPos pos, RegionFile regionfile) throws IOException {
+    public CompoundTag read(ChunkPos pos, org.purpurmc.purpur.region.AbstractRegionFile regionfile) throws IOException { // LinearPurpur
         // We add the regionfile parameter to avoid the potential deadlock (on fileLock) if we went back to obtain a regionfile
         // if we decide to re-read
         // Paper end
@@ -208,7 +250,7 @@ public class RegionFileStorage implements AutoCloseable {
 
         // Paper start
         if (regionfile.isOversized(pos.x, pos.z)) {
-            printOversizedLog("Loading Oversized Chunk!", regionfile.regionFile, pos.x, pos.z);
+            printOversizedLog("Loading Oversized Chunk!", regionfile.getRegionFile(), pos.x, pos.z); // LinearPurpur
             return readOversizedChunk(regionfile, pos);
         }
         // Paper end
@@ -222,12 +264,12 @@ public class RegionFileStorage implements AutoCloseable {
                     if (this.isChunkData) {
                         ChunkPos chunkPos = ChunkSerializer.getChunkCoordinate(nbttagcompound);
                         if (!chunkPos.equals(pos)) {
-                            net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos + " but got chunk data for " + chunkPos + " instead! Attempting regionfile recalculation for regionfile " + regionfile.regionFile.toAbsolutePath());
+                            net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos + " but got chunk data for " + chunkPos + " instead! Attempting regionfile recalculation for regionfile " + regionfile.getRegionFile().toAbsolutePath()); // LinearPurpur
                             if (regionfile.recalculateHeader()) {
-                                regionfile.fileLock.lock(); // otherwise we will unlock twice and only lock once.
+                                regionfile.getFileLock().lock(); // otherwise we will unlock twice and only lock once. // LinearPurpur
                                 return this.read(pos, regionfile);
                             }
-                            net.minecraft.server.MinecraftServer.LOGGER.error("Can't recalculate regionfile header, regenerating chunk " + pos + " for " + regionfile.regionFile.toAbsolutePath());
+                            net.minecraft.server.MinecraftServer.LOGGER.error("Can't recalculate regionfile header, regenerating chunk " + pos + " for " + regionfile.getRegionFile().toAbsolutePath()); // LinearPurpur
                             return null;
                         }
                     }
@@ -261,13 +303,13 @@ public class RegionFileStorage implements AutoCloseable {
 
         return nbttagcompound;
         } finally { // Paper start
-            regionfile.fileLock.unlock();
+            regionfile.getFileLock().unlock(); // LinearPurpur
         } // Paper end
     }
 
     public void scanChunk(ChunkPos chunkPos, StreamTagVisitor scanner) throws IOException {
         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-        RegionFile regionfile = this.getRegionFile(chunkPos, true);
+        org.purpurmc.purpur.region.AbstractRegionFile regionfile = this.getRegionFile(chunkPos, true); // LinearPurpur
         if (regionfile == null) {
             return;
         }
@@ -298,7 +340,7 @@ public class RegionFileStorage implements AutoCloseable {
 
     protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
         // Paper start - rewrite chunk system
-        RegionFile regionfile = this.getRegionFile(pos, nbt == null, true); // CraftBukkit
+        org.purpurmc.purpur.region.AbstractRegionFile regionfile = this.getRegionFile(pos, nbt == null, true); // CraftBukkit // Paper // Paper start - rewrite chunk system // LinearPurpur
         if (nbt == null && regionfile == null) {
             return;
         }
@@ -353,7 +395,7 @@ public class RegionFileStorage implements AutoCloseable {
         // Paper end - Chunk save reattempt
         // Paper start - rewrite chunk system
         } finally {
-            regionfile.fileLock.unlock();
+            regionfile.getFileLock().unlock(); // LinearPurpur
         }
         // Paper end - rewrite chunk system
     }
@@ -363,7 +405,7 @@ public class RegionFileStorage implements AutoCloseable {
         ObjectIterator objectiterator = this.regionCache.values().iterator();
 
         while (objectiterator.hasNext()) {
-            RegionFile regionfile = (RegionFile) objectiterator.next();
+            org.purpurmc.purpur.region.AbstractRegionFile regionfile = (org.purpurmc.purpur.region.AbstractRegionFile) objectiterator.next(); // LinearPurpur
 
             try {
                 regionfile.close();
@@ -379,7 +421,7 @@ public class RegionFileStorage implements AutoCloseable {
         ObjectIterator objectiterator = this.regionCache.values().iterator();
 
         while (objectiterator.hasNext()) {
-            RegionFile regionfile = (RegionFile) objectiterator.next();
+            org.purpurmc.purpur.region.AbstractRegionFile regionfile = (org.purpurmc.purpur.region.AbstractRegionFile) objectiterator.next(); // LinearPurpur
 
             regionfile.flush();
         }

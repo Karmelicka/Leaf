@@ -36,9 +36,9 @@ public class ChunkStorage implements AutoCloseable {
     @Nullable
     private volatile LegacyStructureDataHandler legacyStructureHandler;
 
-    public ChunkStorage(Path directory, DataFixer dataFixer, boolean dsync) {
+    public ChunkStorage(org.purpurmc.purpur.region.RegionFileFormat format, int linearCompression, boolean linearCrashOnBrokenSymlink, Path directory, DataFixer dataFixer, boolean dsync) { // LinearPurpur
         this.fixerUpper = dataFixer;
-        this.regionFileCache = new RegionFileStorage(directory, dsync, true); // Paper - rewrite chunk system; async chunk IO & Attempt to recalculate regionfile header if it is corrupt
+        this.regionFileCache = new RegionFileStorage(format, linearCompression, linearCrashOnBrokenSymlink, directory, dsync, true); // Paper - rewrite chunk system; async chunk IO & Attempt to recalculate regionfile header if it is corrupt // LinearPurpur
     }
 
     public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
