@@ -132,7 +132,6 @@ public final class NaturalSpawner {
     }
 
     public static void spawnForChunk(ServerLevel world, LevelChunk chunk, NaturalSpawner.SpawnState info, boolean spawnAnimals, boolean spawnMonsters, boolean rareSpawn) {
-        world.timings.mobSpawn.startTiming(); // Spigot
         MobCategory[] aenumcreaturetype = NaturalSpawner.SPAWNING_CATEGORIES;
         int i = aenumcreaturetype.length;
 
@@ -184,8 +183,6 @@ public final class NaturalSpawner {
                 // Paper end - Optional per player mob spawns
             }
         }
-
-        world.timings.mobSpawn.stopTiming(); // Spigot
     }
 
     // Paper start - Add mobcaps commands

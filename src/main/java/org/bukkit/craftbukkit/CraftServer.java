@@ -470,7 +470,6 @@ public final class CraftServer implements Server {
         this.saveCommandsConfig();
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
-        //this.pluginManager.useTimings(this.configuration.getBoolean("settings.plugin-profiling")); // Paper - we already moved this
         this.overrideSpawnLimits();
         console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
         this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));

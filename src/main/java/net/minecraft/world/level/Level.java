@@ -176,7 +176,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
 
     public final com.destroystokyo.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
     public final org.purpurmc.purpur.PurpurWorldConfig purpurConfig; // Purpur
-    public final co.aikar.timings.WorldTimingsHandler timings; // Paper
     public static BlockPos lastPhysicsProblem; // Spigot
     private org.spigotmc.TickLimiter entityLimiter;
     private org.spigotmc.TickLimiter tileLimiter;
@@ -364,7 +363,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
             public void onBorderSetDamageSafeZOne(WorldBorder border, double safeZoneRadius) {}
         });
         // CraftBukkit end
-        this.timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
         this.keepSpawnInMemory = this.paperConfig().spawn.keepSpawnLoaded; // Paper - Option to keep spawn chunks loaded
         this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
         this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
@@ -1332,15 +1330,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     }
 
     protected void tickBlockEntities() {
-        this.timings.tileEntityPending.startTiming(); // Spigot
         this.tickingBlockEntities = true;
         if (!this.pendingBlockEntityTickers.isEmpty()) {
             this.blockEntityTickers.addAll(this.pendingBlockEntityTickers);
             this.pendingBlockEntityTickers.clear();
         }
-        this.timings.tileEntityPending.stopTiming(); // Spigot
 
-        this.timings.tileEntityTick.startTiming(); // Spigot
         // Spigot start
         // Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
         boolean flag = this.tickRateManager().runsNormally();
@@ -1369,9 +1364,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         }
         this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
 
-        this.timings.tileEntityTick.stopTiming(); // Spigot
         this.tickingBlockEntities = false;
-        co.aikar.timings.TimingHistory.tileEntityTicks += this.blockEntityTickers.size(); // Paper
         this.spigotConfig.currentPrimedTnt = 0; // Spigot
     }
 

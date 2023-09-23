@@ -57,7 +57,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.io.IoBuilder;
 import org.bukkit.command.CommandSender;
-import co.aikar.timings.MinecraftTimings; // Paper
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.craftbukkit.util.Waitable; // Paper
 import org.bukkit.event.server.RemoteServerCommandEvent;
@@ -533,7 +532,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
     }
 
     public void handleConsoleInputs() {
-        MinecraftTimings.serverCommandTimer.startTiming(); // Spigot
         // Paper start - Perf: use proper queue
         ConsoleInput servercommand;
         while ((servercommand = this.serverCommandQueue.poll()) != null) {
@@ -549,8 +547,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
             this.server.dispatchServerCommand(this.console, servercommand);
             // CraftBukkit end
         }
-
-        MinecraftTimings.serverCommandTimer.stopTiming(); // Spigot
     }
 
     @Override
@@ -822,23 +818,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
             if (event.isCancelled()) {
                 return;
             }
-            // Paper start
-            command.set(event.getCommand());
-            if (event.getCommand().toLowerCase().startsWith("timings") && event.getCommand().toLowerCase().matches("timings (report|paste|get|merged|seperate)")) {
-                org.bukkit.command.BufferedCommandSender sender = new org.bukkit.command.BufferedCommandSender();
-                Waitable<String> waitable = new Waitable<>() {
-                    @Override
-                    protected String evaluate() {
-                        return sender.getBuffer();
-                    }
-                };
-                waitableArray[0] = waitable;
-                co.aikar.timings.Timings.generateReport(new co.aikar.timings.TimingsReportListener(sender, waitable));
-            } else {
-            // Paper end
+
             ConsoleInput serverCommand = new ConsoleInput(event.getCommand(), wrapper);
             this.server.dispatchServerCommand(event.getSender(), serverCommand);
-            } // Paper
         });
         // Paper start
         if (waitableArray[0] != null) {

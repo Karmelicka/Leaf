@@ -13,9 +13,8 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
     private long endTimestamp;
     private final int minDuration;
     private final int maxDuration;
-    // Paper start - configurable behavior tick rate and timings
+    // Paper start - configurable behavior tick rate
     private final String configKey;
-    private final co.aikar.timings.Timing timing;
     // Paper end - configurable behavior tick rate and timings
 
     public Behavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState) {
@@ -30,14 +29,13 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
         this.minDuration = minRunTime;
         this.maxDuration = maxRunTime;
         this.entryCondition = requiredMemoryState;
-        // Paper start - configurable behavior tick rate and timings
+        // Paper start - configurable behavior tick rate
         String key = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName());
         int lastSeparator = key.lastIndexOf('.');
         if (lastSeparator != -1) {
             key = key.substring(lastSeparator + 1);
         }
         this.configKey = key.toLowerCase(java.util.Locale.ROOT);
-        this.timing = co.aikar.timings.MinecraftTimings.getBehaviorTimings(configKey);
         // Paper end - configurable behavior tick rate and timings
     }
 
@@ -58,9 +56,7 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
             this.status = Behavior.Status.RUNNING;
             int i = this.minDuration + world.getRandom().nextInt(this.maxDuration + 1 - this.minDuration);
             this.endTimestamp = time + (long)i;
-            this.timing.startTiming(); // Paper - behavior timings
             this.start(world, entity, time);
-            this.timing.stopTiming(); // Paper - behavior timings
             return true;
         } else {
             return false;
@@ -72,14 +68,11 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
 
     @Override
     public final void tickOrStop(ServerLevel world, E entity, long time) {
-        this.timing.startTiming(); // Paper - behavior timings
         if (!this.timedOut(time) && this.canStillUse(world, entity, time)) {
             this.tick(world, entity, time);
         } else {
             this.doStop(world, entity, time);
         }
-        this.timing.stopTiming(); // Paper - behavior timings
-
     }
 
     protected void tick(ServerLevel world, E entity, long time) {

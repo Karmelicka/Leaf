@@ -114,13 +114,6 @@ public class Block extends BlockBehaviour implements ItemLike {
             this != Blocks.STRUCTURE_BLOCK &&
             this != Blocks.JIGSAW;
     }
-    public co.aikar.timings.Timing timing;
-    public co.aikar.timings.Timing getTiming() {
-        if (timing == null) {
-            timing = co.aikar.timings.MinecraftTimings.getBlockTiming(this);
-        }
-        return timing;
-    }
     // Paper end
     @Nullable
     private String descriptionId;

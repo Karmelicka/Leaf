@@ -792,7 +792,6 @@ public class LevelChunk extends ChunkAccess {
             this.chunkHolder.getEntityChunk().callEntitiesLoadEvent(); // Paper - rewrite chunk system
 
             if (this.needsDecoration) {
-                try (co.aikar.timings.Timing ignored = this.level.timings.chunkLoadPopulate.startTiming()) { // Paper
                 this.needsDecoration = false;
                 java.util.Random random = new java.util.Random();
                 random.setSeed(this.level.getSeed());
@@ -812,7 +811,6 @@ public class LevelChunk extends ChunkAccess {
                     }
                 }
                 server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
-                } // Paper
             }
         }
     }
@@ -1167,7 +1165,6 @@ public class LevelChunk extends ChunkAccess {
 
                 if (LevelChunk.this.isTicking(blockposition)) {
                     try {
-                        this.blockEntity.tickTimer.startTiming(); // Spigot
                         BlockState iblockdata = LevelChunk.this.getBlockState(blockposition);
 
                         if (this.blockEntity.getType().isValid(iblockdata)) {
@@ -1185,14 +1182,9 @@ public class LevelChunk extends ChunkAccess {
                         net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
                         LevelChunk.this.removeBlockEntity(this.getPos());
                         // Paper end - Prevent block entity and entity crashes
-                        // Spigot start
-                    } finally {
-                        this.blockEntity.tickTimer.stopTiming();
-                        // Spigot end
                     }
                 }
             }
-
         }
 
         @Override

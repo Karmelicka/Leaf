@@ -373,8 +373,6 @@ public class Main {
             tryPreloadClass("org.jline.terminal.impl.MouseSupport");
             tryPreloadClass("org.jline.terminal.impl.MouseSupport$1");
             tryPreloadClass("org.jline.terminal.Terminal$MouseTracking");
-            tryPreloadClass("co.aikar.timings.TimingHistory");
-            tryPreloadClass("co.aikar.timings.TimingHistory$MinuteReport");
             tryPreloadClass("io.netty.channel.AbstractChannelHandlerContext");
             tryPreloadClass("io.netty.channel.AbstractChannelHandlerContext$11");
             tryPreloadClass("io.netty.channel.AbstractChannelHandlerContext$12");

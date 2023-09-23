@@ -1,7 +1,7 @@
 package io.papermc.paper.configuration;
 
-import co.aikar.timings.MinecraftTimings;
 import com.mojang.logging.LogUtils;
+import io.papermc.paper.configuration.constraint.Constraint;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.type.number.IntOr;
 import net.kyori.adventure.text.Component;
@@ -88,39 +88,6 @@ public class GlobalConfiguration extends ConfigurationPart {
 
         public Component noPermission = Component.text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", NamedTextColor.RED);
         public boolean useDisplayNameInQuitMessage = false;
-    }
-
-    @Deprecated(forRemoval = true)
-    public Timings timings;
-
-    @Deprecated(forRemoval = true)
-    public class Timings extends ConfigurationPart {
-        // Gale start - recommend disabling timings on startup
-        public boolean enabled = false; // Gale - set default value to false
-        public boolean warnIfEnabled = true;
-        // Gale end - recommend disabling timings on startup
-        public boolean verbose = true;
-        public String url = "https://timin.gs/"; // Gale - use timin.gs by default
-        public boolean serverNamePrivacy = false;
-        public List<String> hiddenConfigEntries = List.of(
-            "database",
-            "proxies.velocity.secret"
-        );
-        public int historyInterval = 300;
-        public int historyLength = 3600;
-        public String serverName = "Unknown Server";
-
-        @PostProcess
-        private void postProcess() {
-            // Gale start - recommend disabling timings on startup
-            if (enabled && warnIfEnabled) {
-                net.minecraft.server.MinecraftServer.LOGGER.warn("To improve performance, we recommend setting timings.enabled to false in paper-global.yml");
-                net.minecraft.server.MinecraftServer.LOGGER.warn("(If you do this, timings will not start on server startup, but you can still start timings later by using /timings on)");
-                net.minecraft.server.MinecraftServer.LOGGER.warn("If you would like to disable this message, set timings.warn-if-enabled to false in paper-global.yml.");
-            }
-            // Gale end - recommend disabling timings on startup
-            MinecraftTimings.processConfig(this);
-        }
     }
 
     public Proxies proxies;

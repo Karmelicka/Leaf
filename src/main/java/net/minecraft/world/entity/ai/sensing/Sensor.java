@@ -19,20 +19,18 @@ public abstract class Sensor<E extends LivingEntity> {
     private static final TargetingConditions ATTACK_TARGET_CONDITIONS_IGNORE_INVISIBILITY_AND_LINE_OF_SIGHT = TargetingConditions.forCombat().range(16.0D).ignoreLineOfSight().ignoreInvisibilityTesting();
     private final int scanRate;
     private long timeToTick;
-    // Paper start - configurable sensor tick rate and timings
+    // Paper start - configurable sensor tick rate
     private final String configKey;
-    private final co.aikar.timings.Timing timing;
     // Paper end
 
     public Sensor(int senseInterval) {
-        // Paper start - configurable sensor tick rate and timings
+        // Paper start - configurable sensor tick rate
         String key = io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName());
         int lastSeparator = key.lastIndexOf('.');
         if (lastSeparator != -1) {
             key = key.substring(lastSeparator + 1);
         }
         this.configKey = key.toLowerCase(java.util.Locale.ROOT);
-        this.timing = co.aikar.timings.MinecraftTimings.getSensorTimings(configKey, senseInterval);
         // Paper end
         this.scanRate = senseInterval;
         this.timeToTick = (long)RANDOM.nextInt(senseInterval);
@@ -44,12 +42,10 @@ public abstract class Sensor<E extends LivingEntity> {
 
     public final void tick(ServerLevel world, E entity) {
         if (--this.timeToTick <= 0L) {
-            // Paper start - configurable sensor tick rate and timings
+            // Paper start - configurable sensor tick rate
             this.timeToTick = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.sensor.get(entity.getType(), this.configKey), this.scanRate);
-            this.timing.startTiming();
             // Paper end
             this.doTick(world, entity);
-            this.timing.stopTiming(); // Paper - sensor timings
         }
 
     }

@@ -1,6 +1,5 @@
 package net.minecraft.server.level;
 
-import co.aikar.timings.Timing; // Paper
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Iterables;
@@ -538,13 +537,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     }
 
     protected void tick(BooleanSupplier shouldKeepTicking) {
-        try (Timing ignored = this.level.timings.poiUnload.startTiming()) { // Paper
         this.poiManager.tick(shouldKeepTicking);
-        } // Paper
         if (!this.level.noSave()) {
-            try (Timing ignored = this.level.timings.chunkUnload.startTiming()) { // Paper
             this.processUnloads(shouldKeepTicking);
-            } // Paper
         }
     }
 
@@ -1135,25 +1130,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
 
     // Paper start - optimised tracker
     private final void processTrackQueue() {
-        this.level.timings.tracker1.startTiming();
-        try {
             for (TrackedEntity tracker : this.entityMap.values()) {
                 // update tracker entry
                 tracker.updatePlayers(tracker.entity.getPlayersInTrackRange());
             }
-        } finally {
-            this.level.timings.tracker1.stopTiming();
-        }
 
-
-        this.level.timings.tracker2.startTiming();
-        try {
             for (TrackedEntity tracker : this.entityMap.values()) {
                 tracker.serverEntity.sendChanges();
             }
-        } finally {
-            this.level.timings.tracker2.stopTiming();
-        }
     }
     // Paper end - optimised tracker
 
@@ -1167,7 +1151,6 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
         List<ServerPlayer> list = Lists.newArrayList();
         List<ServerPlayer> list1 = this.level.players();
         ObjectIterator objectiterator = this.entityMap.values().iterator();
-        level.timings.tracker1.startTiming(); // Paper
 
         ChunkMap.TrackedEntity playerchunkmap_entitytracker;
 
@@ -1192,17 +1175,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                 playerchunkmap_entitytracker.serverEntity.sendChanges();
             }
         }
-        level.timings.tracker1.stopTiming(); // Paper
 
         if (!list.isEmpty()) {
             objectiterator = this.entityMap.values().iterator();
 
-            level.timings.tracker2.startTiming(); // Paper
             while (objectiterator.hasNext()) {
                 playerchunkmap_entitytracker = (ChunkMap.TrackedEntity) objectiterator.next();
                 playerchunkmap_entitytracker.updatePlayers(list);
             }
-            level.timings.tracker2.stopTiming(); // Paper
         }
 
     }

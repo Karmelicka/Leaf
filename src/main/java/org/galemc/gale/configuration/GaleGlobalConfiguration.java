@@ -80,41 +80,6 @@ public class GaleGlobalConfiguration extends ConfigurationPart {
         public int premiumAccountSlowLoginTimeout = -1; // Gale - make slow login timeout configurable
         public boolean ignoreNullLegacyStructureData = false; // Gale - MultiPaper - ignore null legacy structure data
 
-        public IncludeInTimingsReport includeInTimingsReport;
-
-        public class IncludeInTimingsReport extends ConfigurationPart {
-
-            // Gale start - include server.properties in timings
-            public ServerProperties serverProperties;
-            public class ServerProperties extends ConfigurationPart {
-                public boolean dataPacks = true;
-                public boolean enableRcon = false;
-                public boolean generatorSettings = true;
-                public boolean levelName = false;
-                public boolean motd = false;
-                public boolean queryPort = false;
-                public boolean rconPort = false;
-                public boolean resourcePackPrompt = false;
-                @Setting("resource-pack-and-resource-pack-sha1")
-                public boolean resourcePackAndResourcePackSha1 = false;
-                public boolean serverIp = false;
-                public boolean serverPort = false;
-                public boolean textFilteringConfig = false;
-            }
-            // Gale end - include server.properties in timings
-
-            // Gale start - include hardware specs in timings
-            public HardwareSpecs hardwareSpecs;
-            public class HardwareSpecs extends ConfigurationPart {
-                public boolean cpu = true;
-                public boolean disks = true;
-                public boolean gpus = true;
-                public boolean memory = true;
-            }
-            // Gale end - include hardware specs in timings
-
-        }
-
         public Keepalive keepalive;
         public class Keepalive extends ConfigurationPart {
             public boolean sendMultiple = true; // Gale - Purpur - send multiple keep-alive packets

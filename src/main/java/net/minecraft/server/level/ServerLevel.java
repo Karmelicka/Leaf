@@ -1,7 +1,6 @@
 package net.minecraft.server.level;
 
 import com.google.common.annotations.VisibleForTesting;
-import co.aikar.timings.TimingHistory; // Paper
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.util.Pair;
@@ -862,27 +861,19 @@ public class ServerLevel extends Level implements WorldGenLevel {
             this.tickTime();
         }
 
-        this.timings.scheduledBlocks.startTiming(); // Paper
         if (!this.isDebug() && flag) {
             j = this.getGameTime();
             this.blockTicks.tick(j, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
             this.fluidTicks.tick(j, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks
         }
-        this.timings.scheduledBlocks.stopTiming(); // Paper
 
         if (flag) {
-            this.timings.raids.startTiming(); // Paper - timings
             this.raids.tick();
-            this.timings.raids.stopTiming(); // Paper - timings
         }
 
-        this.timings.chunkProviderTick.startTiming(); // Paper - timings
         this.getChunkSource().tick(shouldKeepTicking, true);
-        this.timings.chunkProviderTick.stopTiming(); // Paper - timings
         if (flag) {
-            this.timings.doSounds.startTiming(); // Spigot
             this.runBlockEvents();
-            this.timings.doSounds.stopTiming(); // Spigot
         }
 
         this.handlingTick = false;
@@ -893,13 +884,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
         }
 
         if (flag1 || this.emptyTime++ < 300) {
-            this.timings.tickEntities.startTiming(); // Spigot
             if (this.dragonFight != null && flag) {
                 this.dragonFight.tick();
             }
 
             org.spigotmc.ActivationRange.activateEntities(this); // Spigot
-            this.timings.entityTick.startTiming(); // Spigot
             this.entityTickList.forEach((entity) -> {
                 entity.activatedPriorityReset = false; // Pufferfish - DAB
                 if (!entity.isRemoved()) {
@@ -936,8 +925,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
                     }
                 }
             });
-            this.timings.entityTick.stopTiming(); // Spigot
-            this.timings.tickEntities.stopTiming(); // Spigot
             this.tickBlockEntities();
         }
 
@@ -1071,7 +1058,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
         }
         } // Paper - Option to disable ice and snow
 
-        timings.chunkTicksBlocks.startTiming(); // Paper
         if (randomTickSpeed > 0) {
             // Paper start - optimize random block ticking
             LevelChunkSection[] sections = chunk.getSections();
@@ -1104,8 +1090,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
             }
         }
         // Paper end - optimise random block ticking
-
-        timings.chunkTicksBlocks.stopTiming(); // Paper
     }
 
     @VisibleForTesting
@@ -1435,31 +1419,21 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 currentlyTickingEntity.lazySet(entity);
             }
             // Paper end - log detailed entity tick information
-        ++TimingHistory.entityTicks; // Paper - timings
         // Spigot start
-        co.aikar.timings.Timing timer; // Paper
         /*if (!org.spigotmc.ActivationRange.checkIfActive(entity)) { // Paper - comment out - EAR 2, reimplement below
             entity.tickCount++;
-            timer = entity.getType().inactiveTickTimer.startTiming(); try { // Paper - timings
             entity.inactiveTick();
-            } finally { timer.stopTiming(); } // Paper
             return;
         }*/ // Paper - comment out EAR 2
         // Spigot end
-        // Paper start- timings
         final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity);
-        timer = isActive ? entity.getType().tickTimer.startTiming() : entity.getType().inactiveTickTimer.startTiming(); // Paper
-        try {
-        // Paper end - timings
         entity.setOldPosAndRot();
 
         ++entity.tickCount;
         if (isActive) { // Paper - EAR 2
-            TimingHistory.activatedEntityTicks++;
         entity.tick();
         entity.postTick(); // CraftBukkit
         } else { entity.inactiveTick(); } // Paper - EAR 2
-        } finally { timer.stopTiming(); } // Paper - timings
         Iterator iterator = entity.getPassengers().iterator();
 
         while (iterator.hasNext()) {
@@ -1467,7 +1441,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
             this.tickPassenger(entity, entity1);
         }
-        // } finally { timer.stopTiming(); } // Paper - timings - move up
         // Paper start - log detailed entity tick information
         } finally {
             if (currentlyTickingEntity.get() == entity) {
@@ -1482,9 +1455,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
             if (passenger instanceof Player || this.entityTickList.contains(passenger)) {
                 // Paper - EAR 2
                 final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(passenger);
-                co.aikar.timings.Timing timer = isActive ? passenger.getType().passengerTickTimer.startTiming() : passenger.getType().passengerInactiveTickTimer.startTiming(); // Paper
-                try {
-                // Paper end
                 passenger.setOldPosAndRot();
                 ++passenger.tickCount;
                 // Paper start - EAR 2
@@ -1505,8 +1475,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
                     this.tickPassenger(passenger, entity2);
                 }
-
-            } finally { timer.stopTiming(); }// Paper - EAR2 timings
             }
         } else {
             passenger.stopRiding();
@@ -1526,14 +1494,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
             org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld()));
         }
 
-        try (co.aikar.timings.Timing ignored = this.timings.worldSave.startTiming()) {
             if (doFull) {
                 this.saveLevelData(true); // Paper - Write SavedData IO async
             }
 
-            this.timings.worldSaveChunks.startTiming(); // Paper
             if (!this.noSave()) chunkproviderserver.saveIncrementally();
-            this.timings.worldSaveChunks.stopTiming(); // Paper
 
             // Copied from save()
             // CraftBukkit start - moved from MinecraftServer.saveChunks
@@ -1545,7 +1510,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 this.convertable.saveDataTag(this.server.registryAccess(), this.serverLevelData, this.server.getPlayerList().getSingleplayerData());
             }
             // CraftBukkit end
-        }
     }
     // Paper end - Incremental chunk and player saving
 
@@ -1559,7 +1523,6 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
         if (!savingDisabled) {
             org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(this.getWorld())); // CraftBukkit
-            try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) { // Paper
             if (progressListener != null) {
                 progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
             }
@@ -1569,11 +1532,8 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 progressListener.progressStage(Component.translatable("menu.savingChunks"));
             }
 
-                timings.worldSaveChunks.startTiming(); // Paper
             if (!close) chunkproviderserver.save(flush); // Paper - rewrite chunk system
             if (close) chunkproviderserver.close(true); // Paper - rewrite chunk system
-                timings.worldSaveChunks.stopTiming(); // Paper
-            }// Paper
             // Paper - rewrite chunk system - entity saving moved into ChunkHolder
 
         } else if (close) { chunkproviderserver.close(false); } // Paper - rewrite chunk system

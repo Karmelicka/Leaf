@@ -2,14 +2,9 @@ package org.bukkit.craftbukkit.scheduler;
 
 import java.util.function.Consumer;
 
-import co.aikar.timings.NullTimingHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
-
-import org.spigotmc.CustomTimingsHandler; // Spigot
-import co.aikar.timings.MinecraftTimings; // Paper
-import co.aikar.timings.Timing; // Paper
 
 public class CraftTask implements BukkitTask, Runnable { // Spigot
 
@@ -31,7 +26,6 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
     private long nextRun;
     public final Runnable rTask; // Paper
     public final Consumer<BukkitTask> cTask; // Paper
-    public Timing timings; // Paper
     private final Plugin plugin;
     private final int id;
     private final long createdAt = System.nanoTime();
@@ -50,12 +44,10 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
         this.rTask = (Runnable) task;
         this.cTask = null;
         this.plugin = CraftScheduler.MINECRAFT;
-        this.taskName = taskName;
         this.internal = true;
         this.id = id;
         this.period = CraftTask.NO_REPEATING;
         this.taskName = taskName;
-        this.timings = MinecraftTimings.getInternalTaskName(taskName);
     }
     // Paper end
 
@@ -76,7 +68,6 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
         }
         this.id = id;
         this.period = period;
-        timings = task != null ? MinecraftTimings.getPluginTaskTimings(this, period) : NullTimingHandler.NULL; // Paper
     }
 
     @Override
@@ -96,13 +87,11 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
 
     @Override
     public void run() {
-        try (Timing ignored = timings.startTiming()) { // Paper
         if (this.rTask != null) {
             this.rTask.run();
         } else {
             this.cTask.accept(this);
         }
-        } // Paper
     }
 
     long getCreatedAt() {

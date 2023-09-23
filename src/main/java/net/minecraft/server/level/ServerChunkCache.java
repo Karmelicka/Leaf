@@ -276,10 +276,8 @@ public class ServerChunkCache extends ChunkSource {
             if (!completablefuture.isDone()) { // Paper
                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, x1, z1); // Paper - rewrite chunk system
                 com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x, z); // Paper - Add debug for sync chunk loads
-                this.level.timings.syncChunkLoad.startTiming(); // Paper
             chunkproviderserver_b.managedBlock(completablefuture::isDone);
                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.popChunkWait(); // Paper - rewrite chunk system
-                this.level.timings.syncChunkLoad.stopTiming(); // Paper
             } // Paper
             ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                 return ichunkaccess1;
@@ -428,17 +426,13 @@ public class ServerChunkCache extends ChunkSource {
 
     public void save(boolean flush) {
         this.runDistanceManagerUpdates();
-        try (co.aikar.timings.Timing timed = level.timings.chunkSaveData.startTiming()) { // Paper - Timings
         this.chunkMap.saveAllChunks(flush);
-        } // Paper - Timings
     }
 
     // Paper start - Incremental chunk and player saving; duplicate save, but call incremental
     public void saveIncrementally() {
         this.runDistanceManagerUpdates();
-        try (co.aikar.timings.Timing timed = level.timings.chunkSaveData.startTiming()) { // Paper - Timings
             this.chunkMap.saveIncrementally();
-        } // Paper - Timings
     }
     // Paper end - Incremental chunk and player saving
 
@@ -471,21 +465,15 @@ public class ServerChunkCache extends ChunkSource {
 
     @Override
     public void tick(BooleanSupplier shouldKeepTicking, boolean tickChunks) {
-        this.level.timings.doChunkMap.startTiming(); // Spigot
         this.distanceManager.purgeStaleTickets();
         this.runDistanceManagerUpdates();
-        this.level.timings.doChunkMap.stopTiming(); // Spigot
         if (tickChunks) {
-            this.level.timings.chunks.startTiming(); // Paper - timings
             this.chunkMap.level.playerChunkLoader.tick(); // Paper - replace player chunk loader - this is mostly required to account for view distance changes
             this.tickChunks();
-            this.level.timings.chunks.stopTiming(); // Paper - timings
             this.chunkMap.tick();
         }
 
-        this.level.timings.doChunkUnload.startTiming(); // Spigot
         this.chunkMap.tick(shouldKeepTicking);
-        this.level.timings.doChunkUnload.stopTiming(); // Spigot
         this.clearCache();
     }
 
@@ -495,8 +483,6 @@ public class ServerChunkCache extends ChunkSource {
 
         this.lastInhabitedUpdate = i;
         if (!this.level.isDebug()) {
-            // Paper - optimise chunk tick iteration
-            if (this.level.getServer().tickRateManager().runsNormally()) this.level.timings.chunkTicks.startTiming(); // Paper
 
             // Paper - optimise chunk tick iteration
 
@@ -508,7 +494,6 @@ public class ServerChunkCache extends ChunkSource {
                 boolean flagAndHasNaturalSpawn = flag && this.anySpawnCategoryIsSpawnedThisTick();
                 if (flagAndHasNaturalSpawn) {
                 // Gale end - MultiPaper - skip unnecessary mob spawning computations
-                this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
                 int k = this.distanceManager.getNaturalSpawnChunkCount();
                 // Paper start - Optional per player mob spawns
                 int naturalSpawnChunkCount = k;
@@ -537,7 +522,6 @@ public class ServerChunkCache extends ChunkSource {
                     // Pufferfish end
                 }
                 // Paper end - Optional per player mob spawns
-                this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
 
                 //this.lastSpawnState = spawnercreature_d; // Pufferfish - this is managed asynchronously
                 // Gale start - MultiPaper - skip unnecessary mob spawning computations
@@ -649,17 +633,13 @@ public class ServerChunkCache extends ChunkSource {
                     }
                 }
                 // Paper end - optimise chunk tick iteration
-                this.level.timings.chunkTicks.stopTiming(); // Paper
 
                 if (flag) {
-                    try (co.aikar.timings.Timing ignored = this.level.timings.miscMobSpawning.startTiming()) { // Paper - timings
                     this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
-                    } // Paper - timings
                 }
             }
 
             // Paper - optimise chunk tick iteration
-                this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
             // Paper start - optimise chunk tick iteration
             if (!this.chunkMap.needsChangeBroadcasting.isEmpty()) {
                 it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<ChunkHolder> copy = this.chunkMap.needsChangeBroadcasting.clone();
@@ -673,7 +653,6 @@ public class ServerChunkCache extends ChunkSource {
                 }
             }
             // Paper end - optimise chunk tick iteration
-                this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
             // Paper - optimise chunk tick iteration
         }
 

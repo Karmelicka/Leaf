@@ -178,8 +178,6 @@ import org.bukkit.craftbukkit.Main;
 import org.bukkit.event.server.ServerLoadEvent;
 // CraftBukkit end
 
-import co.aikar.timings.MinecraftTimings; // Paper
-
 public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, CommandSource, AutoCloseable {
 
     public static final int SERVER_THREAD_PRIORITY = Integer.getInteger("gale.thread.priority.server", -1); // Gale - server thread priority environment variable
@@ -959,7 +957,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
         MinecraftServer.LOGGER.info("Stopping server");
         Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
-        MinecraftTimings.stopServer(); // Paper
         // Purpur start
         if (upnp) {
             if (dev.omega24.upnp4j.UPnP4J.close(this.getPort(), dev.omega24.upnp4j.util.Protocol.TCP)) {
@@ -1340,7 +1337,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
 
     protected void waitUntilNextTick() {
-        //this.executeAll(); // Paper - move this into the tick method for timings
+        this.runAllTasks();
         long tickOversleepStart = System.nanoTime(); // Gale - YAPFA - last tick time
         this.managedBlock(() -> {
             return !this.canSleepForTickNoOversleep(); // Paper - move oversleep into full server tick
@@ -1409,8 +1406,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             return;
         }
 
-        co.aikar.timings.MinecraftTimings.midTickChunkTasks.startTiming();
-        try {
             for (;;) {
                 boolean moreTasks = this.tickMidTickTasks();
                 long currTime = System.nanoTime();
@@ -1435,9 +1430,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                     return;
                 }
             }
-        } finally {
-            co.aikar.timings.MinecraftTimings.midTickChunkTasks.stopTiming();
-        }
     }
     // Paper end - execute chunk tasks mid tick
 
@@ -1510,15 +1502,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     }
 
     public void tickServer(BooleanSupplier shouldKeepTicking) {
-        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTimingFullServerTick(); // Paper // Gale - final timings calls
         long i = Util.getNanos();
 
         // Paper start - move oversleep into full server tick
-        isOversleep = true;MinecraftTimings.serverOversleep.startTiming();
+        isOversleep = true;
         this.managedBlock(() -> {
             return !this.canOversleep();
         });
-        isOversleep = false;MinecraftTimings.serverOversleep.stopTiming();
+        isOversleep = false;
         // Paper end
         new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.tickCount+1).callEvent(); // Paper - Server Tick Events
 
@@ -1552,11 +1543,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         }
         // Paper end - Incremental chunk and player saving
         io.papermc.paper.util.CachedLists.reset(); // Paper
-        // Paper start - move executeAll() into full server tick timing
-        try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
-            this.runAllTasks();
-        }
-        // Paper end
         // Paper start - Server Tick Events
         long endTime = System.nanoTime();
         long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
@@ -1578,7 +1564,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         // Paper end - Add tick times API and /mspt command
         this.logTickTime(l - i);
         org.spigotmc.WatchdogThread.tick(); // Spigot
-        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTimingFullServerTick(); // Paper // Gale - final timings calls
     }
 
     private int computeNextAutosaveInterval() {
@@ -1640,9 +1625,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         this.getPlayerList().getPlayers().forEach((entityplayer) -> {
             entityplayer.connection.suspendFlushing();
         });
-        MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
         this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
-        MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
         // Paper start - Folia scheduler API
         ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
         getAllLevels().forEach(level -> {
@@ -1658,20 +1641,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         });
         // Paper end - Folia scheduler API
         io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
-        MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot // Paper
         this.getFunctions().tick();
-        MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot // Paper
         //Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; moved down
 
         // CraftBukkit start
         // Run tasks that are waiting on processing
-        MinecraftTimings.processQueueTimer.startTiming(); // Spigot
         while (!this.processQueue.isEmpty()) {
             this.processQueue.remove().run();
         }
-        MinecraftTimings.processQueueTimer.stopTiming(); // Spigot
 
-        MinecraftTimings.timeUpdateTimer.startTiming(); // Spigot // Paper
         // Send time updates to everyone, it will get the right time from the world the player is in.
         // Paper start - Perf: Optimize time updates
         for (final ServerLevel level : this.getAllLevels()) {
@@ -1691,7 +1669,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             }
         }
         // Paper end - Perf: Optimize time updates
-        MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
 
         this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
         net.minecraft.network.FriendlyByteBuf.hasItemSerializeEvent = org.purpurmc.purpur.event.packet.NetworkItemSerializeEvent.getHandlerList().getRegisteredListeners().length > 0; // Purpur
@@ -1711,14 +1688,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             // CraftBukkit end */
 
             try {
-                worldserver.timings.doTick.startTiming(); // Spigot
                 worldserver.tick(shouldKeepTicking);
                 // Paper start
                 for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
                     regionManager.recalculateRegions();
                 }
                 // Paper end
-                worldserver.timings.doTick.stopTiming(); // Spigot
             } catch (Throwable throwable) {
                 CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
 
@@ -1730,21 +1705,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         }
         this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
 
-        MinecraftTimings.connectionTimer.startTiming(); // Spigot // Paper
         this.getConnection().tick();
-        MinecraftTimings.connectionTimer.stopTiming(); // Spigot // Paper
-        MinecraftTimings.playerListTimer.startTiming(); // Spigot // Paper
         this.playerList.tick();
-        MinecraftTimings.playerListTimer.stopTiming(); // Spigot // Paper
         if (SharedConstants.IS_RUNNING_IN_IDE && this.tickRateManager.runsNormally()) {
             GameTestTicker.SINGLETON.tick();
         }
 
-        MinecraftTimings.tickablesTimer.startTiming(); // Spigot // Paper
         for (int i = 0; i < this.tickables.size(); ++i) {
             ((Runnable) this.tickables.get(i)).run();
         }
-        MinecraftTimings.tickablesTimer.stopTiming(); // Spigot // Paper
 
         iterator = this.playerList.getPlayers().iterator();
 
@@ -1754,7 +1723,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             entityplayer.connection.chunkSender.sendNextChunks(entityplayer);
             entityplayer.connection.resumeFlushing();
         }
-
     }
 
     private void synchronizeTime(ServerLevel world) {

@@ -2483,7 +2483,6 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
 
     public void handleCommand(String s) { // Paper - private -> public
         org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + s); // Paper - Add async catcher
-        co.aikar.timings.MinecraftTimings.playerCommandTimer.startTiming(); // Paper
         if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
         this.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + s);
 
@@ -2493,7 +2492,6 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         this.cserver.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
-            co.aikar.timings.MinecraftTimings.playerCommandTimer.stopTiming(); // Paper
             return;
         }
 
@@ -2505,8 +2503,6 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
             player.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
             java.util.logging.Logger.getLogger(ServerGamePacketListenerImpl.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
             return;
-        } finally {
-            co.aikar.timings.MinecraftTimings.playerCommandTimer.stopTiming(); // Paper
         }
     }
     // CraftBukkit end

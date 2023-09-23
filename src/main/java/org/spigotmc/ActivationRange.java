@@ -35,7 +35,6 @@ import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.raid.Raider;
-import co.aikar.timings.MinecraftTimings;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -184,7 +183,6 @@ public class ActivationRange
      */
     public static void activateEntities(Level world)
     {
-        MinecraftTimings.entityActivationCheckTimer.startTiming();
         final int miscActivationRange = world.spigotConfig.miscActivationRange;
         final int raiderActivationRange = world.spigotConfig.raiderActivationRange;
         final int animalActivationRange = world.spigotConfig.animalActivationRange;
@@ -263,7 +261,6 @@ public class ActivationRange
             }
             // Paper end
         }
-        MinecraftTimings.entityActivationCheckTimer.stopTiming();
     }
 
     /**
