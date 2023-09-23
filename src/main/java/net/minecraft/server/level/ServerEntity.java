@@ -348,12 +348,6 @@ public class ServerEntity {
             ((LivingEntity) this.entity).detectEquipmentUpdatesPublic(); // CraftBukkit - SPIGOT-3789: sync again immediately after sending
         }
 
-        // CraftBukkit start - MC-109346: Fix for nonsensical head yaw
-        if (this.entity instanceof ServerPlayer) {
-            sender.accept(new ClientboundRotateHeadPacket(this.entity, (byte) Mth.floor(this.entity.getYHeadRot() * 256.0F / 360.0F)));
-        }
-        // CraftBukkit end
-
         if (!this.entity.getPassengers().isEmpty()) {
             sender.accept(new ClientboundSetPassengersPacket(this.entity));
         }
