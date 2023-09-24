@@ -191,6 +191,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
             this.playerEntityTrackerTrackMaps[i].remove(player);
         }
         // Paper end - use distance map to optimise tracker
+        this.playerMobSpawnMap.remove(player); // Paper - optimise chunk tick iteration
     }
 
     void updateMaps(ServerPlayer player) {
@@ -240,6 +241,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     }
     public final io.papermc.paper.util.player.NearbyPlayers nearbyPlayers;
     // Paper end
+    // Paper start - optimise chunk tick iteration
+    public final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<ChunkHolder> needsChangeBroadcasting = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
+    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobSpawnMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets);
+    // Paper end - optimise chunk tick iteration
 
     public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
         super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
@@ -408,7 +413,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
     }
     // Paper end - Optional per player mob spawns
 
-    private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
+    public static double euclideanDistanceSquared(ChunkPos pos, Entity entity) { // Paper - optimise chunk iteration; public
         double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
         double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
         double d2 = d0 - entity.getX();

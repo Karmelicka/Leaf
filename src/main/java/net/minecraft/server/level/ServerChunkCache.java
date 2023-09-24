@@ -508,18 +508,10 @@ public class ServerChunkCache extends ChunkSource {
 
             gameprofilerfiller.push("pollingChunks");
             gameprofilerfiller.push("filteringLoadedChunks");
-            List<ServerChunkCache.ChunkAndHolder> list = Lists.newArrayListWithCapacity(this.chunkMap.size());
-            Iterator iterator = this.chunkMap.getChunks().iterator();
+            // Paper - optimise chunk tick iteration
             if (this.level.getServer().tickRateManager().runsNormally()) this.level.timings.chunkTicks.startTiming(); // Paper
 
-            while (iterator.hasNext()) {
-                ChunkHolder playerchunk = (ChunkHolder) iterator.next();
-                LevelChunk chunk = playerchunk.getTickingChunk();
-
-                if (chunk != null) {
-                    list.add(new ServerChunkCache.ChunkAndHolder(chunk, playerchunk));
-                }
-            }
+            // Paper - optimise chunk tick iteration
 
             if (this.level.getServer().tickRateManager().runsNormally()) {
                 gameprofilerfiller.popPush("naturalSpawnCount");
@@ -554,38 +546,109 @@ public class ServerChunkCache extends ChunkSource {
                 gameprofilerfiller.popPush("spawnAndTick");
                 boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
 
-                Util.shuffle(list, this.level.random);
-                // Paper start - PlayerNaturallySpawnCreaturesEvent
-                int chunkRange = level.spigotConfig.mobSpawnRange;
-                chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
-                chunkRange = Math.min(chunkRange, 8);
-                for (ServerPlayer entityPlayer : this.level.players()) {
-                    entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
-                    entityPlayer.playerNaturallySpawnedEvent.callEvent();
+                // Paper start - optimise chunk tick iteration
+                ChunkMap playerChunkMap = this.chunkMap;
+                for (ServerPlayer player : this.level.players) {
+                    if (!player.affectsSpawning || player.isSpectator()) {
+                        playerChunkMap.playerMobSpawnMap.remove(player);
+                        player.playerNaturallySpawnedEvent = null;
+                        player.lastEntitySpawnRadiusSquared = -1.0;
+                        continue;
+                    }
+
+                    int viewDistance = io.papermc.paper.chunk.system.ChunkSystem.getTickViewDistance(player);
+
+                    // copied and modified from isOutisdeRange
+                    int chunkRange = (int)level.spigotConfig.mobSpawnRange;
+                    chunkRange = (chunkRange > viewDistance) ? viewDistance : chunkRange;
+                    chunkRange = (chunkRange > DistanceManager.MOB_SPAWN_RANGE) ? DistanceManager.MOB_SPAWN_RANGE : chunkRange;
+
+                    com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte)chunkRange);
+                    event.callEvent();
+                    if (event.isCancelled() || event.getSpawnRadius() < 0) {
+                        playerChunkMap.playerMobSpawnMap.remove(player);
+                        player.playerNaturallySpawnedEvent = null;
+                        player.lastEntitySpawnRadiusSquared = -1.0;
+                        continue;
+                    }
+
+                    int range = Math.min(event.getSpawnRadius(), DistanceManager.MOB_SPAWN_RANGE); // limit to max spawn range
+                    int chunkX = io.papermc.paper.util.CoordinateUtils.getChunkCoordinate(player.getX());
+                    int chunkZ = io.papermc.paper.util.CoordinateUtils.getChunkCoordinate(player.getZ());
+
+                    playerChunkMap.playerMobSpawnMap.addOrUpdate(player, chunkX, chunkZ, range);
+                    player.lastEntitySpawnRadiusSquared = (double)((range << 4) * (range << 4)); // used in anyPlayerCloseEnoughForSpawning
+                    player.playerNaturallySpawnedEvent = event;
                 }
-                // Paper end - PlayerNaturallySpawnCreaturesEvent
+                // Paper end - optimise chunk tick iteration
                 int l = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
                 boolean flag1 = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && this.level.getLevelData().getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
-                Iterator iterator1 = list.iterator();
+                // Paper - optimise chunk tick iteration
 
                 int chunksTicked = 0; // Paper
-                while (iterator1.hasNext()) {
-                    ServerChunkCache.ChunkAndHolder chunkproviderserver_a = (ServerChunkCache.ChunkAndHolder) iterator1.next();
-                    LevelChunk chunk1 = chunkproviderserver_a.chunk;
+                // Paper start - optimise chunk tick iteration
+                io.papermc.paper.util.player.NearbyPlayers nearbyPlayers = this.chunkMap.getNearbyPlayers(); // Paper - optimise chunk tick iteration
+                Iterator<LevelChunk> chunkIterator;
+                if (this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
+                    chunkIterator = this.tickingChunks.iterator();
+                } else {
+                    chunkIterator = this.tickingChunks.unsafeIterator();
+                    List<LevelChunk> shuffled = Lists.newArrayListWithCapacity(this.tickingChunks.size());
+                    while (chunkIterator.hasNext()) {
+                        shuffled.add(chunkIterator.next());
+                    }
+                    Util.shuffle(shuffled, this.level.random);
+                    chunkIterator = shuffled.iterator();
+                }
+                try {
+                // Paper end - optimise chunk tick iteration
+                while (chunkIterator.hasNext()) {
+                    LevelChunk chunk1 = chunkIterator.next();
+                    // Paper end - optimise chunk tick iteration
                     ChunkPos chunkcoordintpair = chunk1.getPos();
 
-                    if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkcoordintpair)) {
+                    // Paper start - optimise chunk tick iteration
+                    com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> playersNearby
+                        = nearbyPlayers.getPlayers(chunkcoordintpair, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.SPAWN_RANGE);
+                    if (playersNearby == null) {
+                        continue;
+                    }
+                    Object[] rawData = playersNearby.getRawData();
+                    boolean spawn = false;
+                    boolean tick = false;
+                    for (int itr = 0, len = playersNearby.size(); itr < len; ++itr) {
+                        ServerPlayer player = (ServerPlayer)rawData[itr];
+                        if (player.isSpectator()) {
+                            continue;
+                        }
+
+                        double distance = ChunkMap.euclideanDistanceSquared(chunkcoordintpair, player);
+                        spawn |= player.lastEntitySpawnRadiusSquared >= distance;
+                        tick |= ((double)io.papermc.paper.util.player.NearbyPlayers.SPAWN_RANGE_VIEW_DISTANCE_BLOCKS) * ((double)io.papermc.paper.util.player.NearbyPlayers.SPAWN_RANGE_VIEW_DISTANCE_BLOCKS) >= distance;
+                        if (spawn & tick) {
+                            break;
+                        }
+                    }
+                    if (tick && chunk1.chunkStatus.isOrAfter(net.minecraft.server.level.FullChunkStatus.ENTITY_TICKING)) {
+                        // Paper end - optimise chunk tick iteration
                         chunk1.incrementInhabitedTime(j);
-                        if (flag && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkcoordintpair, true)) { // Spigot
+                        if (spawn && flag && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair)) { // Spigot // Paper - optimise chunk tick iteration
                             NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                         }
 
-                        if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
+                        if (true || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) { // Paper - optimise chunk tick iteration
                             this.level.tickChunk(chunk1, l);
                             if ((chunksTicked++ & 1) == 0) net.minecraft.server.MinecraftServer.getServer().executeMidTickTasks(); // Paper
                         }
                     }
                 }
+                // Paper start - optimise chunk tick iteration
+                } finally {
+                    if (chunkIterator instanceof io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator safeIterator) {
+                        safeIterator.finishedIterating();
+                    }
+                }
+                // Paper end - optimise chunk tick iteration
                 this.level.timings.chunkTicks.stopTiming(); // Paper
 
                 gameprofilerfiller.popPush("customSpawners");
@@ -597,11 +660,23 @@ public class ServerChunkCache extends ChunkSource {
             }
 
             gameprofilerfiller.popPush("broadcast");
-            list.forEach((chunkproviderserver_a1) -> {
+            // Paper - optimise chunk tick iteration
                 this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
-                chunkproviderserver_a1.holder.broadcastChanges(chunkproviderserver_a1.chunk);
+            // Paper start - optimise chunk tick iteration
+            if (!this.chunkMap.needsChangeBroadcasting.isEmpty()) {
+                it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<ChunkHolder> copy = this.chunkMap.needsChangeBroadcasting.clone();
+                this.chunkMap.needsChangeBroadcasting.clear();
+                for (ChunkHolder holder : copy) {
+                    holder.broadcastChanges(holder.getFullChunkNowUnchecked()); // LevelChunks are NEVER unloaded
+                    if (holder.needsBroadcastChanges()) {
+                        // I DON'T want to KNOW what DUMB plugins might be doing.
+                        this.chunkMap.needsChangeBroadcasting.add(holder);
+                    }
+                }
+            }
+            // Paper end - optimise chunk tick iteration
                 this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
-            });
+            // Paper - optimise chunk tick iteration
             gameprofilerfiller.pop();
             gameprofilerfiller.pop();
         }

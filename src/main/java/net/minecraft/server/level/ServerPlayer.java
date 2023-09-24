@@ -325,6 +325,9 @@ public class ServerPlayer extends Player {
         });
     }
     // Paper end - replace player chunk loader
+    // Paper start - optimise chunk tick iteration
+    public double lastEntitySpawnRadiusSquared = -1.0;
+    // Paper end - optimise chunk tick iteration
 
     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);

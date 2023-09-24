@@ -17,7 +17,8 @@ public final class NearbyPlayers {
         GENERAL_SMALL,
         GENERAL_REALLY_SMALL,
         TICK_VIEW_DISTANCE,
-        VIEW_DISTANCE;
+        VIEW_DISTANCE, // Paper - optimise chunk iteration
+        SPAWN_RANGE, // Paper - optimise chunk iteration
     }
 
     private static final NearbyMapType[] MOB_TYPES = NearbyMapType.values();
@@ -26,10 +27,12 @@ public final class NearbyPlayers {
     private static final int GENERAL_AREA_VIEW_DISTANCE = 33;
     private static final int GENERAL_SMALL_VIEW_DISTANCE = 10;
     private static final int GENERAL_REALLY_SMALL_VIEW_DISTANCE = 3;
+    private static final int SPAWN_RANGE_VIEW_DISTANCE = net.minecraft.server.level.DistanceManager.MOB_SPAWN_RANGE; // Paper - optimise chunk iteration
 
     public static final int GENERAL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_AREA_VIEW_DISTANCE << 4);
     public static final int GENERAL_SMALL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_SMALL_VIEW_DISTANCE << 4);
     public static final int GENERAL_REALLY_SMALL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_REALLY_SMALL_VIEW_DISTANCE << 4);
+    public static final int SPAWN_RANGE_VIEW_DISTANCE_BLOCKS = (SPAWN_RANGE_VIEW_DISTANCE << 4); // Paper - optimise chunk iteration
 
     private final ServerLevel world;
     private final Reference2ReferenceOpenHashMap<ServerPlayer, TrackedPlayer[]> players = new Reference2ReferenceOpenHashMap<>();
@@ -80,6 +83,7 @@ public final class NearbyPlayers {
         players[NearbyMapType.GENERAL_REALLY_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_REALLY_SMALL_VIEW_DISTANCE);
         players[NearbyMapType.TICK_VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getTickViewDistance(player));
         players[NearbyMapType.VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getLoadViewDistance(player));
+        players[NearbyMapType.SPAWN_RANGE.ordinal()].update(chunk.x, chunk.z, SPAWN_RANGE_VIEW_DISTANCE); // Paper - optimise chunk iteration
     }
 
     public TrackedChunk getChunk(final ChunkPos pos) {
