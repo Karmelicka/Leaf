@@ -65,6 +65,16 @@ dependencies {
 }
 
 val craftbukkitPackageVersion = "1_20_R3" // Paper
+
+// Gale start - hide irrelevant compilation warnings
+tasks.withType<JavaCompile> {
+    val compilerArgs = options.compilerArgs
+    compilerArgs.add("-Xlint:-module")
+    compilerArgs.add("-Xlint:-removal")
+    compilerArgs.add("-Xlint:-dep-ann")
+}
+// Gale end - hide irrelevant compilation warnings
+
 tasks.jar {
     archiveClassifier.set("dev")
 
