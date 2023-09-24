@@ -230,9 +230,13 @@ public interface EntityGetter {
         T livingEntity = null;
 
         for(T livingEntity2 : entityList) {
+            // Paper start - optimise nearby player retrieval; move up
+            // don't check entities outside closest range
+            double e = livingEntity2.distanceToSqr(x, y, z);
+            if (d == -1.0D || e < d) {
+            // Paper end - move up
             if (targetPredicate.test(entity, livingEntity2)) {
-                double e = livingEntity2.distanceToSqr(x, y, z);
-                if (d == -1.0D || e < d) {
+                // Paper - optimise nearby player retrieval; move up
                     d = e;
                     livingEntity = livingEntity2;
                 }

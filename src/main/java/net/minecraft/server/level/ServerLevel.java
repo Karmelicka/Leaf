@@ -576,6 +576,115 @@ public class ServerLevel extends Level implements WorldGenLevel {
         this.lagCompensationTick = (System.nanoTime() - net.minecraft.server.MinecraftServer.SERVER_INIT) / (java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(50L));
     }
     // Paper end - lag compensation
+    // Paper start - optimise nearby player retrieval
+    @Override
+    public java.util.List<net.minecraft.world.entity.player.Player> getNearbyPlayers(net.minecraft.world.entity.ai.targeting.TargetingConditions targetPredicate,
+                                                                                     net.minecraft.world.entity.LivingEntity entity,
+                                                                                     net.minecraft.world.phys.AABB box) {
+        return this.getNearbyEntities(Player.class, targetPredicate, entity, box);
+    }
+
+    @Override
+    public Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
+        if (maxDistance > 0.0D) {
+            io.papermc.paper.util.player.NearbyPlayers players = this.chunkSource.chunkMap.getNearbyPlayers();
+
+            com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> nearby = players.getPlayersByBlock(
+                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(x),
+                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(z),
+                io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.GENERAL
+            );
+
+            if (nearby == null) {
+                return null;
+            }
+
+            ServerPlayer nearest = null;
+            double nearestDist = maxDistance * maxDistance;
+            Object[] rawData = nearby.getRawData();
+            for (int i = 0, len = nearby.size(); i < len; ++i) {
+                ServerPlayer player = (ServerPlayer)rawData[i];
+                double dist = player.distanceToSqr(x, y, z);
+                if (dist >= nearestDist) {
+                    continue;
+                }
+
+                if (targetPredicate == null || targetPredicate.test(player)) {
+                    nearest = player;
+                    nearestDist = dist;
+                }
+            }
+
+            return nearest;
+        } else {
+            ServerPlayer nearest = null;
+            double nearestDist = Double.MAX_VALUE;
+
+            for (ServerPlayer player : this.players()) {
+                double dist = player.distanceToSqr(x, y, z);
+                if (dist >= nearestDist) {
+                    continue;
+                }
+
+                if (targetPredicate == null || targetPredicate.test(player)) {
+                    nearest = player;
+                    nearestDist = dist;
+                }
+            }
+
+            return nearest;
+        }
+    }
+
+    @Override
+    public Player getNearestPlayer(net.minecraft.world.entity.ai.targeting.TargetingConditions targetPredicate, LivingEntity entity) {
+        return this.getNearestPlayer(targetPredicate, entity, entity.getX(), entity.getY(), entity.getZ());
+    }
+
+    @Override
+    public Player getNearestPlayer(net.minecraft.world.entity.ai.targeting.TargetingConditions targetPredicate, LivingEntity entity,
+                                   double x, double y, double z) {
+        double range = targetPredicate.range;
+        if (range > 0.0D) {
+            io.papermc.paper.util.player.NearbyPlayers players = this.chunkSource.chunkMap.getNearbyPlayers();
+
+            com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> nearby = players.getPlayersByBlock(
+                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(x),
+                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(z),
+                io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.GENERAL
+            );
+
+            if (nearby == null) {
+                return null;
+            }
+
+            ServerPlayer nearest = null;
+            double nearestDist = Double.MAX_VALUE;
+            Object[] rawData = nearby.getRawData();
+            for (int i = 0, len = nearby.size(); i < len; ++i) {
+                ServerPlayer player = (ServerPlayer)rawData[i];
+                double dist = player.distanceToSqr(x, y, z);
+                if (dist >= nearestDist) {
+                    continue;
+                }
+
+                if (targetPredicate.test(entity, player)) {
+                    nearest = player;
+                    nearestDist = dist;
+                }
+            }
+
+            return nearest;
+        } else {
+            return this.getNearestEntity(this.players(), targetPredicate, entity, x, y, z);
+        }
+    }
+
+    @Nullable
+    public Player getNearestPlayer(net.minecraft.world.entity.ai.targeting.TargetingConditions targetPredicate, double x, double y, double z) {
+        return this.getNearestPlayer(targetPredicate, null, x, y, z);
+    }
+    // Paper end - optimise nearby player retrieval
 
     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {

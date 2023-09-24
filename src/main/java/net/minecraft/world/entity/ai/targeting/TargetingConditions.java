@@ -10,7 +10,7 @@ public class TargetingConditions {
     public static final TargetingConditions DEFAULT = forCombat();
     private static final double MIN_VISIBILITY_DISTANCE_FOR_INVISIBLE_TARGET = 2.0D;
     private final boolean isCombat;
-    private double range = -1.0D;
+    public double range = -1.0D; // Paper - public
     private boolean checkLineOfSight = true;
     private boolean testInvisible = true;
     @Nullable
