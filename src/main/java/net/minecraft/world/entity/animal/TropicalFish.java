@@ -42,6 +42,33 @@ public class TropicalFish extends AbstractSchoolingFish implements VariantHolder
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.tropicalFishRidable;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.tropicalFishControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.tropicalFishMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.tropicalFishTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.tropicalFishAlwaysDropExp;
+    }
+
     public static String getPredefinedName(int variant) {
         return "entity.minecraft.tropical_fish.predefined." + variant;
     }

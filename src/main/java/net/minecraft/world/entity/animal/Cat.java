@@ -98,6 +98,51 @@ public class Cat extends TamableAnimal implements VariantHolder<CatVariant> {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.catRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.catRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.catControllable;
+    }
+
+    @Override
+    public void onMount(Player rider) {
+        super.onMount(rider);
+        setInSittingPose(false);
+        setLying(false);
+        setRelaxStateOne(false);
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.catMaxHealth);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.catBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.catTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.catAlwaysDropExp;
+    }
+
     public ResourceLocation getResourceLocation() {
         return this.getVariant().texture();
     }
@@ -106,6 +151,7 @@ public class Cat extends TamableAnimal implements VariantHolder<CatVariant> {
     protected void registerGoals() {
         this.temptGoal = new Cat.CatTemptGoal(this, 0.6D, Cat.TEMPT_INGREDIENT, true);
         this.goalSelector.addGoal(1, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new PanicGoal(this, 1.5D));
         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
         this.goalSelector.addGoal(3, new Cat.CatRelaxOnOwnerGoal(this));
@@ -118,6 +164,7 @@ public class Cat extends TamableAnimal implements VariantHolder<CatVariant> {
         this.goalSelector.addGoal(10, new BreedGoal(this, 0.8D));
         this.goalSelector.addGoal(11, new WaterAvoidingRandomStrollGoal(this, 0.8D, 1.0000001E-5F));
         this.goalSelector.addGoal(12, new LookAtPlayerGoal(this, Player.class, 10.0F));
+        this.targetSelector.addGoal(1, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new NonTameRandomTargetGoal<>(this, Rabbit.class, false, (Predicate) null));
         this.targetSelector.addGoal(1, new NonTameRandomTargetGoal<>(this, Turtle.class, false, Turtle.BABY_ON_LAND_SELECTOR));
     }
@@ -309,6 +356,14 @@ public class Cat extends TamableAnimal implements VariantHolder<CatVariant> {
         return Mth.lerp(tickDelta, this.relaxStateOneAmountO, this.relaxStateOneAmount);
     }
 
+    // Purpur start
+    @Override
+    public void tame(Player player) {
+        setCollarColor(level().purpurConfig.catDefaultCollarColor);
+        super.tame(player);
+    }
+    // Purpur end
+
     @Nullable
     @Override
     public Cat getBreedOffspring(ServerLevel world, AgeableMob entity) {
@@ -374,6 +429,7 @@ public class Cat extends TamableAnimal implements VariantHolder<CatVariant> {
 
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (getRider() != null) return InteractionResult.PASS; // Purpur
         ItemStack itemstack = player.getItemInHand(hand);
         Item item = itemstack.getItem();
 
@@ -420,7 +476,7 @@ public class Cat extends TamableAnimal implements VariantHolder<CatVariant> {
                 }
             } else if (this.isFood(itemstack)) {
                 this.usePlayerItem(player, hand, itemstack);
-                if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
+                if ((this.level().purpurConfig.alwaysTameInCreative && player.getAbilities().instabuild) || (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled())) { // CraftBukkit // Purpur
                     this.tame(player);
                     this.setOrderedToSit(true);
                     this.level().broadcastEntityEvent(this, (byte) 7);

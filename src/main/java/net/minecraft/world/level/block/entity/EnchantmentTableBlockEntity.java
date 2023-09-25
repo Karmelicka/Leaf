@@ -24,6 +24,7 @@ public class EnchantmentTableBlockEntity extends BlockEntity implements Nameable
     public float tRot;
     private static final RandomSource RANDOM = RandomSource.create();
     private Component name;
+    private int lapis = 0; // Purpur
 
     public EnchantmentTableBlockEntity(BlockPos pos, BlockState state) {
         super(BlockEntityType.ENCHANTING_TABLE, pos, state);
@@ -35,6 +36,7 @@ public class EnchantmentTableBlockEntity extends BlockEntity implements Nameable
         if (this.hasCustomName()) {
             nbt.putString("CustomName", Component.Serializer.toJson(this.name));
         }
+        nbt.putInt("Purpur.Lapis", this.lapis); // Purpur
 
     }
 
@@ -44,6 +46,7 @@ public class EnchantmentTableBlockEntity extends BlockEntity implements Nameable
         if (nbt.contains("CustomName", 8)) {
             this.name = io.papermc.paper.util.MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
         }
+        this.lapis = nbt.getInt("Purpur.Lapis"); // Purpur
 
     }
 
@@ -117,4 +120,14 @@ public class EnchantmentTableBlockEntity extends BlockEntity implements Nameable
     public Component getCustomName() {
         return this.name;
     }
+
+    // Purpur start
+    public int getLapis() {
+        return this.lapis;
+    }
+
+    public void setLapis(int lapis) {
+        this.lapis = lapis;
+    }
+    // Purpur
 }

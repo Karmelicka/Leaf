@@ -9,7 +9,7 @@ import org.bukkit.inventory.AnvilInventory;
 public class CraftInventoryAnvil extends CraftResultInventory implements AnvilInventory {
 
     private final Location location;
-    private final AnvilMenu container;
+    public final AnvilMenu container; // Purpur - private -> public
 
     public CraftInventoryAnvil(Location location, Container inventory, Container resultInventory, AnvilMenu container) {
         super(inventory, resultInventory);
@@ -57,4 +57,26 @@ public class CraftInventoryAnvil extends CraftResultInventory implements AnvilIn
         Preconditions.checkArgument(levels >= 0, "Maximum repair cost must be positive (or 0)");
         this.container.maximumRepairCost = levels;
     }
+
+    // Purpur start
+    @Override
+    public boolean canBypassCost() {
+        return container.bypassCost;
+    }
+
+    @Override
+    public void setBypassCost(boolean bypassCost) {
+        container.bypassCost = bypassCost;
+    }
+
+    @Override
+    public boolean canDoUnsafeEnchants() {
+        return container.canDoUnsafeEnchants;
+    }
+
+    @Override
+    public void setDoUnsafeEnchants(boolean canDoUnsafeEnchants) {
+        container.canDoUnsafeEnchants = canDoUnsafeEnchants;
+    }
+    // Purpur end
 }

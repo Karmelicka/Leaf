@@ -10,6 +10,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
@@ -17,9 +18,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.TimeUtil;
 import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
@@ -29,6 +33,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -37,6 +42,7 @@ import net.minecraft.world.entity.ai.goal.BegGoal;
 import net.minecraft.world.entity.ai.goal.BreedGoal;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
+import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.LeapAtTargetGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
@@ -64,6 +70,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
@@ -86,6 +93,37 @@ public class Wolf extends TamableAnimal implements NeutralMob {
 
         return entitytypes == EntityType.SHEEP || entitytypes == EntityType.RABBIT || entitytypes == EntityType.FOX;
     };
+    // Purpur start - rabid wolf spawn chance
+    private boolean isRabid = false;
+    private static final Predicate<LivingEntity> RABID_PREDICATE = entity -> entity instanceof ServerPlayer || entity instanceof Mob;
+    private final Goal PATHFINDER_VANILLA = new NonTameRandomTargetGoal<>(this, Animal.class, false, PREY_SELECTOR);
+    private final Goal PATHFINDER_RABID = new NonTameRandomTargetGoal<>(this, LivingEntity.class, false, RABID_PREDICATE);
+    private static final class AvoidRabidWolfGoal extends AvoidEntityGoal<Wolf> {
+        private final Wolf wolf;
+
+        public AvoidRabidWolfGoal(Wolf wolf, float distance, double minSpeed, double maxSpeed) {
+            super(wolf, Wolf.class, distance, minSpeed, maxSpeed);
+            this.wolf = wolf;
+        }
+
+        @Override
+        public boolean canUse() {
+            return super.canUse() && !this.wolf.isRabid() && this.toAvoid != null && this.toAvoid.isRabid(); // wolves which are not rabid run away from rabid wolves
+        }
+
+        @Override
+        public void start() {
+            this.wolf.setTarget(null);
+            super.start();
+        }
+
+        @Override
+        public void tick() {
+            this.wolf.setTarget(null);
+            super.tick();
+        }
+    }
+    // Purpur end
     private static final float START_HEALTH = 8.0F;
     private static final float TAME_HEALTH = 20.0F;
     private float interestedAngle;
@@ -105,12 +143,93 @@ public class Wolf extends TamableAnimal implements NeutralMob {
         this.setPathfindingMalus(BlockPathTypes.DANGER_POWDER_SNOW, -1.0F);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.wolfRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.wolfRidableInWater;
+    }
+
+    public void onMount(Player rider) {
+        super.onMount(rider);
+        setInSittingPose(false);
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.wolfControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.wolfMaxHealth);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.wolfBreedingTicks;
+    }
+
+    public boolean isRabid() {
+        return this.isRabid;
+    }
+
+    public void setRabid(boolean isRabid) {
+        this.isRabid = isRabid;
+        updatePathfinders(true);
+    }
+
+    public void updatePathfinders(boolean modifyEffects) {
+        this.targetSelector.removeGoal(PATHFINDER_VANILLA);
+        this.targetSelector.removeGoal(PATHFINDER_RABID);
+        if (this.isRabid) {
+            setTame(false);
+            setOwnerUUID(null);
+            this.targetSelector.addGoal(5, PATHFINDER_RABID);
+            if (modifyEffects) this.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 1200));
+        } else {
+            this.targetSelector.addGoal(5, PATHFINDER_VANILLA);
+            this.stopBeingAngry();
+            if (modifyEffects) this.removeEffect(MobEffects.CONFUSION);
+        }
+    }
+
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType type, @Nullable SpawnGroupData data, @Nullable CompoundTag nbt) {
+        this.isRabid = world.getLevel().purpurConfig.wolfNaturalRabid > 0.0D && random.nextDouble() <= world.getLevel().purpurConfig.wolfNaturalRabid;
+        this.updatePathfinders(false);
+        return super.finalizeSpawn(world, difficulty, type, data, nbt);
+    }
+
+    @Override
+    public void tame(Player player) {
+        setCollarColor(level().purpurConfig.wolfDefaultCollarColor);
+        super.tame(player);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.wolfTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.wolfAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new Wolf.WolfPanicGoal(1.5D));
         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
         this.goalSelector.addGoal(3, new Wolf.WolfAvoidEntityGoal<>(this, Llama.class, 24.0F, 1.5D, 1.5D));
+        this.goalSelector.addGoal(3, new AvoidRabidWolfGoal(this, 24.0F, 1.5D, 1.5D)); // Purpur
         this.goalSelector.addGoal(4, new LeapAtTargetGoal(this, 0.4F));
         this.goalSelector.addGoal(5, new MeleeAttackGoal(this, 1.0D, true));
         this.goalSelector.addGoal(6, new FollowOwnerGoal(this, 1.0D, 10.0F, 2.0F, false));
@@ -119,11 +238,12 @@ public class Wolf extends TamableAnimal implements NeutralMob {
         this.goalSelector.addGoal(9, new BegGoal(this, 8.0F));
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
         this.targetSelector.addGoal(3, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers());
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
-        this.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(this, Animal.class, false, Wolf.PREY_SELECTOR));
+        // this.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(this, Animal.class, false, Wolf.PREY_SELECTOR)); // Purpur - moved to updatePathfinders()
         this.targetSelector.addGoal(6, new NonTameRandomTargetGoal<>(this, Turtle.class, false, Turtle.BABY_ON_LAND_SELECTOR));
         this.targetSelector.addGoal(7, new NearestAttackableTargetGoal<>(this, AbstractSkeleton.class, false));
         this.targetSelector.addGoal(8, new ResetUniversalAngerTargetGoal<>(this, true));
@@ -150,6 +270,7 @@ public class Wolf extends TamableAnimal implements NeutralMob {
     public void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
         nbt.putByte("CollarColor", (byte) this.getCollarColor().getId());
+        nbt.putBoolean("Purpur.IsRabid", this.isRabid); // Purpur
         this.addPersistentAngerSaveData(nbt);
     }
 
@@ -159,6 +280,10 @@ public class Wolf extends TamableAnimal implements NeutralMob {
         if (nbt.contains("CollarColor", 99)) {
             this.setCollarColor(DyeColor.byId(nbt.getInt("CollarColor")));
         }
+        // Purpur start
+        this.isRabid = nbt.getBoolean("Purpur.IsRabid");
+        this.updatePathfinders(false);
+        // Purpur end
 
         this.readPersistentAngerSaveData(this.level(), nbt);
     }
@@ -203,6 +328,11 @@ public class Wolf extends TamableAnimal implements NeutralMob {
     public void tick() {
         super.tick();
         if (this.isAlive()) {
+            // Purpur start
+            if (this.age % 300 == 0 && this.isRabid()) {
+                this.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 400));
+            }
+            // Purpur end
             this.interestedAngleO = this.interestedAngle;
             if (this.isInterested()) {
                 this.interestedAngle += (1.0F - this.interestedAngle) * 0.4F;
@@ -407,7 +537,7 @@ public class Wolf extends TamableAnimal implements NeutralMob {
             }
 
             // CraftBukkit - added event call and isCancelled check.
-            if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) {
+            if ((this.level().purpurConfig.alwaysTameInCreative && player.getAbilities().instabuild) || (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, player).isCancelled())) { // Purpur
                 this.tame(player);
                 this.navigation.stop();
                 this.setTarget((LivingEntity) null);
@@ -418,6 +548,19 @@ public class Wolf extends TamableAnimal implements NeutralMob {
             }
 
             return InteractionResult.SUCCESS;
+        // Purpur start
+        } else if (this.level().purpurConfig.wolfMilkCuresRabies && itemstack.getItem() == Items.MILK_BUCKET && this.isRabid()) {
+            if (!player.isCreative()) {
+                player.setItemInHand(hand, new ItemStack(Items.BUCKET));
+            }
+            this.setRabid(false);
+            for (int i = 0; i < 10; ++i) {
+                ((ServerLevel) level()).sendParticles(((ServerLevel) level()).players(), null, ParticleTypes.HAPPY_VILLAGER,
+                        getX() + random.nextFloat(), getY() + (random.nextFloat() * 1.5), getZ() + random.nextFloat(), 1,
+                        random.nextGaussian() * 0.05D, random.nextGaussian() * 0.05D, random.nextGaussian() * 0.05D, 0, true);
+            }
+            return InteractionResult.SUCCESS;
+        // Purpur end
         } else {
             return super.mobInteract(player, hand);
         }

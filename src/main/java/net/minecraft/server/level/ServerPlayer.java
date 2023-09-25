@@ -282,6 +282,10 @@ public class ServerPlayer extends Player {
     public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
     public @Nullable String clientBrandName = null; // Paper - Brand support
     public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
+    public boolean purpurClient = false; // Purpur
+    private boolean tpsBar = false; // Purpur
+    private boolean compassBar = false; // Purpur
+    private boolean ramBar = false; // Purpur
 
     // Paper start - replace player chunk loader
     private final java.util.concurrent.atomic.AtomicReference<io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances> viewDistances = new java.util.concurrent.atomic.AtomicReference<>(new io.papermc.paper.chunk.system.RegionizedPlayerChunkLoader.ViewDistances(-1, -1, -1));
@@ -569,6 +573,9 @@ public class ServerPlayer extends Player {
             }
         }
 
+        if (nbt.contains("Purpur.RamBar")) { this.ramBar = nbt.getBoolean("Purpur.RamBar"); } // Purpur
+        if (nbt.contains("Purpur.TPSBar")) { this.tpsBar = nbt.getBoolean("Purpur.TPSBar"); } // Purpur
+        if (nbt.contains("Purpur.CompassBar")) { this.compassBar = nbt.getBoolean("Purpur.CompassBar"); } // Purpur
     }
 
     @Override
@@ -635,6 +642,9 @@ public class ServerPlayer extends Player {
         }
         this.getBukkitEntity().setExtraData(nbt); // CraftBukkit
 
+        nbt.putBoolean("Purpur.RamBar", this.ramBar); // Purpur
+        nbt.putBoolean("Purpur.TPSBar", this.tpsBar); // Purpur
+        nbt.putBoolean("Purpur.CompassBar", this.compassBar); // Purpur
     }
 
     // CraftBukkit start - World fallback code, either respawn location or global spawn
@@ -763,6 +773,15 @@ public class ServerPlayer extends Player {
         this.trackStartFallingPosition();
         this.trackEnteredOrExitedLavaOnVehicle();
         this.advancements.flushDirty(this);
+
+        // Purpur start
+        if (this.level().purpurConfig.useNightVisionWhenRiding && this.getVehicle() != null && this.getVehicle().getRider() == this && this.level().getGameTime() % 100 == 0) { // 5 seconds
+            MobEffectInstance nightVision = this.getEffect(MobEffects.NIGHT_VISION);
+            if (nightVision == null || nightVision.getDuration() <= 300) { // 15 seconds
+                this.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 400, 0)); // 20 seconds
+            }
+        }
+        // Purpur end
     }
 
     public void doTick() {
@@ -1000,6 +1019,7 @@ public class ServerPlayer extends Player {
             }));
             PlayerTeam scoreboardteam = this.getTeam();
 
+            if (org.purpurmc.purpur.PurpurConfig.deathMessageOnlyBroadcastToAffectedPlayer) this.sendSystemMessage(ichatbasecomponent); else // Purpur
             if (scoreboardteam != null && scoreboardteam.getDeathMessageVisibility() != Team.Visibility.ALWAYS) {
                 if (scoreboardteam.getDeathMessageVisibility() == Team.Visibility.HIDE_FOR_OTHER_TEAMS) {
                     this.server.getPlayerList().broadcastSystemToTeam(this, ichatbasecomponent);
@@ -1103,6 +1123,16 @@ public class ServerPlayer extends Player {
         if (this.isInvulnerableTo(source)) {
             return false;
         } else {
+            // Purpur start
+            if (source.is(DamageTypeTags.IS_FALL)) { // Purpur
+                if (getRootVehicle() instanceof net.minecraft.world.entity.vehicle.AbstractMinecart && level().purpurConfig.minecartControllable && !level().purpurConfig.minecartControllableFallDamage) {
+                    return false;
+                }
+                if (getRootVehicle() instanceof net.minecraft.world.entity.vehicle.Boat && !level().purpurConfig.boatsDoFallDamage) {
+                    return false;
+                }
+            }
+            // Purpur end
             boolean flag = this.server.isDedicatedServer() && this.isPvpAllowed() && source.is(DamageTypeTags.IS_FALL);
 
             if (!flag && this.spawnInvulnerableTime > 0 && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
@@ -1246,6 +1276,7 @@ public class ServerPlayer extends Player {
                 playerlist.sendPlayerPermissionLevel(this);
                 worldserver1.removePlayerImmediately(this, Entity.RemovalReason.CHANGED_DIMENSION);
                 this.unsetRemoved();
+                this.portalPos = io.papermc.paper.util.MCUtil.toBlockPosition(exit); // Purpur
 
                 // CraftBukkit end
                 this.setServerLevel(worldserver);
@@ -1401,7 +1432,7 @@ public class ServerPlayer extends Player {
                             return entitymonster.isPreventingPlayerRest(this);
                         });
 
-                        if (!list.isEmpty()) {
+                        if (!this.level().purpurConfig.playerSleepNearMonsters && !list.isEmpty()) { // Purpur
                             return Either.left(Player.BedSleepingProblem.NOT_SAFE);
                         }
                     }
@@ -1441,7 +1472,19 @@ public class ServerPlayer extends Player {
                     });
 
                     if (!this.serverLevel().canSleepThroughNights()) {
-                        this.displayClientMessage(Component.translatable("sleep.not_possible"), true);
+                        // Purpur start
+                        Component clientMessage;
+                        if (org.purpurmc.purpur.PurpurConfig.sleepNotPossible.isBlank()) {
+                            clientMessage = null;
+                        } else if (!org.purpurmc.purpur.PurpurConfig.sleepNotPossible.equalsIgnoreCase("default")) {
+                            clientMessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepNotPossible));
+                        } else {
+                            clientMessage = Component.translatable("sleep.not_possible");
+                        }
+                        if (clientMessage != null) {
+                            this.displayClientMessage(clientMessage, true);
+                        }
+                        // Purpur end
                     }
 
                     ((ServerLevel) this.level()).updateSleepingPlayerList();
@@ -1546,6 +1589,7 @@ public class ServerPlayer extends Player {
 
     @Override
     public void openTextEdit(SignBlockEntity sign, boolean front) {
+        if (level().purpurConfig.signAllowColors) this.connection.send(sign.getTranslatedUpdatePacket(textFilteringEnabled, front)); // Purpur
         this.connection.send(new ClientboundBlockUpdatePacket(this.level(), sign.getBlockPos()));
         this.connection.send(new ClientboundOpenSignEditorPacket(sign.getBlockPos(), front));
     }
@@ -1880,6 +1924,26 @@ public class ServerPlayer extends Player {
         this.lastSentExp = -1; // CraftBukkit - Added to reset
     }
 
+    // Purpur start
+    public void sendActionBarMessage(@Nullable String message) {
+        if (message != null && !message.isEmpty()) {
+            sendActionBarMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message));
+        }
+    }
+
+    public void sendActionBarMessage(@Nullable net.kyori.adventure.text.Component message) {
+        if (message != null) {
+            sendActionBarMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message));
+        }
+    }
+
+    public void sendActionBarMessage(@Nullable Component message) {
+        if (message != null) {
+            displayClientMessage(message, true);
+        }
+    }
+    // Purpur end
+
     @Override
     public void displayClientMessage(Component message, boolean overlay) {
         this.sendSystemMessage(message, overlay);
@@ -2207,7 +2271,67 @@ public class ServerPlayer extends Player {
 
     public void resetLastActionTime() {
         this.lastActionTime = Util.getMillis();
+        this.setAfk(false); // Purpur
     }
+
+    // Purpur Start
+    private boolean isAfk = false;
+
+    @Override
+    public void setAfk(boolean afk) {
+        if (this.isAfk == afk) {
+            return;
+        }
+
+        String msg = afk ? org.purpurmc.purpur.PurpurConfig.afkBroadcastAway : org.purpurmc.purpur.PurpurConfig.afkBroadcastBack;
+
+        org.purpurmc.purpur.event.PlayerAFKEvent event = new org.purpurmc.purpur.event.PlayerAFKEvent(this.getBukkitEntity(), afk, this.level().purpurConfig.idleTimeoutKick, msg, !Bukkit.isPrimaryThread());
+        if (!event.callEvent() || event.shouldKick()) {
+            return;
+        }
+
+        this.isAfk = afk;
+
+        if (!afk) {
+            resetLastActionTime();
+        }
+
+        msg = event.getBroadcastMsg();
+        if (msg != null && !msg.isEmpty()) {
+            String playerName = this.getGameProfile().getName();
+            if (org.purpurmc.purpur.PurpurConfig.afkBroadcastUseDisplayName) {
+                net.kyori.adventure.text.Component playerDisplayNameComponent = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.getBukkitEntity().getDisplayName());
+                playerName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(playerDisplayNameComponent);
+            }
+            server.getPlayerList().broadcastMiniMessage(String.format(msg, playerName), false);
+        }
+
+        if (this.level().purpurConfig.idleTimeoutUpdateTabList) {
+            String scoreboardName = getScoreboardName();
+            String playerListName = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().serialize(getBukkitEntity().playerListName());
+            String[] split = playerListName.split(scoreboardName);
+            String prefix = (split.length > 0 ? split[0] : "").replace(org.purpurmc.purpur.PurpurConfig.afkTabListPrefix, "");
+            String suffix = (split.length > 1 ? split[1] : "").replace(org.purpurmc.purpur.PurpurConfig.afkTabListSuffix, "");
+            if (afk) {
+                getBukkitEntity().setPlayerListName(org.purpurmc.purpur.PurpurConfig.afkTabListPrefix + prefix + scoreboardName + suffix + org.purpurmc.purpur.PurpurConfig.afkTabListSuffix, true);
+            } else {
+                getBukkitEntity().setPlayerListName(prefix + scoreboardName + suffix);
+            }
+        }
+
+        ((ServerLevel) this.level()).updateSleepingPlayerList();
+    }
+
+    @Override
+    public boolean isAfk() {
+        return this.isAfk;
+    }
+
+    @Override
+    public boolean canBeCollidedWith() {
+        return !this.isAfk() && super.canBeCollidedWith();
+    }
+    // Purpur End
 
     public ServerStatsCounter getStats() {
         return this.stats;
@@ -2760,4 +2884,50 @@ public class ServerPlayer extends Player {
         return (CraftPlayer) super.getBukkitEntity();
     }
     // CraftBukkit end
+
+    // Purpur start
+    public void teleport(Location to) {
+        this.ejectPassengers();
+        this.stopRiding(true);
+
+        if (this.isSleeping()) {
+            this.stopSleepInBed(true, false);
+        }
+
+        if (this.containerMenu != this.inventoryMenu) {
+            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.TELEPORT);
+        }
+
+        ServerLevel toLevel = ((CraftWorld) to.getWorld()).getHandle();
+        if (this.level() == toLevel) {
+            this.connection.internalTeleport(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch(), java.util.EnumSet.noneOf(net.minecraft.world.entity.RelativeMovement.class));
+        } else {
+            this.server.getPlayerList().respawn(this, toLevel, true, to, !toLevel.paperConfig().environment.disableTeleportationSuffocationCheck, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.DEATH);
+        }
+    }
+
+    public boolean tpsBar() {
+        return this.tpsBar;
+    }
+
+    public void tpsBar(boolean tpsBar) {
+        this.tpsBar = tpsBar;
+    }
+
+    public boolean compassBar() {
+        return this.compassBar;
+    }
+
+    public void compassBar(boolean compassBar) {
+        this.compassBar = compassBar;
+    }
+
+    public boolean ramBar() {
+        return this.ramBar;
+    }
+
+    public void ramBar(boolean ramBar) {
+        this.ramBar = ramBar;
+    }
+    // Purpur end
 }

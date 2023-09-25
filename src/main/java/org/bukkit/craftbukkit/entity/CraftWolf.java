@@ -57,4 +57,16 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
     public void setInterested(boolean flag) {
         this.getHandle().setIsInterested(flag);
     }
+
+    // Purpur start
+    @Override
+    public boolean isRabid() {
+        return getHandle().isRabid();
+    }
+
+    @Override
+    public void setRabid(boolean isRabid) {
+        getHandle().setRabid(isRabid);
+    }
+    // Purpur end
 }

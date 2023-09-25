@@ -96,6 +96,38 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
         this.xpReward = 5;
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.piglinRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.piglinRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.piglinControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.piglinMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.piglinTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.piglinAlwaysDropExp;
+    }
+
     @Override
     public void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
@@ -303,7 +335,7 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
     private int behaviorTick; // Pufferfish
     @Override
     protected void customServerAiStep() {
-        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
+        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish // Purpur - only use brain if no rider
         this.getBrain().tick((ServerLevel) this.level(), this);
         PiglinAi.updateActivity(this);
         super.customServerAiStep();
@@ -400,7 +432,7 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
 
     @Override
     public boolean wantsToPickUp(ItemStack stack) {
-        return this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && this.canPickUpLoot() && PiglinAi.wantsToPickup(this, stack);
+        return (this.level().purpurConfig.piglinBypassMobGriefing || this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) && this.canPickUpLoot() && PiglinAi.wantsToPickup(this, stack);
     }
 
     protected boolean canReplaceCurrentItem(ItemStack stack) {

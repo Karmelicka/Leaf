@@ -21,6 +21,38 @@ public class Stray extends AbstractSkeleton {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.strayRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.strayRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.strayControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.strayMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.strayTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.strayAlwaysDropExp;
+    }
+
     public static boolean checkStraySpawnRules(EntityType<Stray> type, ServerLevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
         BlockPos blockPos = pos;
 

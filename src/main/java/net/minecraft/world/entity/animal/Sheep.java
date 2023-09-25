@@ -119,10 +119,48 @@ public class Sheep extends Animal implements Shearable {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.sheepRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.sheepRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.sheepControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.sheepMaxHealth);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.sheepBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.sheepTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.sheepAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
         this.eatBlockGoal = new EatBlockGoal(this);
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new PanicGoal(this, 1.25D));
         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
         this.goalSelector.addGoal(3, new TemptGoal(this, 1.1D, Ingredient.of(Items.WHEAT), false));
@@ -254,7 +292,7 @@ public class Sheep extends Animal implements Shearable {
             if (!this.level().isClientSide && this.readyForShearing()) {
                 // CraftBukkit start
                 // Paper start - custom shear drops
-                java.util.List<ItemStack> drops = this.generateDefaultDrops();
+                java.util.List<ItemStack> drops = this.generateDefaultDrops(net.minecraft.world.item.enchantment.EnchantmentHelper.getMobLooting(player)); // Purpur
                 org.bukkit.event.player.PlayerShearEntityEvent event = CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand, drops);
                 if (event != null) {
                     if (event.isCancelled()) {
@@ -281,12 +319,13 @@ public class Sheep extends Animal implements Shearable {
     @Override
     public void shear(SoundSource shearedSoundCategory) {
         // Paper start - custom shear drops
-        this.shear(shearedSoundCategory, this.generateDefaultDrops());
+        this.shear(shearedSoundCategory, this.generateDefaultDrops(0)); // Purpur
     }
 
     @Override
-    public java.util.List<ItemStack> generateDefaultDrops() {
+    public java.util.List<ItemStack> generateDefaultDrops(int looting) { // Purpur
         int count = 1 + this.random.nextInt(3);
+        if (org.purpurmc.purpur.PurpurConfig.allowShearsLooting) count += looting; // Purpur
         java.util.List<ItemStack> dropEntities = new java.util.ArrayList<>(count);
         for (int j = 0; j < count; ++j) {
             dropEntities.add(new ItemStack(Sheep.ITEM_BY_DYE.get(this.getColor())));

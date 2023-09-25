@@ -95,12 +95,40 @@ public class EnderMan extends Monster implements NeutralMob {
     public EnderMan(EntityType<? extends EnderMan> type, Level world) {
         super(type, world);
         this.setMaxUpStep(1.0F);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
+        if (isSensitiveToWater()) this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F); // Purpur
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.endermanRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.endermanRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.endermanControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.endermanMaxHealth);
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.endermanAlwaysDropExp;
     }
 
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new EnderMan.EndermanFreezeWhenLookedAt(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, false));
         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D, 0.0F));
@@ -108,9 +136,10 @@ public class EnderMan extends Monster implements NeutralMob {
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(10, new EnderMan.EndermanLeaveBlockGoal(this));
         this.goalSelector.addGoal(11, new EnderMan.EndermanTakeBlockGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new EnderMan.EndermanLookForPlayerGoal(this, this::isAngryAt));
         this.targetSelector.addGoal(2, new HurtByTargetGoal(this, new Class[0]));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Endermite.class, true, false));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Endermite.class, 10, true, false, (entityliving) -> entityliving.level().purpurConfig.endermanAggroEndermites && entityliving instanceof Endermite endermite && (!entityliving.level().purpurConfig.endermanAggroEndermitesOnlyIfPlayerSpawned || endermite.isPlayerSpawned()))); // Purpur
         this.targetSelector.addGoal(4, new ResetUniversalAngerTargetGoal<>(this, false));
     }
 
@@ -247,7 +276,7 @@ public class EnderMan extends Monster implements NeutralMob {
         // Paper end - EndermanAttackPlayerEvent
         ItemStack itemstack = (ItemStack) player.getInventory().armor.get(3);
 
-        if (itemstack.is(Blocks.CARVED_PUMPKIN.asItem())) {
+        if (this.level().purpurConfig.endermanDisableStareAggro || itemstack.is(Blocks.CARVED_PUMPKIN.asItem()) || (this.level().purpurConfig.endermanIgnorePlayerDragonHead && itemstack.is(net.minecraft.world.item.Items.DRAGON_HEAD))) { // Purpur
             return false;
         } else {
             Vec3 vec3d = player.getViewVector(1.0F).normalize();
@@ -289,12 +318,12 @@ public class EnderMan extends Monster implements NeutralMob {
 
     @Override
     public boolean isSensitiveToWater() {
-        return true;
+        return this.level().purpurConfig.endermanTakeDamageFromWater; // Purpur
     }
 
     @Override
     protected void customServerAiStep() {
-        if (this.level().isDay() && this.tickCount >= this.targetChangeTime + 600) {
+        if ((getRider() == null || !this.isControllable()) && this.level().isDay() && this.tickCount >= this.targetChangeTime + 600) { // Purpur - no random teleporting
             float f = this.getLightLevelDependentMagicValue();
 
             if (f > 0.5F && this.level().canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper - EndermanEscapeEvent
@@ -415,6 +444,8 @@ public class EnderMan extends Monster implements NeutralMob {
     public boolean hurt(DamageSource source, float amount) {
         if (this.isInvulnerableTo(source)) {
             return false;
+        } else if (getRider() != null && this.isControllable()) { return super.hurt(source, amount); // Purpur - no teleporting on damage
+        } else if (org.purpurmc.purpur.PurpurConfig.endermanShortHeight && source.is(net.minecraft.world.damagesource.DamageTypes.IN_WALL)) { return false; // Purpur - no suffocation damage if short height
         } else {
             boolean flag = source.getDirectEntity() instanceof ThrownPotion;
             boolean flag1;
@@ -429,6 +460,7 @@ public class EnderMan extends Monster implements NeutralMob {
             } else {
                 flag1 = flag && this.hurtWithCleanWater(source, (ThrownPotion) source.getDirectEntity(), amount);
 
+                if (!flag1 && this.level().purpurConfig.endermanIgnoreProjectiles) return super.hurt(source, amount); // Purpur
                 if (this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent
                 for (int i = 0; i < 64; ++i) {
                     if (this.teleport()) {
@@ -475,7 +507,7 @@ public class EnderMan extends Monster implements NeutralMob {
 
     @Override
     public boolean requiresCustomPersistence() {
-        return super.requiresCustomPersistence() || this.getCarriedBlock() != null;
+        return super.requiresCustomPersistence() || (!this.level().purpurConfig.endermanDespawnEvenWithBlock && this.getCarriedBlock() != null); // Purpur
     }
 
     private static class EndermanFreezeWhenLookedAt extends Goal {
@@ -522,7 +554,16 @@ public class EnderMan extends Monster implements NeutralMob {
 
         @Override
         public boolean canUse() {
-            return this.enderman.getCarriedBlock() == null ? false : (!this.enderman.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? false : this.enderman.getRandom().nextInt(reducedTickDelay(2000)) == 0);
+            if (!enderman.level().purpurConfig.endermanAllowGriefing) return false; // Purpur
+            // Purpur start
+            if (this.enderman.getCarriedBlock() == null) {
+                return false;
+            }
+            if (!this.enderman.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !this.enderman.level().purpurConfig.endermanBypassMobGriefing) {
+                return false;
+            }
+            return this.enderman.getRandom().nextInt(reducedTickDelay(2000)) == 0;
+            // Purpur end
         }
 
         @Override
@@ -567,7 +608,16 @@ public class EnderMan extends Monster implements NeutralMob {
 
         @Override
         public boolean canUse() {
-            return this.enderman.getCarriedBlock() != null ? false : (!this.enderman.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? false : this.enderman.getRandom().nextInt(reducedTickDelay(20)) == 0);
+            if (!enderman.level().purpurConfig.endermanAllowGriefing) return false; // Purpur
+            // Purpur start
+            if (this.enderman.getCarriedBlock() != null) {
+                return false;
+            }
+            if (!this.enderman.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !this.enderman.level().purpurConfig.endermanBypassMobGriefing) {
+                return false;
+            }
+            return this.enderman.getRandom().nextInt(reducedTickDelay(20)) == 0;
+            // Purpur end
         }
 
         @Override

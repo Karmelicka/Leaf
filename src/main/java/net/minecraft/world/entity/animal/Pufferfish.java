@@ -45,6 +45,33 @@ public class Pufferfish extends AbstractFish {
         this.refreshDimensions();
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.pufferfishRidable;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.pufferfishControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.pufferfishMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.pufferfishTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.pufferfishAlwaysDropExp;
+    }
+
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();

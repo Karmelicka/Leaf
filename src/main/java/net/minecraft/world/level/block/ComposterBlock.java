@@ -238,20 +238,28 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
         ItemStack itemstack = player.getItemInHand(hand);
 
         if (i < 8 && ComposterBlock.COMPOSTABLES.containsKey(itemstack.getItem())) {
-            if (i < 7 && !world.isClientSide) {
-                BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
-                // Paper start - handle cancelled events
-                if (iblockdata1 == null) {
-                    return InteractionResult.PASS;
-                }
-                // Paper end
-
-                world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
-                player.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
-                if (!player.getAbilities().instabuild) {
-                    itemstack.shrink(1);
-                }
+            // Purpur start
+            BlockState newState = process(i, state, world, itemstack, pos, player);
+            if (newState == null) {
+                return InteractionResult.PASS;
             }
+
+            if (world.purpurConfig.composterBulkProcess && player.isShiftKeyDown() && newState != state) {
+                BlockState oldState;
+                int oldCount, newCount, oldLevel, newLevel;
+                do {
+                    oldState = newState;
+                    oldCount = itemstack.getCount();
+                    oldLevel = oldState.getValue(ComposterBlock.LEVEL);
+                    newState = process(oldLevel, oldState, world, itemstack, pos, player);
+                    if (newState == null) {
+                        return InteractionResult.PASS;
+                    }
+                    newCount = itemstack.getCount();
+                    newLevel = newState.getValue(ComposterBlock.LEVEL);
+                } while (newCount > 0 && (newCount != oldCount || newLevel != oldLevel || newState != oldState));
+            }
+            // Purpur end
 
             return InteractionResult.sidedSuccess(world.isClientSide);
         } else if (i == 8) {
@@ -261,6 +269,26 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
             return InteractionResult.PASS;
         }
     }
+
+    private static BlockState process(int level, BlockState state, Level world, ItemStack itemstack, BlockPos pos, Player player) {
+        if (level < 7 && !world.isClientSide) {
+            BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
+            // Paper start - handle cancelled events
+            if (iblockdata1 == null) {
+                return iblockdata1;
+            }
+            // Paper end
+
+            world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
+            player.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
+            if (!player.getAbilities().instabuild) {
+                itemstack.shrink(1);
+            }
+            return iblockdata1;
+        }
+        return state;
+    }
+    // Purpur end
 
     public static BlockState insertItem(Entity user, BlockState state, ServerLevel world, ItemStack stack, BlockPos pos) {
         int i = (Integer) state.getValue(ComposterBlock.LEVEL);

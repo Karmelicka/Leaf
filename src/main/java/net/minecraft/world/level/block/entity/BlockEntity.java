@@ -6,6 +6,8 @@ import net.minecraft.CrashReportCategory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.resources.ResourceLocation;
@@ -73,10 +75,27 @@ public abstract class BlockEntity {
         if (persistentDataTag instanceof CompoundTag) {
             this.persistentDataContainer.putAll((CompoundTag) persistentDataTag);
         }
+        // Purpur start
+        if (nbt.contains("Purpur.persistentDisplayName")) {
+            this.persistentDisplayName = nbt.getString("Purpur.persistentDisplayName");
+        }
+        if (nbt.contains("Purpur.persistentLore")) {
+            this.persistentLore = nbt.getList("Purpur.persistentLore", 8);
+        }
+        // Purpur end
     }
     // CraftBukkit end
 
-    protected void saveAdditional(CompoundTag nbt) {}
+    protected void saveAdditional(CompoundTag nbt) {
+        // Purpur start
+        if (this.persistentDisplayName != null) {
+            nbt.put("Purpur.persistentDisplayName", StringTag.valueOf(this.persistentDisplayName));
+        }
+        if (this.persistentLore != null) {
+            nbt.put("Purpur.persistentLore", this.persistentLore);
+        }
+        // Purpur end
+    }
 
     public final CompoundTag saveWithFullMetadata() {
         CompoundTag nbttagcompound = this.saveWithoutMetadata();
@@ -186,10 +205,24 @@ public abstract class BlockEntity {
 
     @Nullable
     public Packet<ClientGamePacketListener> getUpdatePacket() {
+        // Purpur start
+        if (this instanceof net.minecraft.world.Nameable nameable && nameable.hasCustomName()) {
+            CompoundTag nbt = this.saveWithoutMetadata();
+            nbt.remove("Items");
+            return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this, $ -> nbt);
+        }
+        // Purpur end
         return null;
     }
 
     public CompoundTag getUpdateTag() {
+        // Purpur start
+        if (this instanceof net.minecraft.world.Nameable nameable && nameable.hasCustomName()) {
+            CompoundTag nbt = this.saveWithoutMetadata();
+            nbt.remove("Items");
+            return nbt;
+        }
+        // Purpur end
         return new CompoundTag();
     }
 
@@ -262,4 +295,25 @@ public abstract class BlockEntity {
         return tag;
     }
     // Paper end - Sanitize sent data
+
+    // Purpur start
+    private String persistentDisplayName = null;
+    private ListTag persistentLore = null;
+
+    public void setPersistentDisplayName(String json) {
+        this.persistentDisplayName = json;
+    }
+
+    public void setPersistentLore(ListTag lore) {
+        this.persistentLore = lore;
+    }
+
+    public String getPersistentDisplayName() {
+        return this.persistentDisplayName;
+    }
+
+    public ListTag getPersistentLore() {
+        return this.persistentLore;
+    }
+    // Purpur end
 }

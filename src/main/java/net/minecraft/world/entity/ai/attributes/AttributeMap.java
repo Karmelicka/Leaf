@@ -27,14 +27,22 @@ public class AttributeMap {
     // Gale end - Lithium - replace AI attributes with optimized collections
     private final AttributeSupplier supplier;
     private final java.util.function.Function<Attribute, AttributeInstance> createInstance; // Gale - Airplane - reduce entity allocations
+    private final net.minecraft.world.entity.LivingEntity entity; // Purpur
 
     public AttributeMap(AttributeSupplier defaultAttributes) {
+        // Purpur start
+        this(defaultAttributes, null);
+    }
+
+    public AttributeMap(AttributeSupplier defaultAttributes, net.minecraft.world.entity.LivingEntity entity) {
+        this.entity = entity;
+        // Purpur end
         this.supplier = defaultAttributes;
         this.createInstance = attribute -> this.supplier.createInstance(this::onAttributeModified, attribute); // Gale - Airplane - reduce entity allocations
     }
 
     private void onAttributeModified(AttributeInstance instance) {
-        if (instance.getAttribute().isClientSyncable()) {
+        if (instance.getAttribute().isClientSyncable() && (entity == null || entity.shouldSendAttribute(instance.getAttribute()))) { // Purpur
             this.dirtyAttributes.add(instance);
         }
 
@@ -46,7 +54,7 @@ public class AttributeMap {
 
     public Collection<AttributeInstance> getSyncableAttributes() {
         return this.attributes.values().stream().filter((attribute) -> {
-            return attribute.getAttribute().isClientSyncable();
+            return attribute.getAttribute().isClientSyncable() && (entity == null || entity.shouldSendAttribute(attribute.getAttribute())); // Purpur
         }).collect(Collectors.toList());
     }
 

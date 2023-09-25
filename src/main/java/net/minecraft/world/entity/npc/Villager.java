@@ -146,6 +146,8 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
     });
 
     public long nextGolemPanic = -1; // Pufferfish
+    private boolean isLobotomized = false; public boolean isLobotomized() { return this.isLobotomized; } // Purpur
+    private int notLobotomizedCount = 0; // Purpur
 
     public Villager(EntityType<? extends Villager> entityType, Level world) {
         this(entityType, world, VillagerType.PLAINS);
@@ -158,6 +160,91 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
         this.getNavigation().setCanFloat(true);
         this.setCanPickUpLoot(true);
         this.setVillagerData(this.getVillagerData().setType(type).setProfession(VillagerProfession.NONE));
+        if (level().purpurConfig.villagerFollowEmeraldBlock) this.goalSelector.addGoal(3, new net.minecraft.world.entity.ai.goal.TemptGoal(this, 1.0D, TEMPT_ITEMS, false));
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.villagerRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.villagerRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.villagerControllable;
+    }
+
+    @Override
+    protected void registerGoals() {
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this));
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.villagerMaxHealth);
+    }
+
+    @Override
+    public boolean canBeLeashed(Player player) {
+        return level().purpurConfig.villagerCanBeLeashed && !this.isLeashed();
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.villagerTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.villagerAlwaysDropExp;
+    }
+
+    private boolean checkLobotomized() {
+        int interval = this.level().purpurConfig.villagerLobotomizeCheckInterval;
+        boolean shouldCheckForTradeLocked = this.level().purpurConfig.villagerLobotomizeWaitUntilTradeLocked;
+        if (this.notLobotomizedCount > 3) {
+            // check half as often if not lobotomized for the last 3+ consecutive checks
+            interval *= 2;
+        }
+        if (this.level().getGameTime() % interval == 0) {
+            // offset Y for short blocks like dirt_path/farmland
+            this.isLobotomized = !(shouldCheckForTradeLocked && this.getVillagerXp() == 0) && !canTravelFrom(BlockPos.containing(this.position().x, this.getBoundingBox().minY + 0.0625D, this.position().z));
+
+            if (this.isLobotomized) {
+                this.notLobotomizedCount = 0;
+            } else {
+                this.notLobotomizedCount++;
+            }
+        }
+        return this.isLobotomized;
+    }
+
+    private boolean canTravelFrom(BlockPos pos) {
+        return canTravelTo(pos.east()) || canTravelTo(pos.west()) || canTravelTo(pos.north()) || canTravelTo(pos.south());
+    }
+
+    private boolean canTravelTo(BlockPos pos) {
+        net.minecraft.world.level.block.state.BlockState state = this.level().getBlockStateIfLoaded(pos);
+        if (state == null) {
+            // chunk not loaded
+            return false;
+        }
+        net.minecraft.world.level.block.Block bottom = state.getBlock();
+        if (bottom instanceof net.minecraft.world.level.block.FenceBlock ||
+                bottom instanceof net.minecraft.world.level.block.FenceGateBlock ||
+                bottom instanceof net.minecraft.world.level.block.WallBlock) {
+            // bottom block is too tall to get over
+            return false;
+        }
+        net.minecraft.world.level.block.Block top = level().getBlockState(pos.above()).getBlock();
+        // only if both blocks have no collision
+        return !bottom.hasCollision && !top.hasCollision;
     }
 
     @Override
@@ -194,7 +281,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
             brain.addActivity(Activity.PLAY, VillagerGoalPackages.getPlayPackage(0.5F));
         } else {
             brain.setSchedule(Schedule.VILLAGER_DEFAULT);
-            brain.addActivityWithConditions(Activity.WORK, VillagerGoalPackages.getWorkPackage(villagerprofession, 0.5F), ImmutableSet.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT)));
+            brain.addActivityWithConditions(Activity.WORK, VillagerGoalPackages.getWorkPackage(villagerprofession, 0.5F, this.level().purpurConfig.villagerClericsFarmWarts), ImmutableSet.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT))); // Purpur
         }
 
         brain.addActivity(Activity.CORE, VillagerGoalPackages.getCorePackage(villagerprofession, 0.5F));
@@ -257,13 +344,21 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
         // Paper start
         this.customServerAiStep(false);
     }
-    protected void customServerAiStep(final boolean inactive) {
+    protected void customServerAiStep(boolean inactive) { // Purpur - not final
         // Paper end
-        // Pufferfish start
-        if (!inactive && this.behaviorTick++ % this.activatedPriority == 0) {
-            this.getBrain().tick((ServerLevel) this.level(), this); // Paper
+        // Purpur start
+        if (this.level().purpurConfig.villagerLobotomizeEnabled) {
+            // treat as inactive if lobotomized
+            inactive = inactive || checkLobotomized();
+        } else {
+            this.isLobotomized = false;
         }
+        // Pufferfish start
+        if (!inactive && (getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider
+            this.getBrain().tick((ServerLevel) this.level(), this); // Paper
         // Pufferfish end
+        else if (this.isLobotomized && shouldRestock()) restock();
+        // Purpur end
         if (this.assignProfessionWhenSpawned) {
             this.assignProfessionWhenSpawned = false;
         }
@@ -319,7 +414,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
         if (!itemstack.is(Items.VILLAGER_SPAWN_EGG) && this.isAlive() && !this.isTrading() && !this.isSleeping()) {
             if (this.isBaby()) {
                 this.setUnhappy();
-                return InteractionResult.sidedSuccess(this.level().isClientSide);
+                return tryRide(player, hand, InteractionResult.sidedSuccess(this.level().isClientSide)); // Purpur
             } else {
                 boolean flag = this.getOffers().isEmpty();
 
@@ -332,9 +427,10 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
                 }
 
                 if (flag) {
-                    return InteractionResult.sidedSuccess(this.level().isClientSide);
+                    return tryRide(player, hand, InteractionResult.sidedSuccess(this.level().isClientSide)); // Purpur
                 } else {
-                    if (!this.level().isClientSide && !this.offers.isEmpty()) {
+                    if (level().purpurConfig.villagerRidable && itemstack.isEmpty()) return tryRide(player, hand); // Purpur
+                    if (this.level().purpurConfig.villagerAllowTrading && !this.offers.isEmpty()) {
                         this.startTrading(player);
                     }
 
@@ -503,7 +599,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
         while (iterator.hasNext()) {
             MerchantOffer merchantrecipe = (MerchantOffer) iterator.next();
 
-            merchantrecipe.updateDemand();
+            merchantrecipe.updateDemand(this.level().purpurConfig.villagerMinimumDemand); // Purpur
         }
 
     }
@@ -753,7 +849,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
 
     @Override
     public boolean canBreed() {
-        return this.foodLevel + this.countFoodPointsInInventory() >= 12 && !this.isSleeping() && this.getAge() == 0;
+        return this.level().purpurConfig.villagerCanBreed && this.foodLevel + this.countFoodPointsInInventory() >= 12 && !this.isSleeping() && this.getAge() == 0; // Purpur
     }
 
     private boolean hungry() {
@@ -967,6 +1063,11 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
 
     public boolean hasFarmSeeds() {
         return this.getInventory().hasAnyMatching((itemstack) -> {
+            // Purpur start
+            if (this.level().purpurConfig.villagerClericsFarmWarts && this.getVillagerData().getProfession() == VillagerProfession.CLERIC) {
+                return itemstack.is(Items.NETHER_WART);
+            }
+            // Purpur end
             return itemstack.is(ItemTags.VILLAGER_PLANTABLE_SEEDS);
         });
     }
@@ -1024,6 +1125,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
     }
 
     public void spawnGolemIfNeeded(ServerLevel world, long time, int requiredCount) {
+        if (world.purpurConfig.villagerSpawnIronGolemRadius > 0 && world.getEntitiesOfClass(net.minecraft.world.entity.animal.IronGolem.class, getBoundingBox().inflate(world.purpurConfig.villagerSpawnIronGolemRadius)).size() > world.purpurConfig.villagerSpawnIronGolemLimit) return; // Purpur
         if (this.wantsToSpawnGolem(time)) {
             AABB axisalignedbb = this.getBoundingBox().inflate(10.0D, 10.0D, 10.0D);
             List<Villager> list = world.getEntitiesOfClass(Villager.class, axisalignedbb);
@@ -1088,6 +1190,12 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
 
     @Override
     public void startSleeping(BlockPos pos) {
+        // Purpur start
+        if (level().purpurConfig.bedExplodeOnVillagerSleep && this.level().getBlockState(pos).getBlock() instanceof net.minecraft.world.level.block.BedBlock) {
+            this.level().explode(null, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (float) this.level().purpurConfig.bedExplosionPower, this.level().purpurConfig.bedExplosionFire, this.level().purpurConfig.bedExplosionEffect);
+            return;
+        }
+        // Purpur end
         super.startSleeping(pos);
         this.brain.setMemory(MemoryModuleType.LAST_SLEPT, this.level().getGameTime()); // CraftBukkit - decompile error
         this.brain.eraseMemory(MemoryModuleType.WALK_TARGET);

@@ -48,14 +48,48 @@ public class Silverfish extends Monster {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.silverfishRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.silverfishRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.silverfishControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.silverfishMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.silverfishTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.silverfishAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
         this.friendsGoal = new Silverfish.SilverfishWakeUpFriendsGoal(this);
         this.goalSelector.addGoal(1, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new ClimbOnTopOfPowderSnowGoal(this, this.level()));
         this.goalSelector.addGoal(3, this.friendsGoal);
         this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, false));
         this.goalSelector.addGoal(5, new Silverfish.SilverfishMergeWithStoneGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers());
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }
@@ -187,7 +221,7 @@ public class Silverfish extends Monster {
                                     continue;
                                 }
                                 // CraftBukkit end
-                                if (world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+                                if (world.purpurConfig.silverfishBypassMobGriefing || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) { // Purpur
                                     world.destroyBlock(blockposition1, true, this.silverfish);
                                 } else {
                                     world.setBlock(blockposition1, ((InfestedBlock) block).hostStateByInfested(world.getBlockState(blockposition1)), 3);
@@ -225,7 +259,7 @@ public class Silverfish extends Monster {
             } else {
                 RandomSource randomsource = this.mob.getRandom();
 
-                if (this.mob.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && randomsource.nextInt(reducedTickDelay(10)) == 0) {
+                if ((this.mob.level().purpurConfig.silverfishBypassMobGriefing || this.mob.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) && randomsource.nextInt(reducedTickDelay(10)) == 0) { // Purpur
                     this.selectedDirection = Direction.getRandom(randomsource);
                     BlockPos blockposition = BlockPos.containing(this.mob.getX(), this.mob.getY() + 0.5D, this.mob.getZ()).relative(this.selectedDirection);
                     BlockState iblockdata = this.mob.level().getBlockState(blockposition);

@@ -106,7 +106,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock 
 
                 Vec3 vec3d = pos.getCenter();
 
-                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // Paper - add exploded state
+                if (world.purpurConfig.bedExplode) world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, (float) world.purpurConfig.bedExplosionPower, world.purpurConfig.bedExplosionFire, world.purpurConfig.bedExplosionEffect); // Paper - add exploded state // Purpur
                 return InteractionResult.SUCCESS;
             } else if ((Boolean) state.getValue(BedBlock.OCCUPIED)) {
                 if (!BedBlock.canSetSpawn(world)) return this.explodeBed(state, world, pos); // Paper - check explode first
@@ -159,7 +159,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock 
 
                 Vec3 vec3d = blockposition.getCenter();
 
-                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // Paper - add exploded state
+                if (world.purpurConfig.bedExplode) world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, explodedBlockState), (ExplosionDamageCalculator) null, vec3d, (float) world.purpurConfig.bedExplosionPower, world.purpurConfig.bedExplosionFire, world.purpurConfig.bedExplosionEffect); // Paper - add exploded state // Purpur
                 return InteractionResult.SUCCESS;
             }
         }
@@ -183,7 +183,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock 
 
     @Override
     public void fallOn(Level world, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
-        super.fallOn(world, state, pos, entity, fallDistance * 0.5F);
+        super.fallOn(world, state, pos, entity, fallDistance); // Purpur
     }
 
     @Override

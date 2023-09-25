@@ -454,6 +454,7 @@ public final class ItemStack {
                     world.preventPoiUpdated = true; // CraftBukkit - SPIGOT-5710
                     for (BlockState blockstate : blocks) {
                         blockstate.update(true, false);
+                        ((CraftBlock) blockstate.getBlock()).getNMS().getBlock().forgetPlacer(); // Purpur
                     }
                     world.preventPoiUpdated = false;
 
@@ -485,6 +486,7 @@ public final class ItemStack {
                         if (!(block.getBlock() instanceof BaseEntityBlock)) { // Containers get placed automatically
                             block.getBlock().onPlace(block, world, newblockposition, oldBlock, true, context); // Paper - pass context
                         }
+                        block.getBlock().forgetPlacer(); // Purpur
 
                         world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getBlockState(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
                     }
@@ -613,6 +615,16 @@ public final class ItemStack {
         return this.isDamageableItem() && this.getDamageValue() > 0;
     }
 
+    // Purpur start
+    public float getDamagePercent() {
+        if (isDamaged()) {
+            return (float) getDamageValue() / (float) getItem().getMaxDamage();
+        } else {
+            return 0F;
+        }
+    }
+    // Purpur end
+
     public int getDamageValue() {
         return this.tag == null ? 0 : this.tag.getInt("Damage");
     }
@@ -632,7 +644,7 @@ public final class ItemStack {
             int j;
 
             if (amount > 0) {
-                j = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.UNBREAKING, this);
+                j = (getItem() == Items.ELYTRA && player != null && player.level().purpurConfig.elytraIgnoreUnbreaking) ? 0 : EnchantmentHelper.getItemEnchantmentLevel(Enchantments.UNBREAKING, this);
                 int k = 0;
 
                 for (int l = 0; j > 0 && l < amount; ++l) {
@@ -687,6 +699,12 @@ public final class ItemStack {
                 if (this.hurt(amount, entity.getRandom(), entity /*instanceof ServerPlayer ? (ServerPlayer) entity : null*/)) { // Paper - Add EntityDamageItemEvent
                     breakCallback.accept(entity);
                     Item item = this.getItem();
+                    // Purpur start
+                    if (item == Items.ELYTRA) {
+                        setDamageValue(item.getMaxDamage() - 1);
+                        return;
+                    }
+                    // Purpur end
                     // CraftBukkit start - Check for item breaking
                     if (this.count == 1 && entity instanceof net.minecraft.world.entity.player.Player) {
                         org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((net.minecraft.world.entity.player.Player) entity, this);
@@ -1217,13 +1235,19 @@ public final class ItemStack {
 
         ListTag nbttaglist = this.tag.getList("Enchantments", 10);
 
-        nbttaglist.add(EnchantmentHelper.storeEnchantment(EnchantmentHelper.getEnchantmentId(enchantment), (byte) level));
+        nbttaglist.add(EnchantmentHelper.storeEnchantment(EnchantmentHelper.getEnchantmentId(enchantment), (org.purpurmc.purpur.PurpurConfig.clampEnchantLevels) ? (byte) level : (short) level)); // Purpur
         processEnchantOrder(this.tag); // Paper
     }
 
     public boolean isEnchanted() {
         return this.tag != null && this.tag.contains("Enchantments", 9) ? !this.tag.getList("Enchantments", 10).isEmpty() : false;
     }
+
+    // Purpur start
+    public boolean hasEnchantment(Enchantment enchantment) {
+        return isEnchanted() && EnchantmentHelper.deserializeEnchantments(getEnchantmentTags()).containsKey(enchantment);
+    }
+    // Purpur end
 
     public void addTagElement(String key, Tag element) {
         this.getOrCreateTag().put(key, element);

@@ -119,8 +119,9 @@ public class MinecartItem extends Item {
         BlockState iblockdata = world.getBlockState(blockposition);
 
         if (!iblockdata.is(BlockTags.RAILS)) {
-            return InteractionResult.FAIL;
-        } else {
+            if (!world.purpurConfig.minecartPlaceAnywhere) return InteractionResult.FAIL;
+            if (iblockdata.isSolid()) blockposition = blockposition.relative(context.getClickedFace());
+        } // else { // Purpur - place minecarts anywhere
             ItemStack itemstack = context.getItemInHand();
 
             if (world instanceof ServerLevel) {
@@ -145,6 +146,6 @@ public class MinecartItem extends Item {
 
             itemstack.shrink(1);
             return InteractionResult.sidedSuccess(world.isClientSide);
-        }
+        // } // Purpur - place minecarts anywhere
     }
 }

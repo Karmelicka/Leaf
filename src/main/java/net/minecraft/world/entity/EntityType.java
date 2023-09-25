@@ -313,12 +313,23 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
     private Component description;
     @Nullable
     private ResourceLocation lootTable;
-    private final EntityDimensions dimensions;
+    private EntityDimensions dimensions; // Purpur - remove final
+    public void setDimensions(EntityDimensions dimensions) { this.dimensions = dimensions; } // Purpur
     private final FeatureFlagSet requiredFeatures;
 
     private static <T extends Entity> EntityType<T> register(String id, EntityType.Builder type) { // CraftBukkit - decompile error
         return (EntityType) Registry.register(BuiltInRegistries.ENTITY_TYPE, id, (EntityType<T>) type.build(id)); // CraftBukkit - decompile error
     }
+
+    // Purpur start
+    public static EntityType<?> getFromBukkitType(org.bukkit.entity.EntityType bukkitType) {
+        return getFromKey(new ResourceLocation(bukkitType.getKey().toString()));
+    }
+
+    public static EntityType<?> getFromKey(ResourceLocation location) {
+        return BuiltInRegistries.ENTITY_TYPE.get(location);
+    }
+    // Purpur end
 
     public static ResourceLocation getKey(EntityType<?> type) {
         return BuiltInRegistries.ENTITY_TYPE.getKey(type);
@@ -531,6 +542,16 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
         return this.category;
     }
 
+    // Purpur start
+    public String getName() {
+        return BuiltInRegistries.ENTITY_TYPE.getKey(this).getPath();
+    }
+
+    public String getTranslatedName() {
+        return getDescription().getString();
+    }
+    // Purpur end
+
     public String getDescriptionId() {
         if (this.descriptionId == null) {
             this.descriptionId = Util.makeDescriptionId("entity", BuiltInRegistries.ENTITY_TYPE.getKey(this));
@@ -598,6 +619,12 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
             entity.load(nbt);
         }, () -> {
             EntityType.LOGGER.warn("Skipping Entity with id {}", nbt.getString("id"));
+            // Purpur start - log skipped entity's position
+            try {
+                ListTag pos = nbt.getList("Pos", 6);
+                EntityType.LOGGER.warn("Location: {} {},{},{}", world.getWorld().getName(), pos.getDouble(0), pos.getDouble(1), pos.getDouble(2));
+            } catch (Throwable ignore) {}
+            // Purpur end
         });
     }
 

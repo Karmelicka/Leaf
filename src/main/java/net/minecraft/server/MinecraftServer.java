@@ -276,6 +276,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     public OptionSet options;
     public org.bukkit.command.ConsoleCommandSender console;
     public static int currentTick; // Paper - improve tick loop
+    public static final long startTimeMillis = System.currentTimeMillis();
     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
     public int autosavePeriod;
     public Commands vanillaCommandDispatcher;
@@ -286,12 +287,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
     public static final int TICK_TIME = 1000000000 / MinecraftServer.TPS;
     private static final int SAMPLE_INTERVAL = 20; // Paper - improve server tick loop
     @Deprecated(forRemoval = true) // Paper
-    public final double[] recentTps = new double[ 3 ];
+    public final double[] recentTps = new double[ 4 ]; // Purpur
     // Spigot end
     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
     public final GaleConfigurations galeConfigurations; // Gale - Gale configuration
     public static long currentTickLong = 0L; // Paper - track current tick as a long
     public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
+    public boolean lagging = false; // Purpur
+    protected boolean upnp = false; // Purpur
 
     public volatile Thread shutdownThread; // Paper
     public volatile boolean abnormalExit = false; // Paper
@@ -957,6 +960,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         MinecraftServer.LOGGER.info("Stopping server");
         Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
         MinecraftTimings.stopServer(); // Paper
+        // Purpur start
+        if (upnp) {
+            if (dev.omega24.upnp4j.UPnP4J.close(this.getPort(), dev.omega24.upnp4j.util.Protocol.TCP)) {
+                LOGGER.info("[UPnP] Port {} closed", this.getPort());
+            } else {
+                LOGGER.error("[UPnP] Failed to close port {}", this.getPort());
+            }
+        }
+        // Purpur end
         // CraftBukkit start
         if (this.server != null) {
             this.server.disablePlugins();
@@ -1038,6 +1050,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         this.safeShutdown(waitForShutdown, false);
     }
     public void safeShutdown(boolean waitForShutdown, boolean isRestarting) {
+        org.purpurmc.purpur.task.BossBarTask.stopAll(); // Purpur
+        org.purpurmc.purpur.task.BeehiveTask.instance().unregister(); // Purpur
         this.isRestarting = isRestarting;
         this.hasLoggedStop = true; // Paper - Debugging
         if (isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
@@ -1188,9 +1202,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                     tps15.add(currentTps, diff);
 
                     // Backwards compat with bad plugins
-                    this.recentTps[0] = tps1.getAverage();
-                    this.recentTps[1] = tps5.getAverage();
-                    this.recentTps[2] = tps15.getAverage();
+                    // Purpur start
+                    this.recentTps[0] = tps5s.getAverage();
+                    this.recentTps[1] = tps1.getAverage();
+                    this.recentTps[2] = tps5.getAverage();
+                    this.recentTps[3] = tps15.getAverage();
+                    // Purpur end
+                    lagging = recentTps[0] < org.purpurmc.purpur.PurpurConfig.laggingThreshold; // Purpur
                     tickSection = currentTime;
                 }
                 // Paper end - further improve server tick loop
@@ -1207,7 +1225,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                 } : this::haveTime);
                 lastTickProperTime = (System.nanoTime() - tickProperStart) / 1000000L; // Gale - YAPFA - last tick time
                 this.mayHaveDelayedTasks = true;
-                this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + i, this.nextTickTimeNanos);
+                // Purpur start - tps catchup
+                if (org.purpurmc.purpur.PurpurConfig.tpsCatchup) {
+                    this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + i, this.nextTickTimeNanos);
+                } else {
+                    this.delayedTasksMaxNextTickTimeNanos = this.nextTickTimeNanos = currentTime + i;
+                }
+                // Purpur end - tps catchup
                 this.waitUntilNextTick();
                 if (flag) {
                     this.tickRateManager.endTickWork();
@@ -1656,7 +1680,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             long worldTime = level.getGameTime();
             final ClientboundSetTimePacket worldPacket = new ClientboundSetTimePacket(worldTime, dayTime, doDaylight);
             for (Player entityhuman : level.players()) {
-                if (!(entityhuman instanceof ServerPlayer) || (tickCount + entityhuman.getId()) % 20 != 0) {
+                if (!(entityhuman instanceof ServerPlayer) || (!level.isForceTime() && (tickCount + entityhuman.getId()) % 20 != 0)) { // Purpur
                     continue;
                 }
                 ServerPlayer entityplayer = (ServerPlayer) entityhuman;
@@ -1670,11 +1694,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
         MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
 
         this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
+        net.minecraft.network.FriendlyByteBuf.hasItemSerializeEvent = org.purpurmc.purpur.event.packet.NetworkItemSerializeEvent.getHandlerList().getRegisteredListeners().length > 0; // Purpur
         Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; move down
         while (iterator.hasNext()) {
             ServerLevel worldserver = (ServerLevel) iterator.next();
             worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
             worldserver.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
+            worldserver.hasRidableMoveEvent = org.purpurmc.purpur.event.entity.RidableMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Purpur
             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
             worldserver.updateLagCompensationTick(); // Paper - lag compensation
 
@@ -2710,6 +2736,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
 
     public ChatDecorator getChatDecorator() {
+        // Purpur start
+        return this.chatDecorator;
+    }
+    public void setChatDecorator(ChatDecorator chatDecorator) {
+        this.chatDecorator = chatDecorator;
+    }
+    private ChatDecorator chatDecorator = getPaperHardcodedChatDecorator();
+    public ChatDecorator getPaperHardcodedChatDecorator() {
+        // Purpur end
         // Paper start - moved to ChatPreviewProcessor
         return ChatDecorator.create((sender, commandSourceStack, message) -> {
             final io.papermc.paper.adventure.ChatDecorationProcessor processor = new io.papermc.paper.adventure.ChatDecorationProcessor(this, sender, commandSourceStack, message);

@@ -22,6 +22,8 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
@@ -49,6 +51,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.ShulkerBullet;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.DyeItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
@@ -97,12 +101,59 @@ public class Shulker extends AbstractGolem implements VariantHolder<Optional<Dye
         this.lookControl = new Shulker.ShulkerLookControl(this);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.shulkerRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.shulkerRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.shulkerControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.shulkerMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.shulkerTakeDamageFromWater;
+    }
+
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
+        if (player.level().purpurConfig.shulkerChangeColorWithDye && itemstack.getItem() instanceof DyeItem dye && dye.getDyeColor() != this.getColor()) {
+            this.setVariant(Optional.of(dye.getDyeColor()));
+            if (!player.getAbilities().instabuild) {
+                itemstack.shrink(1);
+            }
+            return InteractionResult.SUCCESS;
+        }
+        return super.mobInteract(player, hand);
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.shulkerAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 8.0F, 0.02F, true));
         this.goalSelector.addGoal(4, new Shulker.ShulkerAttackGoal());
         this.goalSelector.addGoal(7, new Shulker.ShulkerPeekGoal());
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[]{this.getClass()})).setAlertOthers());
         this.targetSelector.addGoal(2, new Shulker.ShulkerNearestAttackGoal(this));
         this.targetSelector.addGoal(3, new Shulker.ShulkerDefenseAttackGoal(this));
@@ -474,12 +525,21 @@ public class Shulker extends AbstractGolem implements VariantHolder<Optional<Dye
         Vec3 vec3d = this.position();
         AABB axisalignedbb = this.getBoundingBox();
 
-        if (!this.isClosed() && this.teleportSomewhere()) {
-            int i = this.level().getEntities((EntityTypeTest) EntityType.SHULKER, axisalignedbb.inflate(8.0D), Entity::isAlive).size();
-            float f = (float) (i - 1) / 5.0F;
-
-            if (this.level().random.nextFloat() >= f) {
+        if ((!this.level().purpurConfig.shulkerSpawnFromBulletRequireOpenLid || !this.isClosed()) && this.teleportSomewhere()) {
+            // Purpur start
+            float chance = this.level().purpurConfig.shulkerSpawnFromBulletBaseChance;
+            if (!this.level().purpurConfig.shulkerSpawnFromBulletNearbyEquation.isBlank()) {
+                int nearby = this.level().getEntities((EntityTypeTest) EntityType.SHULKER, axisalignedbb.inflate(this.level().purpurConfig.shulkerSpawnFromBulletNearbyRange), Entity::isAlive).size();
+                try {
+                    chance -= ((Number) scriptEngine.eval("let nearby = " + nearby + "; " + this.level().purpurConfig.shulkerSpawnFromBulletNearbyEquation)).floatValue();
+                } catch (javax.script.ScriptException e) {
+                    e.printStackTrace();
+                    chance -= (nearby - 1) / 5.0F;
+                }
+            }
+            if (this.level().random.nextFloat() <= chance) {
                 Shulker entityshulker = (Shulker) EntityType.SHULKER.create(this.level());
+                // Purpur end
 
                 if (entityshulker != null) {
                     entityshulker.setVariant(this.getVariant());
@@ -591,7 +651,7 @@ public class Shulker extends AbstractGolem implements VariantHolder<Optional<Dye
 
     @Override
     public Optional<DyeColor> getVariant() {
-        return Optional.ofNullable(this.getColor());
+        return Optional.ofNullable(this.level().purpurConfig.shulkerSpawnFromBulletRandomColor ? DyeColor.random(this.level().random) : this.getColor()); // Purpur
     }
 
     @Nullable
@@ -601,7 +661,7 @@ public class Shulker extends AbstractGolem implements VariantHolder<Optional<Dye
         return b0 != 16 && b0 <= 15 ? DyeColor.byId(b0) : null;
     }
 
-    private class ShulkerLookControl extends LookControl {
+    private class ShulkerLookControl extends org.purpurmc.purpur.controller.LookControllerWASD { // Purpur
 
         public ShulkerLookControl(Mob entity) {
             super(entity);

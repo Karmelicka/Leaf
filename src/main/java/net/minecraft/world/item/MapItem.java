@@ -235,6 +235,7 @@ public class MapItem extends ComplexItem {
         MapItemSavedData worldmap = MapItem.getSavedData(map, world);
 
         if (worldmap != null) {
+            worldmap.isExplorerMap = true; // Purpur
             if (world.dimension() == worldmap.dimension) {
                 int i = 1 << worldmap.scale;
                 int j = worldmap.centerX;

@@ -230,6 +230,19 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
     }
     // CraftBukkit end
 
+    // Purpur start
+    public boolean testPermission(int i, String bukkitPermission) {
+        if (hasPermission(i, bukkitPermission)) {
+            return true;
+        }
+        net.kyori.adventure.text.Component permissionMessage = getLevel().getServer().server.permissionMessage();
+        if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
+            sendFailure(io.papermc.paper.adventure.PaperAdventure.asVanilla(permissionMessage.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("<permission>").replacement(bukkitPermission).build())));
+        }
+        return false;
+    }
+    // Purpur end
+
     public Vec3 getPosition() {
         return this.worldPosition;
     }
@@ -334,6 +347,30 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
 
         }
     }
+
+    // Purpur start
+    public void sendSuccess(@Nullable String message) {
+        sendSuccess(message, false);
+    }
+
+    public void sendSuccess(@Nullable String message, boolean broadcastToOps) {
+        if (message == null) {
+            return;
+        }
+        sendSuccess(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message), broadcastToOps);
+    }
+
+    public void sendSuccess(@Nullable net.kyori.adventure.text.Component message) {
+        sendSuccess(message, false);
+    }
+
+    public void sendSuccess(@Nullable net.kyori.adventure.text.Component message, boolean broadcastToOps) {
+        if (message == null) {
+            return;
+        }
+        sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(message), broadcastToOps);
+    }
+    // Purpur end
 
     public void sendSuccess(Supplier<Component> feedbackSupplier, boolean broadcastToOps) {
         boolean flag1 = this.source.acceptsSuccess() && !this.silent;

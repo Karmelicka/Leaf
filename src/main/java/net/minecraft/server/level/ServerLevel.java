@@ -214,6 +214,8 @@ public class ServerLevel extends Level implements WorldGenLevel {
     private final StructureManager structureManager;
     private final StructureCheck structureCheck;
     private final boolean tickTime;
+    private double preciseTime; // Purpur
+    private boolean forceTime; // Purpur
     private final RandomSequences randomSequences;
     public long lastMidTickExecuteFailure; // Paper - execute chunk tasks mid tick
 
@@ -223,6 +225,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
     public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
     public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
     private final alternate.current.wire.WireHandler wireHandler = new alternate.current.wire.WireHandler(this); // Paper - optimize redstone (Alternate Current)
+    public boolean hasRidableMoveEvent = false; // Purpur
 
     public LevelChunk getChunkIfLoaded(int x, int z) {
         return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
@@ -708,7 +711,24 @@ public class ServerLevel extends Level implements WorldGenLevel {
         this.dragonParts = new Int2ObjectOpenHashMap();
         this.tickTime = flag1;
         this.server = minecraftserver;
-        this.customSpawners = list;
+        // Purpur start - enable/disable MobSpawners per world
+        this.customSpawners = Lists.newArrayList();
+        if (purpurConfig.phantomSpawning) {
+            customSpawners.add(new net.minecraft.world.level.levelgen.PhantomSpawner());
+        }
+        if (purpurConfig.patrolSpawning) {
+            customSpawners.add(new net.minecraft.world.level.levelgen.PatrolSpawner());
+        }
+        if (purpurConfig.catSpawning) {
+            customSpawners.add(new net.minecraft.world.entity.npc.CatSpawner());
+        }
+        if (purpurConfig.villageSiegeSpawning) {
+            customSpawners.add(new net.minecraft.world.entity.ai.village.VillageSiege());
+        }
+        if (purpurConfig.villagerTraderSpawning) {
+            customSpawners.add(new net.minecraft.world.entity.npc.WanderingTraderSpawner(iworlddataserver));
+        }
+        // Purpur end
         this.serverLevelData = iworlddataserver;
         ChunkGenerator chunkgenerator = worlddimension.generator();
         // CraftBukkit start
@@ -770,6 +790,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
         this.chunkTaskScheduler = new io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler(this, io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.workerThreads); // Paper - rewrite chunk system
         this.entityLookup = new io.papermc.paper.chunk.system.entity.EntityLookup(this, new EntityCallbacks()); // Paper - rewrite chunk system
+        this.preciseTime = this.serverLevelData.getDayTime(); // Purpur
     }
 
     // Paper start
@@ -816,7 +837,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
         int i = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
         long j;
 
-        if (this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
+        if (this.purpurConfig.playersSkipNight && this.sleepStatus.areEnoughSleeping(i) && this.sleepStatus.areEnoughDeepSleeping(i, this.players)) {
             // CraftBukkit start
             j = this.levelData.getDayTime() + 24000L;
             TimeSkipEvent event = new TimeSkipEvent(this.getWorld(), TimeSkipEvent.SkipReason.NIGHT_SKIP, (j - j % 24000L) - this.getDayTime());
@@ -907,7 +928,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
                             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
                             MinecraftServer.LOGGER.error(msg, throwable);
                             getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable)));
-                            entity.discard();
+                            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Purpur
                             // Paper end
                         }
                         // Gale end - Airplane - remove lambda from ticking guard - copied from guardEntityTick
@@ -938,6 +959,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
             this.serverLevelData.setGameTime(i);
             this.serverLevelData.getScheduledEvents().tick(this.server, i);
             if (this.levelData.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
+                // Purpur start
+                int incrementTicks = isDay() ? this.purpurConfig.daytimeTicks : this.purpurConfig.nighttimeTicks;
+                if (incrementTicks != 12000) {
+                    this.preciseTime += 12000 / (double) incrementTicks;
+                    this.setDayTime(this.preciseTime);
+                } else
+                // Purpur end
                 this.setDayTime(this.levelData.getDayTime() + 1L);
             }
 
@@ -946,7 +974,21 @@ public class ServerLevel extends Level implements WorldGenLevel {
 
     public void setDayTime(long timeOfDay) {
         this.serverLevelData.setDayTime(timeOfDay);
+        // Purpur start
+        this.preciseTime = timeOfDay;
+        this.forceTime = false;
     }
+    public void setDayTime(double i) {
+        this.serverLevelData.setDayTime((long) i);
+        this.forceTime = true;
+        // Purpur end
+    }
+
+    // Purpur start
+    public boolean isForceTime() {
+        return this.forceTime;
+    }
+    // Purpur end
 
     public void tickCustomSpawners(boolean spawnMonsters, boolean spawnAnimals) {
         Iterator iterator = this.customSpawners.iterator();
@@ -990,10 +1032,18 @@ public class ServerLevel extends Level implements WorldGenLevel {
                 boolean flag1 = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01D) && !this.getBlockState(blockposition.below()).is(Blocks.LIGHTNING_ROD); // Paper - Configurable spawn chances for skeleton horses
 
                 if (flag1) {
-                    SkeletonHorse entityhorseskeleton = (SkeletonHorse) EntityType.SKELETON_HORSE.create(this);
+                    // Purpur start
+                    net.minecraft.world.entity.animal.horse.AbstractHorse entityhorseskeleton;
+                    if (purpurConfig.zombieHorseSpawnChance > 0D && random.nextDouble() <= purpurConfig.zombieHorseSpawnChance) {
+                        entityhorseskeleton = EntityType.ZOMBIE_HORSE.create(this);
+                    } else {
+                        entityhorseskeleton = EntityType.SKELETON_HORSE.create(this);
+                        if (entityhorseskeleton != null) ((SkeletonHorse) entityhorseskeleton).setTrap(true);
+                    }
+                    // Purpur end
 
                     if (entityhorseskeleton != null) {
-                        entityhorseskeleton.setTrap(true);
+                        //entityhorseskeleton.setTrap(true); // Purpur - moved up
                         entityhorseskeleton.setAge(0);
                         entityhorseskeleton.setPos((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ());
                         this.addFreshEntity(entityhorseskeleton, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
@@ -1113,7 +1163,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
             return holder.is(PoiTypes.LIGHTNING_ROD);
         }, (blockposition1) -> {
             return blockposition1.getY() == this.getHeight(Heightmap.Types.WORLD_SURFACE, blockposition1.getX(), blockposition1.getZ()) - 1;
-        }, pos, 128, PoiManager.Occupancy.ANY);
+        }, pos, org.purpurmc.purpur.PurpurConfig.lightningRodRange, PoiManager.Occupancy.ANY);
 
         return optional.map((blockposition1) -> {
             return blockposition1.above(1);
@@ -1162,11 +1212,27 @@ public class ServerLevel extends Level implements WorldGenLevel {
         if (this.canSleepThroughNights()) {
             if (!this.getServer().isSingleplayer() || this.getServer().isPublished()) {
                 int i = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
-                MutableComponent ichatmutablecomponent;
+                Component ichatmutablecomponent;
 
                 if (this.sleepStatus.areEnoughSleeping(i)) {
+                    // Purpur start
+                    if (org.purpurmc.purpur.PurpurConfig.sleepSkippingNight.isBlank()) {
+                        return;
+                    }
+                    if (!org.purpurmc.purpur.PurpurConfig.sleepSkippingNight.equalsIgnoreCase("default")) {
+                        ichatmutablecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepSkippingNight));
+                    } else
                     ichatmutablecomponent = Component.translatable("sleep.skipping_night");
                 } else {
+                    if (org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent.isBlank()) {
+                        return;
+                    }
+                    if (!org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent.equalsIgnoreCase("default")) {
+                        ichatmutablecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent,
+                                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("count", Integer.toString(this.sleepStatus.amountSleeping())),
+                                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("total", Integer.toString(this.sleepStatus.sleepersNeeded(i)))));
+                    } else
+                    // Purpur end
                     ichatmutablecomponent = Component.translatable("sleep.players_sleeping", this.sleepStatus.amountSleeping(), this.sleepStatus.sleepersNeeded(i));
                 }
 
@@ -1306,6 +1372,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
     @VisibleForTesting
     public void resetWeatherCycle() {
         // CraftBukkit start
+        if (this.purpurConfig.rainStopsAfterSleep) // Purpur
         this.serverLevelData.setRaining(false, org.bukkit.event.weather.WeatherChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
         // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
         // Not that everyone ever manages to get the whole server to sleep at the same time....
@@ -1313,6 +1380,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
             this.serverLevelData.setRainTime(0);
         }
         // CraftBukkit end
+        if (this.purpurConfig.thunderStopsAfterSleep) // Purpur
         this.serverLevelData.setThundering(false, org.bukkit.event.weather.ThunderChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
         // CraftBukkit start
         // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
@@ -2809,7 +2877,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
             // Spigot Start
             if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(entity instanceof ServerPlayer) || entity.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
                 // Paper start - Fix merchant inventory not closing on entity removal
-                if (entity.getBukkitEntity() instanceof org.bukkit.inventory.Merchant merchant && merchant.getTrader() != null) {
+                if (!entity.level().purpurConfig.playerVoidTrading && entity.getBukkitEntity() instanceof org.bukkit.inventory.Merchant merchant && merchant.getTrader() != null) { // Purpur
                     merchant.getTrader().closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED);
                 }
                 // Paper end - Fix merchant inventory not closing on entity removal

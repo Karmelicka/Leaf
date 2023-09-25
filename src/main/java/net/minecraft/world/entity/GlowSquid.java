@@ -23,6 +23,39 @@ public class GlowSquid extends Squid {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.glowSquidRidable;
+    }
+
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.glowSquidControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.glowSquidMaxHealth);
+    }
+
+    @Override
+    public boolean canFly() {
+        return this.level().purpurConfig.glowSquidsCanFly;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.glowSquidTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.glowSquidAlwaysDropExp;
+    }
+
     @Override
     protected ParticleOptions getInkParticle() {
         return ParticleTypes.GLOW_SQUID_INK;

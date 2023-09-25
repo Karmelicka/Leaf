@@ -60,14 +60,59 @@ public class IronGolem extends AbstractGolem implements NeutralMob {
     private int remainingPersistentAngerTime;
     @Nullable
     private UUID persistentAngerTarget;
+    @Nullable private UUID summoner; // Purpur
 
     public IronGolem(EntityType<? extends IronGolem> type, Level world) {
         super(type, world);
         this.setMaxUpStep(1.0F);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.ironGolemRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.ironGolemRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.ironGolemControllable;
+    }
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.ironGolemMaxHealth);
+    }
+    // Purpur end
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.ironGolemTakeDamageFromWater;
+    }
+
+    @Nullable
+    public UUID getSummoner() {
+        return summoner;
+    }
+
+    public void setSummoner(@Nullable UUID summoner) {
+        this.summoner = summoner;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.ironGolemAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
+        if (level().purpurConfig.ironGolemCanSwim) this.goalSelector.addGoal(0, new net.minecraft.world.entity.ai.goal.FloatGoal(this)); // Purpur
+        if (this.level().purpurConfig.ironGolemPoppyCalm) this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.ReceiveFlower(this)); // Purpur
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.0D, true));
         this.goalSelector.addGoal(2, new MoveTowardsTargetGoal(this, 0.9D, 32.0F));
         this.goalSelector.addGoal(2, new MoveBackToVillageGoal(this, 0.6D, false));
@@ -75,6 +120,7 @@ public class IronGolem extends AbstractGolem implements NeutralMob {
         this.goalSelector.addGoal(5, new OfferFlowerGoal(this));
         this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new DefendVillageTargetGoal(this));
         this.targetSelector.addGoal(2, new HurtByTargetGoal(this, new Class[0]));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
@@ -139,6 +185,7 @@ public class IronGolem extends AbstractGolem implements NeutralMob {
     public void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
         nbt.putBoolean("PlayerCreated", this.isPlayerCreated());
+        if (getSummoner() != null) nbt.putUUID("Purpur.Summoner", getSummoner()); // Purpur
         this.addPersistentAngerSaveData(nbt);
     }
 
@@ -146,6 +193,7 @@ public class IronGolem extends AbstractGolem implements NeutralMob {
     public void readAdditionalSaveData(CompoundTag nbt) {
         super.readAdditionalSaveData(nbt);
         this.setPlayerCreated(nbt.getBoolean("PlayerCreated"));
+        if (nbt.contains("Purpur.Summoner")) setSummoner(nbt.getUUID("Purpur.Summoner")); // Purpur
         this.readPersistentAngerSaveData(this.level(), nbt);
     }
 
@@ -270,13 +318,13 @@ public class IronGolem extends AbstractGolem implements NeutralMob {
         ItemStack itemstack = player.getItemInHand(hand);
 
         if (!itemstack.is(Items.IRON_INGOT)) {
-            return InteractionResult.PASS;
+            return tryRide(player, hand); // Purpur
         } else {
             float f = this.getHealth();
 
             this.heal(25.0F);
             if (this.getHealth() == f) {
-                return InteractionResult.PASS;
+                return tryRide(player, hand); // Purpur
             } else {
                 float f1 = 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F;
 
@@ -285,6 +333,7 @@ public class IronGolem extends AbstractGolem implements NeutralMob {
                     itemstack.shrink(1);
                 }
 
+                if (this.level().purpurConfig.ironGolemHealCalm && isAngry() && getHealth() == getMaxHealth()) stopBeingAngry(); // Purpur
                 return InteractionResult.sidedSuccess(this.level().isClientSide);
             }
         }

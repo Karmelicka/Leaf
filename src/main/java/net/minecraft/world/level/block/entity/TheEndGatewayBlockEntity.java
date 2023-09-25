@@ -172,6 +172,14 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
     public static void teleportEntity(Level world, BlockPos pos, BlockState state, Entity entity, TheEndGatewayBlockEntity blockEntity) {
         if (world instanceof ServerLevel && !blockEntity.isCoolingDown()) {
             if (entity.level().galeConfig().gameplayMechanics.fixes.checkCanChangeDimensionsBeforeUseEndGateway && world.galeConfig().gameplayMechanics.fixes.checkCanChangeDimensionsBeforeUseEndGateway && !entity.canChangeDimensions()) return; // Gale - Purpur - end gateway should check if entity can use portal
+            // Purpur start
+            if (world.purpurConfig.imposeTeleportRestrictionsOnGateways && (entity.isVehicle() || entity.isPassenger())) {
+                if (new org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent(entity.getBukkitEntity(), entity.isPassenger() ? org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent.Reason.IS_PASSENGER : org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent.Reason.IS_VEHICLE, PlayerTeleportEvent.TeleportCause.END_GATEWAY).callEvent()) {
+                    teleportEntity(world, pos, state, entity, blockEntity);
+                }
+                return;
+            }
+            // Purpur end
             ServerLevel worldserver = (ServerLevel) world;
 
             blockEntity.teleportCooldown = 100;

@@ -2,15 +2,22 @@ package net.minecraft.world.food;
 
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
+
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.world.effect.MobEffectInstance;
 
 public class FoodProperties {
-    private final int nutrition;
-    private final float saturationModifier;
-    private final boolean isMeat;
-    private final boolean canAlwaysEat;
-    private final boolean fastFood;
+    // Purpur start
+    private int nutrition; public void setNutrition(int nutrition) { this.nutrition = nutrition; }
+    private float saturationModifier; public void setSaturationModifier(float saturation) { this.saturationModifier = saturation; }
+    private boolean isMeat; public void setIsMeat(boolean isMeat) { this.isMeat = isMeat; }
+    private boolean canAlwaysEat; public void setCanAlwaysEat(boolean canAlwaysEat) { this.canAlwaysEat = canAlwaysEat; }
+    private boolean fastFood; public void setFastFood(boolean isFastFood) { this.fastFood = isFastFood; }
+    public FoodProperties copy() {
+        return new FoodProperties(this.nutrition, this.saturationModifier, this.isMeat, this.canAlwaysEat, this.fastFood, new ArrayList<>(this.effects));
+    }
+    // Purpur end
     private final List<Pair<MobEffectInstance, Float>> effects;
 
     FoodProperties(int hunger, float saturationModifier, boolean meat, boolean alwaysEdible, boolean snack, List<Pair<MobEffectInstance, Float>> statusEffects) {

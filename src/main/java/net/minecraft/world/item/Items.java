@@ -316,7 +316,7 @@ public class Items {
     public static final Item PURPUR_BLOCK = registerBlock(Blocks.PURPUR_BLOCK);
     public static final Item PURPUR_PILLAR = registerBlock(Blocks.PURPUR_PILLAR);
     public static final Item PURPUR_STAIRS = registerBlock(Blocks.PURPUR_STAIRS);
-    public static final Item SPAWNER = registerBlock(Blocks.SPAWNER);
+    public static final Item SPAWNER = registerBlock(new org.purpurmc.purpur.item.SpawnerItem(Blocks.SPAWNER, new Item.Properties().rarity(Rarity.EPIC))); // Purpur
     public static final Item CHEST = registerBlock(Blocks.CHEST);
     public static final Item CRAFTING_TABLE = registerBlock(Blocks.CRAFTING_TABLE);
     public static final Item FARMLAND = registerBlock(Blocks.FARMLAND);
@@ -1224,7 +1224,7 @@ public class Items {
     public static final Item LANTERN = registerBlock(Blocks.LANTERN);
     public static final Item SOUL_LANTERN = registerBlock(Blocks.SOUL_LANTERN);
     public static final Item SWEET_BERRIES = registerItem("sweet_berries", new ItemNameBlockItem(Blocks.SWEET_BERRY_BUSH, (new Item.Properties()).food(Foods.SWEET_BERRIES)));
-    public static final Item GLOW_BERRIES = registerItem("glow_berries", new ItemNameBlockItem(Blocks.CAVE_VINES, (new Item.Properties()).food(Foods.GLOW_BERRIES)));
+    public static final Item GLOW_BERRIES = registerItem("glow_berries", new org.purpurmc.purpur.item.GlowBerryItem(Blocks.CAVE_VINES, (new Item.Properties()).food(Foods.GLOW_BERRIES))); // Purpur
     public static final Item CAMPFIRE = registerBlock(Blocks.CAMPFIRE);
     public static final Item SOUL_CAMPFIRE = registerBlock(Blocks.SOUL_CAMPFIRE);
     public static final Item SHROOMLIGHT = registerBlock(Blocks.SHROOMLIGHT);
@@ -1366,6 +1366,13 @@ public class Items {
         if (item instanceof BlockItem) {
             ((BlockItem)item).registerBlocks(Item.BY_BLOCK, item);
         }
+
+        // Purpur start
+        if (item.getFoodProperties() != null) {
+            Foods.ALL_PROPERTIES.put(key.location().getPath(), item.getFoodProperties());
+            Foods.DEFAULT_PROPERTIES.put(key.location().getPath(), item.getFoodProperties().copy());
+        }
+        // Purpur end
 
         return Registry.register(BuiltInRegistries.ITEM, key, item);
     }

@@ -99,4 +99,14 @@ public class StonecutterBlock extends Block {
     public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type) {
         return false;
     }
+
+    // Purpur start
+    @Override
+    public void stepOn(Level level, BlockPos pos, BlockState state, net.minecraft.world.entity.Entity entity) {
+        if (level.purpurConfig.stonecutterDamage > 0.0F && entity instanceof net.minecraft.world.entity.LivingEntity) {
+            entity.hurt(entity.damageSources().stonecutter().directBlock(level, pos), level.purpurConfig.stonecutterDamage);
+        }
+        super.stepOn(level, pos, state, entity);
+    }
+    // Purpur end
 }

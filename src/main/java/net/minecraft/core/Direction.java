@@ -253,6 +253,12 @@ public enum Direction implements StringRepresentable {
             case EAST:
                 var10000 = SOUTH;
                 break;
+        // Purpur start
+        case UP:
+            return UP;
+        case DOWN:
+            return DOWN;
+        // Purpur end
             default:
                 throw new IllegalStateException("Unable to get Y-rotated facing of " + this);
         }
@@ -365,6 +371,12 @@ public enum Direction implements StringRepresentable {
             case EAST:
                 var10000 = NORTH;
                 break;
+        // Purpur start
+        case UP:
+            return UP;
+        case DOWN:
+            return DOWN;
+        // Purpur end
             default:
                 throw new IllegalStateException("Unable to get CCW facing of " + this);
         }

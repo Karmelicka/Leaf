@@ -63,6 +63,13 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.slf4j.Logger;
 
+// Purpur start
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.world.Nameable;
+// Purpur end
+
 public class Block extends BlockBehaviour implements ItemLike {
 
     public static final MapCodec<Block> CODEC = simpleCodec(Block::new);
@@ -89,6 +96,10 @@ public class Block extends BlockBehaviour implements ItemLike {
     public static final int UPDATE_LIMIT = 512;
     protected final StateDefinition<Block, BlockState> stateDefinition;
     private BlockState defaultBlockState;
+    // Purpur start
+    public float fallDamageMultiplier = 1.0F;
+    public float fallDistanceMultiplier = 1.0F;
+    // Purpur end
     // Paper start
     public final boolean isDestroyable() {
         return io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits ||
@@ -320,7 +331,7 @@ public class Block extends BlockBehaviour implements ItemLike {
     public static void dropResources(BlockState state, LevelAccessor world, BlockPos pos, @Nullable BlockEntity blockEntity) {
         if (world instanceof ServerLevel) {
             Block.getDrops(state, (ServerLevel) world, pos, blockEntity).forEach((itemstack) -> {
-                Block.popResource((ServerLevel) world, pos, itemstack);
+                Block.popResource((ServerLevel) world, pos, applyDisplayNameAndLoreFromTile(itemstack, blockEntity)); // Purpur
             });
             state.spawnAfterBreak((ServerLevel) world, pos, ItemStack.EMPTY, true);
         }
@@ -339,7 +350,7 @@ public class Block extends BlockBehaviour implements ItemLike {
             event.setExpToDrop(block.getExpDrop(state, serverLevel, pos, net.minecraft.world.item.ItemStack.EMPTY, true)); // Paper - Properly handle xp dropping
             event.callEvent();
             for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
-                popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
+                popResource(serverLevel, pos, applyDisplayNameAndLoreFromTile(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop), blockEntity)); // Purpur
             }
             state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
             block.popExperience(serverLevel, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
@@ -356,12 +367,52 @@ public class Block extends BlockBehaviour implements ItemLike {
     // Paper end - Properly handle xp dropping
         if (world instanceof ServerLevel) {
             Block.getDrops(state, (ServerLevel) world, pos, blockEntity, entity, tool).forEach((itemstack1) -> {
-                Block.popResource(world, pos, itemstack1);
+                Block.popResource(world, pos, applyDisplayNameAndLoreFromTile(itemstack1, blockEntity)); // Purpur
             });
             state.spawnAfterBreak((ServerLevel) world, pos, tool, dropExperience); // Paper - Properly handle xp dropping
         }
 
     }
+
+    // Purpur start
+    private static ItemStack applyDisplayNameAndLoreFromTile(ItemStack stack, BlockEntity blockEntity) {
+        if (stack.getItem() instanceof BlockItem) {
+            if (blockEntity != null && blockEntity.getLevel() instanceof ServerLevel && blockEntity.getLevel().purpurConfig.persistentTileEntityDisplayNames) {
+                String name = blockEntity.getPersistentDisplayName();
+                ListTag lore = blockEntity.getPersistentLore();
+                if (blockEntity instanceof Nameable) {
+                    Nameable namedTile = (Nameable) blockEntity;
+                    if (namedTile.hasCustomName()) {
+                        name = Component.Serializer.toJson(namedTile.getCustomName());
+                    }
+                }
+
+                if (name != null || lore != null) {
+                    CompoundTag display = stack.getTagElement("display");
+                    if (display == null) {
+                        display = new CompoundTag();
+                    }
+
+                    if (name != null) {
+                        display.put("Name", StringTag.valueOf(name));
+                    }
+                    if (lore != null) {
+                        display.put("Lore", lore);
+                    }
+
+                    CompoundTag tag = stack.getTag();
+                    if (tag == null) {
+                        tag = new CompoundTag();
+                    }
+                    tag.put("display", display);
+
+                    stack.setTag(tag);
+                }
+            }
+        }
+        return stack;
+    }
+    // Purpur end
 
     public static void popResource(Level world, BlockPos pos, ItemStack stack) {
         double d0 = (double) EntityType.ITEM.getHeight() / 2.0D;
@@ -446,7 +497,17 @@ public class Block extends BlockBehaviour implements ItemLike {
         } // Paper - fix drops not preventing stats/food exhaustion
     }
 
-    public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {}
+    // Purpur start
+    @Nullable protected LivingEntity placer = null;
+
+    public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
+        this.placer = placer;
+    }
+
+    public void forgetPlacer() {
+        this.placer = null;
+    }
+    // Purpur end
 
     public boolean isPossibleToRespawnInThis(BlockState state) {
         return !state.isSolid() && !state.liquid();
@@ -465,7 +526,7 @@ public class Block extends BlockBehaviour implements ItemLike {
     }
 
     public void fallOn(Level world, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
-        entity.causeFallDamage(fallDistance, 1.0F, entity.damageSources().fall());
+        entity.causeFallDamage(fallDistance * fallDistanceMultiplier, fallDamageMultiplier, entity.damageSources().fall()); // Purpur
     }
 
     public void updateEntityAfterFallOn(BlockGetter world, Entity entity) {

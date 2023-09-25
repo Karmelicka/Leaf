@@ -71,6 +71,11 @@ public class BoatItem extends Item {
 
                 entityboat.setVariant(this.type);
                 entityboat.setYRot(user.getYRot());
+                // Purpur start
+                if (world.purpurConfig.persistentDroppableEntityDisplayNames && itemstack.hasCustomHoverName()) {
+                    entityboat.setCustomName(itemstack.getHoverName());
+                }
+                // Purpur end
                 if (!world.noCollision(entityboat, entityboat.getBoundingBox())) {
                     return InteractionResultHolder.fail(itemstack);
                 } else {

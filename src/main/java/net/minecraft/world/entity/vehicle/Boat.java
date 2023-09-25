@@ -521,6 +521,7 @@ public class Boat extends VehicleEntity implements VariantHolder<Boat.Type> {
 
             if (f > 0.0F) {
                 this.landFriction = f;
+                if (level().purpurConfig.boatEjectPlayersOnLand) ejectPassengers(); // Purpur
                 return Boat.Status.ON_LAND;
             } else {
                 return Boat.Status.IN_AIR;
@@ -967,7 +968,13 @@ public class Boat extends VehicleEntity implements VariantHolder<Boat.Type> {
 
     @Override
     public ItemStack getPickResult() {
-        return new ItemStack(this.getDropItem());
+        // Purpur start
+        final ItemStack boat = new ItemStack(this.getDropItem());
+        if (this.level().purpurConfig.persistentDroppableEntityDisplayNames && this.hasCustomName()) {
+            boat.setHoverName(this.getCustomName());
+        }
+        return boat;
+        // Purpur end
     }
 
     public static enum Type implements StringRepresentable {

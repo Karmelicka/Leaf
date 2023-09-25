@@ -46,6 +46,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 // CraftBukkit start
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -210,6 +211,22 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
         // Paper end - cache burn durations
     }
 
+    // Purpur start
+    public static void addFuel(ItemStack itemStack, Integer burnTime) {
+        Map<Item, Integer> map = Maps.newLinkedHashMap();
+        map.putAll(getFuel());
+        map.put(itemStack.getItem(), burnTime);
+        cachedBurnDurations = com.google.common.collect.ImmutableMap.copyOf(map);
+    }
+
+    public static void removeFuel(ItemStack itemStack) {
+        Map<Item, Integer> map = Maps.newLinkedHashMap();
+        map.putAll(getFuel());
+        map.remove(itemStack.getItem());
+        cachedBurnDurations = com.google.common.collect.ImmutableMap.copyOf(map);
+    }
+    // Purpur End
+
     // CraftBukkit start - add fields and methods
     private int maxStack = MAX_STACK;
     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -332,6 +349,21 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
         }
 
         ItemStack itemstack = (ItemStack) blockEntity.items.get(1);
+        // Purpur start
+        boolean usedLavaFromUnderneath = false;
+        if (world.purpurConfig.furnaceUseLavaFromUnderneath && !blockEntity.isLit() && itemstack.isEmpty() && !blockEntity.items.get(0).isEmpty() && world.getGameTime() % 20 == 0) {
+            BlockPos below = blockEntity.getBlockPos().below();
+            BlockState belowState = world.getBlockStateIfLoaded(below);
+            if (belowState != null && belowState.is(Blocks.LAVA)) {
+                FluidState fluidState = belowState.getFluidState();
+                if (fluidState != null && fluidState.isSource()) {
+                    world.setBlock(below, Blocks.AIR.defaultBlockState(), 3);
+                    itemstack = Items.LAVA_BUCKET.getDefaultInstance();
+                    usedLavaFromUnderneath = true;
+                }
+            }
+        }
+        // Purpur end
         boolean flag2 = !((ItemStack) blockEntity.items.get(0)).isEmpty();
         boolean flag3 = !itemstack.isEmpty();
 
@@ -417,6 +449,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
             setChanged(world, pos, state);
         }
 
+        if (usedLavaFromUnderneath) blockEntity.items.set(1, ItemStack.EMPTY); // Purpur
     }
 
     private static boolean canBurn(RegistryAccess registryManager, @Nullable RecipeHolder<?> recipe, NonNullList<ItemStack> slots, int count) {

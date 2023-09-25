@@ -88,6 +88,17 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
         navigation.setCanWalkOverFences(true);
     }
 
+    // Purpur start
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.camelRidableInWater;
+    }
+
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.camelBreedingTicks;
+    }
+    // Purpur end
+
     @Override
     public void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
@@ -313,6 +324,23 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
     public int getJumpCooldown() {
         return this.dashCooldown;
     }
+
+    // Purpur start
+    @Override
+    public float generateMaxHealth(net.minecraft.util.RandomSource random) {
+        return (float) generateMaxHealth(this.level().purpurConfig.camelMaxHealthMin, this.level().purpurConfig.camelMaxHealthMax);
+    }
+
+    @Override
+    public double generateJumpStrength(net.minecraft.util.RandomSource random) {
+        return generateJumpStrength(this.level().purpurConfig.camelJumpStrengthMin, this.level().purpurConfig.camelJumpStrengthMax);
+    }
+
+    @Override
+    public double generateSpeed(net.minecraft.util.RandomSource random) {
+        return generateSpeed(this.level().purpurConfig.camelMovementSpeedMin, this.level().purpurConfig.camelMovementSpeedMax);
+    }
+    // Purpur end
 
     @Override
     protected SoundEvent getAmbientSound() {

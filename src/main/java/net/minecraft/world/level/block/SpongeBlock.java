@@ -58,7 +58,7 @@ public class SpongeBlock extends Block {
 
     private boolean removeWaterBreadthFirstSearch(Level world, BlockPos pos) {
         BlockStateListPopulator blockList = new BlockStateListPopulator(world); // CraftBukkit - Use BlockStateListPopulator
-        BlockPos.breadthFirstTraversal(pos, 6, 65, (blockposition1, consumer) -> {
+        BlockPos.breadthFirstTraversal(pos, world.purpurConfig.spongeAbsorptionRadius, world.purpurConfig.spongeAbsorptionArea, (blockposition1, consumer) -> { // Purpur
             Direction[] aenumdirection = SpongeBlock.ALL_DIRECTIONS;
             int i = aenumdirection.length;
 
@@ -77,7 +77,7 @@ public class SpongeBlock extends Block {
                 FluidState fluid = blockList.getFluidState(blockposition1);
                 // CraftBukkit end
 
-                if (!fluid.is(FluidTags.WATER)) {
+                if (!fluid.is(FluidTags.WATER) && (!world.purpurConfig.spongeAbsorbsLava || !fluid.is(FluidTags.LAVA)) && (!world.purpurConfig.spongeAbsorbsWaterFromMud || !iblockdata.is(Blocks.MUD))) { // Purpur
                     return false;
                 } else {
                     Block block = iblockdata.getBlock();
@@ -92,6 +92,10 @@ public class SpongeBlock extends Block {
 
                     if (iblockdata.getBlock() instanceof LiquidBlock) {
                         blockList.setBlock(blockposition1, Blocks.AIR.defaultBlockState(), 3); // CraftBukkit
+                    // Purpur start
+                    } else if (iblockdata.is(Blocks.MUD)) {
+                        blockList.setBlock(blockposition1, Blocks.CLAY.defaultBlockState(), 3);
+                    // Purpur end
                     } else {
                         if (!iblockdata.is(Blocks.KELP) && !iblockdata.is(Blocks.KELP_PLANT) && !iblockdata.is(Blocks.SEAGRASS) && !iblockdata.is(Blocks.TALL_SEAGRASS)) {
                             return false;

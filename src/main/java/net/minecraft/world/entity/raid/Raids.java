@@ -29,6 +29,7 @@ import net.minecraft.world.phys.Vec3;
 public class Raids extends SavedData {
 
     private static final String RAID_FILE_ID = "raids";
+    public final Map<java.util.UUID, Integer> playerCooldowns = Maps.newHashMap();
     public final Map<Integer, Raid> raidMap = Maps.newHashMap();
     private final ServerLevel level;
     private int nextAvailableID;
@@ -54,6 +55,17 @@ public class Raids extends SavedData {
 
     public void tick() {
         ++this.tick;
+        // Purpur start
+        if (level.purpurConfig.raidCooldownSeconds != 0 && this.tick % 20 == 0) {
+            com.google.common.collect.ImmutableMap.copyOf(playerCooldowns).forEach((uuid, i) -> {
+                if (i < 1) {
+                    playerCooldowns.remove(uuid);
+                } else {
+                    playerCooldowns.put(uuid, i - 1);
+                }
+            });
+        }
+        // Purpur end
         Iterator iterator = this.raidMap.values().iterator();
 
         while (iterator.hasNext()) {
@@ -138,11 +150,13 @@ public class Raids extends SavedData {
                 }
 
                 if (flag) {
+                    if (level.purpurConfig.raidCooldownSeconds != 0 && playerCooldowns.containsKey(player.getUUID())) return null; // Purpur
                     // CraftBukkit start
                     if (!org.bukkit.craftbukkit.event.CraftEventFactory.callRaidTriggerEvent(raid, player)) {
                         player.removeEffect(MobEffects.BAD_OMEN);
                         return null;
                     }
+                    if (level.purpurConfig.raidCooldownSeconds != 0) playerCooldowns.put(player.getUUID(), level.purpurConfig.raidCooldownSeconds); // Purpur
 
                     if (!this.raidMap.containsKey(raid.getId())) {
                         this.raidMap.put(raid.getId(), raid);

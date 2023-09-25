@@ -40,6 +40,43 @@ public class Horse extends AbstractHorse implements VariantHolder<Variant> {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.horseRidableInWater;
+    }
+    // Purpur end
+
+    @Override
+    public float generateMaxHealth(RandomSource random) {
+        return (float) generateMaxHealth(this.level().purpurConfig.horseMaxHealthMin, this.level().purpurConfig.horseMaxHealthMax);
+    }
+
+    @Override
+    public double generateJumpStrength(RandomSource random) {
+        return generateJumpStrength(this.level().purpurConfig.horseJumpStrengthMin, this.level().purpurConfig.horseJumpStrengthMax);
+    }
+
+    @Override
+    public double generateSpeed(RandomSource random) {
+        return generateSpeed(this.level().purpurConfig.horseMovementSpeedMin, this.level().purpurConfig.horseMovementSpeedMax);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.horseBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.horseTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.horseAlwaysDropExp;
+    }
+
     @Override
     protected void randomizeAttributes(RandomSource random) {
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue((double)generateMaxHealth(random::nextInt));

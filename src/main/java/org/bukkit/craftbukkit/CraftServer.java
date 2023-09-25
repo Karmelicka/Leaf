@@ -404,6 +404,20 @@ public final class CraftServer implements Server {
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
 
         Bukkit.setServer(this);
+        // Purpur start
+        org.purpurmc.purpur.language.Language.setLanguage(new org.purpurmc.purpur.language.Language() {
+            private net.minecraft.locale.Language language = net.minecraft.locale.Language.getInstance();
+            @Override
+            public boolean has(@org.jetbrains.annotations.NotNull String key) {
+                return language.has(key);
+            }
+
+            @Override
+            public @org.jetbrains.annotations.NotNull String getOrDefault(@org.jetbrains.annotations.NotNull String key) {
+                return language.getOrDefault(key);
+            }
+        });
+        // Purpur end
 
         CraftRegistry.setMinecraftRegistry(console.registryAccess());
 
@@ -1059,6 +1073,7 @@ public final class CraftServer implements Server {
         org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
         this.console.paperConfigurations.reloadConfigs(this.console);
         this.console.galeConfigurations.reloadConfigs(this.console); // Gale - Gale configuration
+        org.purpurmc.purpur.PurpurConfig.init((File) console.options.valueOf("purpur-settings")); // Purpur
         for (ServerLevel world : this.console.getAllLevels()) {
             // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
             world.setSpawnSettings(world.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && config.spawnMonsters, config.spawnAnimals); // Paper - per level difficulty (from MinecraftServer#setDifficulty(ServerLevel, Difficulty, boolean))
@@ -1074,6 +1089,7 @@ public final class CraftServer implements Server {
                 }
             }
             world.spigotConfig.init(); // Spigot
+            world.purpurConfig.init(); // Purpur
         }
 
         Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
@@ -1089,6 +1105,7 @@ public final class CraftServer implements Server {
         this.reloadData();
         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
         io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
+        org.purpurmc.purpur.PurpurConfig.registerCommands(); // Purpur
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
 
@@ -1589,6 +1606,55 @@ public final class CraftServer implements Server {
         // Paper end - API for updating recipes on clients
         return true;
     }
+
+    // Purpur Start
+    @Override
+    public void addFuel(org.bukkit.Material material, int burnTime) {
+        Preconditions.checkArgument(burnTime > 0, "BurnTime must be greater than 0");
+        net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity.addFuel(net.minecraft.world.item.ItemStack.fromBukkitCopy(new ItemStack(material)), burnTime);
+    }
+
+    @Override
+    public void removeFuel(org.bukkit.Material material) {
+        net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity.removeFuel(net.minecraft.world.item.ItemStack.fromBukkitCopy(new ItemStack(material)));
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration) {
+        sendBlockHighlight(location, duration, "", 0x6400FF00);
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, int argb) {
+        sendBlockHighlight(location, duration, "", argb);
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, String text) {
+        sendBlockHighlight(location, duration, text, 0x6400FF00);
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, String text, int argb) {
+        this.worlds.forEach((name, world) -> world.sendBlockHighlight(location, duration, text, argb));
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, org.bukkit.Color color, int transparency) {
+        sendBlockHighlight(location, duration, "", color, transparency);
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, String text, org.bukkit.Color color, int transparency) {
+        if (transparency < 0 || transparency > 255) throw new IllegalArgumentException("transparency is outside of 0-255 range");
+        sendBlockHighlight(location, duration, text, transparency << 24 | color.asRGB());
+    }
+
+    @Override
+    public void clearBlockHighlights() {
+        this.worlds.forEach((name, world) -> clearBlockHighlights());
+    }
+    // Purpur End
 
     @Override
     public List<Recipe> getRecipesFor(ItemStack result) {
@@ -3045,6 +3111,18 @@ public final class CraftServer implements Server {
         }
         // Gale end - Gale configuration - API
 
+        // Purpur start
+        @Override
+        public YamlConfiguration getPurpurConfig() {
+            return org.purpurmc.purpur.PurpurConfig.config;
+        }
+
+        @Override
+        public java.util.Properties getServerProperties() {
+            return getProperties().properties;
+        }
+        // Purpur end
+
         @Override
         public void restart() {
             org.spigotmc.RestartCommand.restart();
@@ -3331,4 +3409,15 @@ public final class CraftServer implements Server {
     }
     // Gale end - YAPFA - last tick time - API
 
+    // Purpur start
+    @Override
+    public String getServerName() {
+        return this.getProperties().serverName;
+    }
+
+    @Override
+    public boolean isLagging() {
+        return getServer().lagging;
+    }
+    // Purpur end
 }

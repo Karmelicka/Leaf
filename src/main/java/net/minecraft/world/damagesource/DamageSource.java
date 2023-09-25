@@ -27,6 +27,8 @@ public class DamageSource {
     private boolean withSweep = false;
     private boolean melting = false;
     private boolean poison = false;
+    private boolean scissors = false; // Purpur
+    private boolean stonecutter = false; // Purpur
     private Entity customCausingEntity = null; // This field is a helper for when causing entity damage is not set by vanilla
 
     public DamageSource sweep() {
@@ -55,6 +57,26 @@ public class DamageSource {
     public boolean isPoison() {
         return this.poison;
     }
+
+    // Purpur start
+    public DamageSource scissors() {
+        this.scissors = true;
+        return this;
+    }
+
+    public boolean isScissors() {
+        return this.scissors;
+    }
+
+    public DamageSource stonecutter() {
+        this.stonecutter = true;
+        return this;
+    }
+
+    public boolean isStonecutter() {
+        return this.stonecutter;
+    }
+    // Purpur end
 
     public Entity getCausingEntity() {
         return (this.customCausingEntity != null) ? this.customCausingEntity : this.causingEntity;
@@ -94,6 +116,8 @@ public class DamageSource {
         damageSource.withSweep = this.isSweep();
         damageSource.poison = this.isPoison();
         damageSource.melting = this.isMelting();
+        damageSource.scissors = this.isScissors(); // Purpur
+        damageSource.stonecutter = this.isStonecutter(); // Purpur
         return damageSource;
     }
     // CraftBukkit end
@@ -166,9 +190,18 @@ public class DamageSource {
 
             ItemStack itemstack1 = itemstack;
 
-            return !itemstack1.isEmpty() && itemstack1.hasCustomHoverName() ? Component.translatable(s + ".item", killed.getDisplayName(), ichatbasecomponent, itemstack1.getDisplayName()) : Component.translatable(s, killed.getDisplayName(), ichatbasecomponent);
+            return !itemstack1.isEmpty() && (org.purpurmc.purpur.PurpurConfig.playerDeathsAlwaysShowItem || itemstack1.hasCustomHoverName()) ? Component.translatable(s + ".item", killed.getDisplayName(), ichatbasecomponent, itemstack1.getDisplayName()) : Component.translatable(s, killed.getDisplayName(), ichatbasecomponent);
         }
     }
+
+    // Purpur start
+    public Component getLocalizedDeathMessage(String str, LivingEntity entity) {
+        net.kyori.adventure.text.Component name = io.papermc.paper.adventure.PaperAdventure.asAdventure(entity.getDisplayName());
+        net.kyori.adventure.text.minimessage.tag.resolver.TagResolver template = net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component("player", name);
+        net.kyori.adventure.text.Component component = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(str, template);
+        return io.papermc.paper.adventure.PaperAdventure.asVanilla(component);
+    }
+    // Purpur end
 
     public String getMsgId() {
         return this.type().msgId();

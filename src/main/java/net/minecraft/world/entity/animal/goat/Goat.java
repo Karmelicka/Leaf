@@ -92,6 +92,38 @@ public class Goat extends Animal {
         return InstrumentItem.create(Items.GOAT_HORN, (Holder) holderset.getRandomElement(randomsource).get());
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.goatRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.goatRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.goatControllable;
+    }
+    // Purpur end
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.goatBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.goatTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.goatAlwaysDropExp;
+    }
+
     @Override
     protected Brain.Provider<Goat> brainProvider() {
         return Brain.provider(Goat.MEMORY_TYPES, Goat.SENSOR_TYPES);
@@ -194,7 +226,7 @@ public class Goat extends Animal {
     private int behaviorTick = 0; // Pufferfish
     @Override
     protected void customServerAiStep() {
-        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
+        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish // Purpur - only use brain if no rider
         this.getBrain().tick((ServerLevel) this.level(), this);
         GoatAi.updateActivity(this);
         super.customServerAiStep();
@@ -393,6 +425,7 @@ public class Goat extends Animal {
 
     // Paper start - Goat ram API
     public void ram(net.minecraft.world.entity.LivingEntity entity) {
+        if(!new org.purpurmc.purpur.event.entity.GoatRamEntityEvent((org.bukkit.entity.Goat) getBukkitEntity(), (org.bukkit.entity.LivingEntity) entity.getBukkitLivingEntity()).callEvent()) return; // Purpur
         Brain<Goat> brain = this.getBrain();
         brain.setMemory(MemoryModuleType.RAM_TARGET, entity.position());
         brain.eraseMemory(MemoryModuleType.RAM_COOLDOWN_TICKS);

@@ -13,6 +13,33 @@ public class Salmon extends AbstractSchoolingFish {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.salmonRidable;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.salmonControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.salmonMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.salmonTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.salmonAlwaysDropExp;
+    }
+
     @Override
     public int getMaxSchoolSize() {
         return 5;

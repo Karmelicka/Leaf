@@ -77,10 +77,18 @@ public class TridentItem extends Item implements Vanishable {
                         if (k == 0) {
                             ThrownTrident entitythrowntrident = new ThrownTrident(world, entityhuman, stack);
 
-                            entitythrowntrident.shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, 2.5F + (float) k * 0.5F, 1.0F);
+                            entitythrowntrident.shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, 2.5F + (float) k * 0.5F, (float) world.purpurConfig.tridentProjectileOffset);  // Purpur
                             if (entityhuman.getAbilities().instabuild) {
                                 entitythrowntrident.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
                             }
+
+                            // Purpur start
+                            int lootingLevel = EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.MOB_LOOTING, stack);
+
+                            if (lootingLevel > 0) {
+                                entitythrowntrident.setLootingLevel(lootingLevel);
+                            }
+                            // Purpur end
 
                             // CraftBukkit start
                             // Paper start - PlayerLaunchProjectileEvent
@@ -131,6 +139,14 @@ public class TridentItem extends Item implements Vanishable {
                         f2 *= f6 / f5;
                         f3 *= f6 / f5;
                         f4 *= f6 / f5;
+
+                        // Purpur start
+                        ItemStack chestItem = entityhuman.getItemBySlot(EquipmentSlot.CHEST);
+                        if (chestItem.getItem() == Items.ELYTRA && world.purpurConfig.elytraDamagePerTridentBoost > 0) {
+                            chestItem.hurtAndBreak(world.purpurConfig.elytraDamagePerTridentBoost, entityhuman, (entity) -> entity.broadcastBreakEvent(EquipmentSlot.CHEST));
+                        }
+                        // Purpur end
+
                         entityhuman.push((double) f2, (double) f3, (double) f4);
                         entityhuman.startAutoSpinAttack(20);
                         if (entityhuman.onGround()) {

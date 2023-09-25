@@ -139,7 +139,7 @@ public class LiquidBlock extends Block implements BucketPickup {
 
     @Override
     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
-        if (this.shouldSpreadLiquid(world, pos, state)) {
+        if (world.purpurConfig.tickFluids && this.shouldSpreadLiquid(world, pos, state)) { // Purpur
             world.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(world, pos)); // Paper - Configurable speed for water flowing over lava
         }
 
@@ -167,7 +167,7 @@ public class LiquidBlock extends Block implements BucketPickup {
 
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
-        if (state.getFluidState().isSource() || neighborState.getFluidState().isSource()) {
+        if (world.getMinecraftWorld().purpurConfig.tickFluids && state.getFluidState().isSource() || neighborState.getFluidState().isSource()) { // Purpur
             world.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(world));
         }
 
@@ -176,7 +176,7 @@ public class LiquidBlock extends Block implements BucketPickup {
 
     @Override
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
-        if (this.shouldSpreadLiquid(world, pos, state)) {
+        if (world.purpurConfig.tickFluids && this.shouldSpreadLiquid(world, pos, state)) { // Purpur
             world.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(world, pos)); // Paper - Configurable speed for water flowing over lava
         }
 

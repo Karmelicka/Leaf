@@ -592,6 +592,15 @@ public class CraftEventFactory {
         // Paper end
         craftServer.getPluginManager().callEvent(event);
 
+        // Purpur start
+        if (who != null) {
+            switch (action) {
+                case LEFT_CLICK_BLOCK, LEFT_CLICK_AIR -> who.processClick(InteractionHand.MAIN_HAND);
+                case RIGHT_CLICK_BLOCK, RIGHT_CLICK_AIR -> who.processClick(InteractionHand.OFF_HAND);
+            }
+        }
+        // Purpur end
+
         return event;
     }
 
@@ -1125,7 +1134,7 @@ public class CraftEventFactory {
             return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), entity, DamageCause.LAVA, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
         } else if (source.getDirectBlock() != null) {
             DamageCause cause;
-            if (source.is(DamageTypes.CACTUS) || source.is(DamageTypes.SWEET_BERRY_BUSH) || source.is(DamageTypes.STALAGMITE) || source.is(DamageTypes.FALLING_STALACTITE) || source.is(DamageTypes.FALLING_ANVIL)) {
+            if (source.is(DamageTypes.CACTUS) || source.is(DamageTypes.SWEET_BERRY_BUSH) || source.is(DamageTypes.STALAGMITE) || source.is(DamageTypes.FALLING_STALACTITE) || source.is(DamageTypes.FALLING_ANVIL) || source.isStonecutter()) { // Purpur
                 cause = DamageCause.CONTACT;
             } else if (source.is(DamageTypes.HOT_FLOOR)) {
                 cause = DamageCause.HOT_FLOOR;
@@ -1183,6 +1192,7 @@ public class CraftEventFactory {
         EntityDamageEvent event;
         if (damager != null) {
             event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions, critical);
+            damager.processClick(InteractionHand.MAIN_HAND); // Purpur
         } else {
             event = new EntityDamageEvent(damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions);
         }

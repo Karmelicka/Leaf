@@ -179,7 +179,7 @@ public class CropBlock extends BushBlock implements BonemealableBlock {
     @Override
     public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-        if (entity instanceof Ravager && CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), !world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit
+        if (entity instanceof Ravager && world.purpurConfig.ravagerGriefableBlocks.contains(world.getBlockState(pos).getBlock()) && CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), (!world.purpurConfig.ravagerBypassMobGriefing && !world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)))) { // CraftBukkit // Purpur
             world.destroyBlock(pos, true, entity);
         }
 
@@ -214,4 +214,15 @@ public class CropBlock extends BushBlock implements BonemealableBlock {
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(CropBlock.AGE);
     }
+
+    // Purpur start
+    @Override
+    public void playerDestroy(Level world, net.minecraft.world.entity.player.Player player, BlockPos pos, BlockState state, @javax.annotation.Nullable net.minecraft.world.level.block.entity.BlockEntity blockEntity, ItemStack itemInHand, boolean includeDrops, boolean dropExp) {
+        if (world.purpurConfig.hoeReplantsCrops && itemInHand.getItem() instanceof net.minecraft.world.item.HoeItem) {
+            super.playerDestroyAndReplant(world, player, pos, state, blockEntity, itemInHand, getBaseSeedId());
+        } else {
+            super.playerDestroy(world, player, pos, state, blockEntity, itemInHand, includeDrops, dropExp);
+        }
+    }
+    // Purpur end
 }

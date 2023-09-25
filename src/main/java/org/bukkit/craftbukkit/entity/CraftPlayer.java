@@ -488,10 +488,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setPlayerListName(String name) {
+        // Purpur start
+        setPlayerListName(name, false);
+    }
+    public void setPlayerListName(String name, boolean useMM) {
+        // Purpur end
         if (name == null) {
             name = this.getName();
         }
-        this.getHandle().listName = name.equals(this.getName()) ? null : CraftChatMessage.fromStringOrNull(name);
+        this.getHandle().listName = name.equals(this.getName()) ? null : useMM ? io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(name)) : CraftChatMessage.fromStringOrNull(name); // Purpur
         for (ServerPlayer player : (List<ServerPlayer>) this.server.getHandle().players) {
             if (player.getBukkitEntity().canSee(this)) {
                 player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, this.getHandle()));
@@ -1351,6 +1356,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         if (entity.isVehicle() && !ignorePassengers) { // Paper - Teleport API
+            // Purpur start
+            if (new org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent(entity.getBukkitEntity(), org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent.Reason.IS_VEHICLE, cause).callEvent())
+                return teleport(location, cause);
+            // Purpur end
             return false;
         }
 
@@ -2661,6 +2670,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         return this.getHandle().getAbilities().walkingSpeed * 2f;
     }
 
+    // Purpur start - OfflinePlayer API
+    @Override
+    public boolean teleportOffline(@NotNull Location destination) {
+        return this.teleport(destination);
+    }
+
+    @Override
+    public boolean teleportOffline(Location destination, PlayerTeleportEvent.TeleportCause cause) {
+        return this.teleport(destination, cause);
+    }
+
+    @Override
+    public java.util.concurrent.CompletableFuture<Boolean> teleportOfflineAsync(@NotNull Location destination) {
+        return this.teleportAsync(destination);
+    }
+
+    @Override
+    public java.util.concurrent.CompletableFuture<Boolean> teleportOfflineAsync(@NotNull Location destination, PlayerTeleportEvent.TeleportCause cause) {
+        return this.teleportAsync(destination, cause);
+    }
+    // Purpur end - OfflinePlayer API
+
     private void validateSpeed(float value) {
         Preconditions.checkArgument(value <= 1f && value >= -1f, "Speed value (%s) need to be between -1f and 1f", value);
     }
@@ -3427,4 +3458,70 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void setSendViewDistance(final int viewDistance) {
         this.getHandle().setSendViewDistance(viewDistance);
     }
+
+    // Purpur start
+    @Override
+    public boolean usesPurpurClient() {
+        return getHandle().purpurClient;
+    }
+
+    @Override
+    public boolean isAfk() {
+        return getHandle().isAfk();
+    }
+
+    @Override
+    public void setAfk(boolean setAfk) {
+        getHandle().setAfk(setAfk);
+    }
+
+    @Override
+    public void resetIdleTimer() {
+        getHandle().resetLastActionTime();
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration) {
+        sendBlockHighlight(location, duration, "", 0x6400FF00);
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, int argb) {
+        sendBlockHighlight(location, duration, "", argb);
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, String text) {
+        sendBlockHighlight(location, duration, text, 0x6400FF00);
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, String text, int argb) {
+        if (this.getHandle().connection == null) return;
+        this.getHandle().connection.send(new net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket(new net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload(io.papermc.paper.util.MCUtil.toBlockPosition(location), argb, text, duration)));
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, org.bukkit.Color color, int transparency) {
+        sendBlockHighlight(location, duration, "", color, transparency);
+    }
+
+    @Override
+    public void sendBlockHighlight(Location location, int duration, String text, org.bukkit.Color color, int transparency) {
+        if (transparency < 0 || transparency > 255) throw new IllegalArgumentException("transparency is outside of 0-255 range");
+        sendBlockHighlight(location, duration, text, transparency << 24 | color.asRGB());
+    }
+
+    @Override
+    public void clearBlockHighlights() {
+        if (this.getHandle().connection == null) return;
+        this.getHandle().connection.send(new net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket(new net.minecraft.network.protocol.common.custom.GameTestClearMarkersDebugPayload()));
+    }
+
+    @Override
+    public void sendDeathScreen(net.kyori.adventure.text.Component message) {
+        if (this.getHandle().connection == null) return;
+        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundPlayerCombatKillPacket(getEntityId(), io.papermc.paper.adventure.PaperAdventure.asVanilla(message)));
+    }
+    // Purpur end
 }

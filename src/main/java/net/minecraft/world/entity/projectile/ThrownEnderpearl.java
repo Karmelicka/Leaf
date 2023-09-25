@@ -71,10 +71,11 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
                     Bukkit.getPluginManager().callEvent(teleEvent);
 
                     if (!teleEvent.isCancelled() && entityplayer.connection.isAcceptingMessages()) {
-                        if (this.random.nextFloat() < 0.05F && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
+                        if (this.random.nextFloat() < this.level().purpurConfig.enderPearlEndermiteChance && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) { // Purpur
                             Endermite entityendermite = (Endermite) EntityType.ENDERMITE.create(this.level());
 
                             if (entityendermite != null) {
+                                entityendermite.setPlayerSpawned(true); // Purpur
                                 entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
                                 this.level().addFreshEntity(entityendermite, CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
                             }
@@ -86,7 +87,7 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
 
                         entityplayer.connection.teleport(teleEvent.getTo());
                         entity.resetFallDistance();
-                        entity.hurt(this.damageSources().fall().customCausingEntity(this), 5.0F); // CraftBukkit
+                        entity.hurt(this.damageSources().fall().customCausingEntity(this), this.level().purpurConfig.enderPearlDamage); // CraftBukkit // Purpur
                     }
                     // CraftBukkit end
                     this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_TELEPORT, SoundSource.PLAYERS);

@@ -4,6 +4,9 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 
 public class Foods {
+    public static final java.util.Map<String, FoodProperties> ALL_PROPERTIES = new java.util.HashMap<>(); // Purpur
+    public static final java.util.Map<String, FoodProperties> DEFAULT_PROPERTIES = new java.util.HashMap<>(); // Purpur
+
     public static final FoodProperties APPLE = (new FoodProperties.Builder()).nutrition(4).saturationMod(0.3F).build();
     public static final FoodProperties BAKED_POTATO = (new FoodProperties.Builder()).nutrition(5).saturationMod(0.6F).build();
     public static final FoodProperties BEEF = (new FoodProperties.Builder()).nutrition(3).saturationMod(0.3F).meat().build();

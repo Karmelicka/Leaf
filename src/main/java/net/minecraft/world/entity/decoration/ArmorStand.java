@@ -100,10 +100,12 @@ public class ArmorStand extends LivingEntity {
     private boolean noTickPoseDirty = false;
     private boolean noTickEquipmentDirty = false;
     // Paper end - Allow ArmorStands not to tick
+    public boolean canMovementTick = true; // Purpur
 
     public ArmorStand(EntityType<? extends ArmorStand> type, Level world) {
         super(type, world);
         if (world != null) this.canTick = world.paperConfig().entities.armorStands.tick; // Paper - Allow ArmorStands not to tick
+        if (world != null) this.canMovementTick = world.purpurConfig.armorstandMovement; // Purpur
         this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
         this.armorItems = NonNullList.withSize(4, ItemStack.EMPTY);
         this.headPose = ArmorStand.DEFAULT_HEAD_POSE;
@@ -113,6 +115,7 @@ public class ArmorStand extends LivingEntity {
         this.leftLegPose = ArmorStand.DEFAULT_LEFT_LEG_POSE;
         this.rightLegPose = ArmorStand.DEFAULT_RIGHT_LEG_POSE;
         this.setMaxUpStep(0.0F);
+        this.setShowArms(world != null && world.purpurConfig.armorstandPlaceWithArms); // Purpur
     }
 
     public ArmorStand(Level world, double x, double y, double z) {
@@ -607,7 +610,7 @@ public class ArmorStand extends LivingEntity {
     private org.bukkit.event.entity.EntityDeathEvent brokenByPlayer(DamageSource damageSource) { // Paper
         ItemStack itemstack = new ItemStack(Items.ARMOR_STAND);
 
-        if (this.hasCustomName()) {
+        if (this.level().purpurConfig.persistentDroppableEntityDisplayNames && this.hasCustomName()) { // Purpur
             itemstack.setHoverName(this.getCustomName());
         }
 
@@ -678,6 +681,7 @@ public class ArmorStand extends LivingEntity {
 
     @Override
     public void tick() {
+        maxUpStep = level().purpurConfig.armorstandStepHeight; // Purpur
         // Paper start - Allow ArmorStands not to tick
         if (!this.canTick) {
             if (this.noTickPoseDirty) {
@@ -1005,4 +1009,18 @@ public class ArmorStand extends LivingEntity {
         }
     }
     // Paper end
+
+    // Purpur start
+    @Override
+    public void updateInWaterStateAndDoWaterCurrentPushing() {
+        if (this.level().purpurConfig.armorstandWaterMovement &&
+            (this.level().purpurConfig.armorstandWaterFence || !(level().getBlockState(blockPosition().below()).getBlock() instanceof net.minecraft.world.level.block.FenceBlock)))
+            super.updateInWaterStateAndDoWaterCurrentPushing();
+    }
+
+    @Override
+    public void aiStep() {
+        if (this.canMovementTick && this.canMove) super.aiStep();
+    }
+    // Purpur end
 }

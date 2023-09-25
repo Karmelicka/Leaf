@@ -76,6 +76,7 @@ public abstract class AbstractContainerMenu {
     @Nullable
     private ContainerSynchronizer synchronizer;
     private boolean suppressRemoteUpdates;
+    @javax.annotation.Nullable protected ItemStack activeQuickItem = null; // Purpur
 
     // CraftBukkit start
     public boolean checkReachable = true;

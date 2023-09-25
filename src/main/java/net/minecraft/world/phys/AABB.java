@@ -374,4 +374,10 @@ public class AABB {
     public static AABB ofSize(Vec3 center, double dx, double dy, double dz) {
         return new AABB(center.x - dx / 2.0D, center.y - dy / 2.0D, center.z - dz / 2.0D, center.x + dx / 2.0D, center.y + dy / 2.0D, center.z + dz / 2.0D);
     }
+
+    // Purpur - tuinity added method
+    public final AABB offsetY(double dy) {
+        return new AABB(this.minX, this.minY + dy, this.minZ, this.maxX, this.maxY + dy, this.maxZ);
+    }
+    // Purpur
 }

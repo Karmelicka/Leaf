@@ -30,6 +30,8 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.Containers; // Purpur
+import net.minecraft.world.item.Items; // Purpur
 
 public class EnchantmentTableBlock extends BaseEntityBlock {
     public static final MapCodec<EnchantmentTableBlock> CODEC = simpleCodec(EnchantmentTableBlock::new);
@@ -128,4 +130,18 @@ public class EnchantmentTableBlock extends BaseEntityBlock {
     public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type) {
         return false;
     }
+
+    // Purpur start
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+
+        if (level.purpurConfig.enchantmentTableLapisPersists && blockEntity instanceof EnchantmentTableBlockEntity enchantmentTable) {
+            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(Items.LAPIS_LAZULI, enchantmentTable.getLapis()));
+            level.updateNeighbourForOutputSignal(pos, this);
+        }
+
+        super.onRemove(state, level, pos, newState, moved);
+    }
+    // Purpur end
 }

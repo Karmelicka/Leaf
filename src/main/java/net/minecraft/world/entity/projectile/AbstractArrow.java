@@ -75,6 +75,7 @@ public abstract class AbstractArrow extends Projectile {
     @Nullable
     private List<Entity> piercedAndKilledEntities;
     public ItemStack pickupItemStack;
+    public int lootingLevel; // Purpur
 
     // Spigot Start
     @Override
@@ -641,6 +642,12 @@ public abstract class AbstractArrow extends Projectile {
     public void setKnockback(int punch) {
         this.knockback = punch;
     }
+
+    // Purpur start
+    public void setLootingLevel(int looting) {
+        this.lootingLevel = looting;
+    }
+    // Purpur end
 
     public int getKnockback() {
         return this.knockback;

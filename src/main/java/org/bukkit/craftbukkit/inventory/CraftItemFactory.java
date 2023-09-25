@@ -596,4 +596,17 @@ public final class CraftItemFactory implements ItemFactory {
         return CraftItemStack.asCraftMirror(enchanted);
     }
     // Paper end - enchantWithLevels API
+
+    // Purpur start
+    @Override
+    public @org.jetbrains.annotations.NotNull java.util.List<net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component> getHoverLines(@org.jetbrains.annotations.NotNull ItemStack itemStack, boolean advanced) {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(
+                CraftItemStack.asNMSCopy(itemStack).getTooltipLines(
+                        null,
+                        advanced ? net.minecraft.world.item.TooltipFlag.ADVANCED
+                                : net.minecraft.world.item.TooltipFlag.NORMAL
+                )
+        );
+    }
+    // Purpur end
 }

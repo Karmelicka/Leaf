@@ -30,6 +30,58 @@ public class TraderLlama extends Llama {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.traderLlamaRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.traderLlamaRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.traderLlamaControllable;
+    }
+
+    @Override
+    public boolean isSaddled() {
+        return super.isSaddled() || isTamed();
+    }
+    // Purpur end
+
+    @Override
+    public float generateMaxHealth(net.minecraft.util.RandomSource random) {
+        return (float) generateMaxHealth(this.level().purpurConfig.traderLlamaMaxHealthMin, this.level().purpurConfig.traderLlamaMaxHealthMax);
+    }
+
+    @Override
+    public double generateJumpStrength(net.minecraft.util.RandomSource random) {
+        return generateJumpStrength(this.level().purpurConfig.traderLlamaJumpStrengthMin, this.level().purpurConfig.traderLlamaJumpStrengthMax);
+    }
+
+    @Override
+    public double generateSpeed(net.minecraft.util.RandomSource random) {
+        return generateSpeed(this.level().purpurConfig.traderLlamaMovementSpeedMin, this.level().purpurConfig.traderLlamaMovementSpeedMax);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.traderLlamaBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.traderLlamaTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.traderLlamaAlwaysDropExp;
+    }
+
     @Override
     public boolean isTraderLlama() {
         return true;

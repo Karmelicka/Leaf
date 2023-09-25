@@ -5,6 +5,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -31,7 +33,9 @@ public class MilkBucketItem extends Item {
         }
 
         if (!world.isClientSide) {
+            MobEffectInstance badOmen = user.getEffect(MobEffects.BAD_OMEN);
             user.removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.MILK); // CraftBukkit
+            if (!world.purpurConfig.milkCuresBadOmen && badOmen != null) user.addEffect(badOmen); // Purpur
         }
 
         return stack.isEmpty() ? new ItemStack(Items.BUCKET) : stack;

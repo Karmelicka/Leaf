@@ -30,7 +30,7 @@ public class CatSpawner implements CustomSpawner {
             if (this.nextTick > 0) {
                 return 0;
             } else {
-                this.nextTick = 1200;
+                this.nextTick = world.purpurConfig.catSpawnDelay; // Purpur
                 Player player = world.getRandomPlayer();
                 if (player == null) {
                     return 0;
@@ -63,11 +63,15 @@ public class CatSpawner implements CustomSpawner {
     }
 
     private int spawnInVillage(ServerLevel world, BlockPos pos) {
-        int i = 48;
+        // Purpur start
+        int range = world.purpurConfig.catSpawnVillageScanRange;
+        if (range <= 0) return 0;
+
         if (world.getPoiManager().getCountInRange((entry) -> {
             return entry.is(PoiTypes.HOME);
-        }, pos, 48, PoiManager.Occupancy.IS_OCCUPIED) > 4L) {
-            List<Cat> list = world.getEntitiesOfClass(Cat.class, (new AABB(pos)).inflate(48.0D, 8.0D, 48.0D));
+        }, pos, range, PoiManager.Occupancy.IS_OCCUPIED) > 4L) {
+            List<Cat> list = world.getEntitiesOfClass(Cat.class, (new AABB(pos)).inflate(range, 8.0D, range));
+            // Purpur end
             if (list.size() < 5) {
                 return this.spawnCat(pos, world);
             }
@@ -77,8 +81,11 @@ public class CatSpawner implements CustomSpawner {
     }
 
     private int spawnInHut(ServerLevel world, BlockPos pos) {
-        int i = 16;
-        List<Cat> list = world.getEntitiesOfClass(Cat.class, (new AABB(pos)).inflate(16.0D, 8.0D, 16.0D));
+        // Purpur start
+        int range = world.purpurConfig.catSpawnSwampHutScanRange;
+        if (range <= 0) return 0;
+        List<Cat> list = world.getEntitiesOfClass(Cat.class, (new AABB(pos)).inflate(range, 8.0D, range));
+        // Purpur end
         return list.size() < 1 ? this.spawnCat(pos, world) : 0;
     }
 

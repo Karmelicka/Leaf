@@ -85,18 +85,57 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
         return entityliving.getMobType() != MobType.UNDEAD && entityliving.attackable();
     };
     private static final TargetingConditions TARGETING_CONDITIONS = TargetingConditions.forCombat().range(20.0D).selector(WitherBoss.LIVING_ENTITY_SELECTOR);
+    @Nullable private java.util.UUID summoner; // Purpur
+    private int shootCooldown = 0; // Purpur
     // Paper start
     private boolean canPortal = false;
 
     public void setCanTravelThroughPortals(boolean canPortal) { this.canPortal = canPortal; }
     // Paper end
+    private org.purpurmc.purpur.controller.FlyingWithSpacebarMoveControllerWASD purpurController; // Purpur
 
     public WitherBoss(EntityType<? extends WitherBoss> type, Level world) {
         super(type, world);
         this.bossEvent = (ServerBossEvent) (new ServerBossEvent(this.getDisplayName(), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.PROGRESS)).setDarkenScreen(true);
-        this.moveControl = new FlyingMoveControl(this, 10, false);
+        // Purpur start
+        this.purpurController = new org.purpurmc.purpur.controller.FlyingWithSpacebarMoveControllerWASD(this, 0.1F);
+        this.moveControl = new FlyingMoveControl(this, 10, false) {
+            @Override
+            public void tick() {
+                if (mob.getRider() != null && mob.isControllable()) {
+                    purpurController.purpurTick(mob.getRider());
+                } else {
+                    super.tick();
+                }
+            }
+        };
+        // Purpur end
         this.setHealth(this.getMaxHealth());
         this.xpReward = 50;
+    }
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.witherMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.witherTakeDamageFromWater;
+    }
+
+    @Nullable
+    public java.util.UUID getSummoner() {
+        return summoner;
+    }
+
+    public void setSummoner(@Nullable java.util.UUID summoner) {
+        this.summoner = summoner;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.witherAlwaysDropExp;
     }
 
     @Override
@@ -109,13 +148,113 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
         return navigationflying;
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.witherRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.witherRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.witherControllable;
+    }
+
+    @Override
+    public double getMaxY() {
+        return level().purpurConfig.witherMaxY;
+    }
+
+    @Override
+    public void travel(Vec3 vec3) {
+        super.travel(vec3);
+        if (getRider() != null && this.isControllable() && !onGround) {
+            float speed = (float) getAttributeValue(Attributes.FLYING_SPEED) * 5F;
+            setSpeed(speed);
+            Vec3 mot = getDeltaMovement();
+            move(net.minecraft.world.entity.MoverType.SELF, mot.multiply(speed, 0.5, speed));
+            setDeltaMovement(mot.scale(0.9D));
+        }
+    }
+
+    @Override
+    public void onMount(Player rider) {
+        super.onMount(rider);
+        this.entityData.set(DATA_TARGETS.get(0), 0);
+        this.entityData.set(DATA_TARGETS.get(1), 0);
+        this.entityData.set(DATA_TARGETS.get(2), 0);
+        getNavigation().stop();
+        shootCooldown = 20;
+    }
+
+    @Override
+    public boolean onClick(net.minecraft.world.InteractionHand hand) {
+        return shoot(getRider(), hand == net.minecraft.world.InteractionHand.MAIN_HAND ? new int[]{1} : new int[]{2});
+    }
+
+    public boolean shoot(@Nullable Player rider, int[] heads) {
+        if (shootCooldown > 0) {
+            return false;
+        }
+
+        shootCooldown = 20;
+        if (rider == null) {
+            return false;
+        }
+
+        org.bukkit.craftbukkit.entity.CraftHumanEntity player = rider.getBukkitEntity();
+        if (!player.hasPermission("allow.special.wither")) {
+            return false;
+        }
+
+        net.minecraft.world.phys.HitResult rayTrace = getRayTrace(120, net.minecraft.world.level.ClipContext.Fluid.NONE);
+        if (rayTrace == null) {
+            return false;
+        }
+
+        Vec3 loc;
+        if (rayTrace.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+            BlockPos pos = ((net.minecraft.world.phys.BlockHitResult) rayTrace).getBlockPos();
+            loc = new Vec3(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
+        } else if (rayTrace.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
+            Entity target = ((net.minecraft.world.phys.EntityHitResult) rayTrace).getEntity();
+            loc = new Vec3(target.getX(), target.getY() + (target.getEyeHeight() / 2), target.getZ());
+        } else {
+            org.bukkit.block.Block block = player.getTargetBlock(null, 120);
+            loc = new Vec3(block.getX() + 0.5D, block.getY() + 0.5D, block.getZ() + 0.5D);
+        }
+
+        for (int head : heads) {
+            shoot(head, loc.x(), loc.y(), loc.z(), rider);
+        }
+
+        return true; // handled
+    }
+
+    public void shoot(int head, double x, double y, double z, Player rider) {
+        level().levelEvent(null, 1024, blockPosition(), 0);
+        double headX = getHeadX(head);
+        double headY = getHeadY(head);
+        double headZ = getHeadZ(head);
+        WitherSkull skull = new WitherSkull(level(), this, x - headX, y - headY, z - headZ);
+        skull.setPosRaw(headX, headY, headZ);
+        level().addFreshEntity(skull);
+    }
+    // Purpur end
+
     @Override
     protected void registerGoals() {
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(0, new WitherBoss.WitherDoNothingGoal());
         this.goalSelector.addGoal(2, new RangedAttackGoal(this, 1.0D, 40, 20.0F));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomFlyingGoal(this, 1.0D));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this, new Class[0]));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, LivingEntity.class, 0, false, false, WitherBoss.LIVING_ENTITY_SELECTOR));
     }
@@ -133,6 +272,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
     public void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
         nbt.putInt("Invul", this.getInvulnerableTicks());
+        if (getSummoner() != null) nbt.putUUID("Purpur.Summoner", getSummoner()); // Purpur
     }
 
     @Override
@@ -142,6 +282,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
         if (this.hasCustomName()) {
             this.bossEvent.setName(this.getDisplayName());
         }
+        if (nbt.contains("Purpur.Summoner")) setSummoner(nbt.getUUID("Purpur.Summoner")); // Purpur
 
     }
 
@@ -257,6 +398,16 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
 
     @Override
     protected void customServerAiStep() {
+        // Purpur start
+        if (getRider() != null && this.isControllable()) {
+            Vec3 mot = getDeltaMovement();
+            setDeltaMovement(mot.x(), mot.y() + (getVerticalMot() > 0 ? 0.07D : 0.0D), mot.z());
+        }
+        if (shootCooldown > 0) {
+            shootCooldown--;
+        }
+        // Purpur end
+
         int i;
 
         if (this.getInvulnerableTicks() > 0) {
@@ -273,7 +424,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
                 }
                 // CraftBukkit end
 
-                if (!this.isSilent()) {
+                if (!this.isSilent() && level().purpurConfig.witherPlaySpawnSound) {
                     // CraftBukkit start - Use relative location for far away sounds
                     // this.level().globalLevelEvent(1023, new BlockPosition(this), 0);
                     int viewDistance = ((ServerLevel) this.level()).getCraftServer().getViewDistance() * 16;
@@ -298,7 +449,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
 
             this.setInvulnerableTicks(i);
             if (this.tickCount % 10 == 0) {
-                this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
+                this.heal(this.getMaxHealth() / 33, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit // Purpur
             }
 
         } else {
@@ -358,7 +509,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
 
             if (this.destroyBlocksTick > 0) {
                 --this.destroyBlocksTick;
-                if (this.destroyBlocksTick == 0 && this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+                if (this.destroyBlocksTick == 0 && (this.level().purpurConfig.witherBypassMobGriefing || this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // Purpur
                     i = Mth.floor(this.getY());
                     j = Mth.floor(this.getX());
                     int i1 = Mth.floor(this.getZ());
@@ -391,8 +542,10 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
                 }
             }
 
-            if (this.tickCount % 20 == 0) {
-                this.heal(1.0F, EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
+            // Purpur start - customizable heal rate and amount
+            if (this.tickCount % level().purpurConfig.witherHealthRegenDelay == 0) {
+                this.heal(level().purpurConfig.witherHealthRegenAmount, EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
+                // Purpur end
             }
 
             this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
@@ -578,11 +731,11 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
     }
 
     public int getAlternativeTarget(int headIndex) {
-        return (Integer) this.entityData.get((EntityDataAccessor) WitherBoss.DATA_TARGETS.get(headIndex));
+        return getRider() != null && this.isControllable() ? 0 : this.entityData.get(WitherBoss.DATA_TARGETS.get(headIndex)); // Purpur
     }
 
     public void setAlternativeTarget(int headIndex, int id) {
-        this.entityData.set((EntityDataAccessor) WitherBoss.DATA_TARGETS.get(headIndex), id);
+        if (getRider() == null || !this.isControllable()) this.entityData.set(WitherBoss.DATA_TARGETS.get(headIndex), id); // Purpur
     }
 
     @Override
@@ -597,6 +750,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
 
     @Override
     protected boolean canRide(Entity entity) {
+        if (this.level().purpurConfig.witherCanRideVehicles) return this.boardingCooldown <= 0; // Purpur
         return false;
     }
 

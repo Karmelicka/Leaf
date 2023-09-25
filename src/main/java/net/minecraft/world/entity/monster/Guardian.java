@@ -70,8 +70,43 @@ public class Guardian extends Monster {
         this.xpReward = 10;
         this.setPathfindingMalus(BlockPathTypes.WATER, 0.0F);
         this.moveControl = new Guardian.GuardianMoveControl(this);
+        // Purpur start
+        this.lookControl = new org.purpurmc.purpur.controller.LookControllerWASD(this) {
+            @Override
+            public void setYawPitch(float yaw, float pitch) {
+                super.setYawPitch(yaw, pitch * 0.35F);
+            }
+        };
+        // Purpur end
         this.clientSideTailAnimation = this.random.nextFloat();
         this.clientSideTailAnimationO = this.clientSideTailAnimation;
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.guardianRidable;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.guardianControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.guardianMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.guardianTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.guardianAlwaysDropExp;
     }
 
     @Override
@@ -79,6 +114,7 @@ public class Guardian extends Monster {
         MoveTowardsRestrictionGoal pathfindergoalmovetowardsrestriction = new MoveTowardsRestrictionGoal(this, 1.0D);
 
         this.randomStrollGoal = new RandomStrollGoal(this, 1.0D, 80);
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(4, this.guardianAttackGoal = new Guardian.GuardianAttackGoal(this)); // CraftBukkit - assign field
         this.goalSelector.addGoal(5, pathfindergoalmovetowardsrestriction);
         this.goalSelector.addGoal(7, this.randomStrollGoal);
@@ -87,6 +123,7 @@ public class Guardian extends Monster {
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
         this.randomStrollGoal.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         pathfindergoalmovetowardsrestriction.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, LivingEntity.class, 10, true, false, new Guardian.GuardianAttackSelector(this)));
     }
 
@@ -347,7 +384,7 @@ public class Guardian extends Monster {
     @Override
     public void travel(Vec3 movementInput) {
         if (this.isControlledByLocalInstance() && this.isInWater()) {
-            this.moveRelative(0.1F, movementInput);
+            this.moveRelative(getRider() != null && this.isControllable() ? getSpeed() : 0.1F, movementInput); // Purpur
             this.move(MoverType.SELF, this.getDeltaMovement());
             this.setDeltaMovement(this.getDeltaMovement().scale(0.9D));
             if (!this.isMoving() && this.getTarget() == null) {
@@ -364,7 +401,7 @@ public class Guardian extends Monster {
         return new Vector3f(0.0F, dimensions.height + 0.125F * scaleFactor, 0.0F);
     }
 
-    private static class GuardianMoveControl extends MoveControl {
+    private static class GuardianMoveControl extends org.purpurmc.purpur.controller.WaterMoveControllerWASD { // Purpur
 
         private final Guardian guardian;
 
@@ -373,8 +410,17 @@ public class Guardian extends Monster {
             this.guardian = guardian;
         }
 
+        // Purpur start
         @Override
-        public void tick() {
+        public void purpurTick(Player rider) {
+            super.purpurTick(rider);
+            guardian.setDeltaMovement(guardian.getDeltaMovement().add(0.0D, 0.005D, 0.0D));
+            guardian.setMoving(guardian.getForwardMot() > 0.0F); // control tail speed
+        }
+        // Purpur end
+
+        @Override
+        public void vanillaTick() { // Purpur
             if (this.operation == MoveControl.Operation.MOVE_TO && !this.guardian.getNavigation().isDone()) {
                 Vec3 vec3d = new Vec3(this.wantedX - this.guardian.getX(), this.wantedY - this.guardian.getY(), this.wantedZ - this.guardian.getZ());
                 double d0 = vec3d.length();
@@ -385,7 +431,7 @@ public class Guardian extends Monster {
 
                 this.guardian.setYRot(this.rotlerp(this.guardian.getYRot(), f, 90.0F));
                 this.guardian.yBodyRot = this.guardian.getYRot();
-                float f1 = (float) (this.speedModifier * this.guardian.getAttributeValue(Attributes.MOVEMENT_SPEED));
+                float f1 = (float) (this.getSpeedModifier() * this.guardian.getAttributeValue(Attributes.MOVEMENT_SPEED)); // Purpur
                 float f2 = Mth.lerp(0.125F, this.guardian.getSpeed(), f1);
 
                 this.guardian.setSpeed(f2);

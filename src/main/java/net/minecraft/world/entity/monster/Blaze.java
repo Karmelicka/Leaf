@@ -32,26 +32,73 @@ public class Blaze extends Monster {
 
     public Blaze(EntityType<? extends Blaze> type, Level world) {
         super(type, world);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
+        this.moveControl = new org.purpurmc.purpur.controller.FlyingWithSpacebarMoveControllerWASD(this, 0.3F); // Purpur
+        if (isSensitiveToWater()) this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F); // Purpur
         this.setPathfindingMalus(BlockPathTypes.LAVA, 8.0F);
         this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 0.0F);
         this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 0.0F);
         this.xpReward = 10;
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.blazeRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.blazeRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.blazeControllable;
+    }
+
+    @Override
+    public double getMaxY() {
+        return level().purpurConfig.blazeMaxY;
+    }
+
+    @Override
+    public void travel(Vec3 vec3) {
+        super.travel(vec3);
+        if (getRider() != null && this.isControllable() && !onGround) {
+            float speed = (float) getAttributeValue(Attributes.FLYING_SPEED);
+            setSpeed(speed);
+            Vec3 mot = getDeltaMovement();
+            move(net.minecraft.world.entity.MoverType.SELF, mot.multiply(speed, 1.0, speed));
+            setDeltaMovement(mot.scale(0.9D));
+        }
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.blazeMaxHealth);
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.blazeAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(4, new Blaze.BlazeAttackGoal(this));
         this.goalSelector.addGoal(5, new MoveTowardsRestrictionGoal(this, 1.0D));
         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D, 0.0F));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)).setAlertOthers());
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Monster.createMonsterAttributes().add(Attributes.ATTACK_DAMAGE, 6.0D).add(Attributes.MOVEMENT_SPEED, (double)0.23F).add(Attributes.FOLLOW_RANGE, 48.0D);
+        return Monster.createMonsterAttributes().add(Attributes.ATTACK_DAMAGE, 6.0D).add(Attributes.MOVEMENT_SPEED, (double)0.23F).add(Attributes.FOLLOW_RANGE, 48.0D).add(Attributes.FLYING_SPEED, 0.6D); // Purpur
     }
 
     @Override
@@ -101,11 +148,19 @@ public class Blaze extends Monster {
 
     @Override
     public boolean isSensitiveToWater() {
-        return true;
+        return this.level().purpurConfig.blazeTakeDamageFromWater; // Purpur
     }
 
     @Override
     protected void customServerAiStep() {
+        // Purpur start
+        if (getRider() != null && this.isControllable()) {
+            Vec3 mot = getDeltaMovement();
+            setDeltaMovement(mot.x(), getVerticalMot() > 0 ? 0.07D : -0.07D, mot.z());
+            return;
+        }
+        // Purpur end
+
         --this.nextHeightOffsetChangeTick;
         if (this.nextHeightOffsetChangeTick <= 0) {
             this.nextHeightOffsetChangeTick = 100;

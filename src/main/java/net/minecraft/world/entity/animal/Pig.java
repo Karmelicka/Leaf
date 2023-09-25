@@ -68,9 +68,47 @@ public class Pig extends Animal implements ItemSteerable, Saddleable {
         this.steering = new ItemBasedSteering(this.entityData, Pig.DATA_BOOST_TIME, Pig.DATA_SADDLE_ID);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.pigRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.pigRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.pigControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.pigMaxHealth);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.pigBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.pigTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.pigAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new PanicGoal(this, 1.25D));
         this.goalSelector.addGoal(3, new BreedGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new TemptGoal(this, 1.2D, Ingredient.of(Items.CARROT_ON_A_STICK), false));
@@ -154,6 +192,17 @@ public class Pig extends Animal implements ItemSteerable, Saddleable {
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         boolean flag = this.isFood(player.getItemInHand(hand));
+
+        if (level().purpurConfig.pigGiveSaddleBack && player.isSecondaryUseActive() && !flag && isSaddled() && !isVehicle()) {
+            this.steering.setSaddle(false);
+            if (!player.getAbilities().instabuild) {
+                ItemStack saddle = new ItemStack(Items.SADDLE);
+                if (!player.getInventory().add(saddle)) {
+                    player.drop(saddle, false);
+                }
+            }
+            return InteractionResult.SUCCESS;
+        }
 
         if (!flag && this.isSaddled() && !this.isVehicle() && !player.isSecondaryUseActive()) {
             if (!this.level().isClientSide) {

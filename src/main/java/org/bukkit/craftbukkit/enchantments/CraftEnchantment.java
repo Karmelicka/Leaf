@@ -71,6 +71,8 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
             case TRIDENT -> EnchantmentTarget.TRIDENT;
             case CROSSBOW -> EnchantmentTarget.CROSSBOW;
             case VANISHABLE -> EnchantmentTarget.VANISHABLE;
+            case BOW_AND_CROSSBOW -> EnchantmentTarget.BOW_AND_CROSSBOW; // Purpur
+            case WEAPON_AND_SHEARS -> EnchantmentTarget.WEAPON_AND_SHEARS; // Purpur
         };
     }
 

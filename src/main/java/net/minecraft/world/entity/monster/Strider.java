@@ -94,10 +94,42 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
         super(type, world);
         this.steering = new ItemBasedSteering(this.entityData, Strider.DATA_BOOST_TIME, Strider.DATA_SADDLE_ID);
         this.blocksBuilding = true;
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
+        if (isSensitiveToWater()) this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F); // Purpur
         this.setPathfindingMalus(BlockPathTypes.LAVA, 0.0F);
         this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 0.0F);
         this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 0.0F);
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.striderRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.striderRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.striderControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.striderMaxHealth);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.striderBreedingTicks;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.striderAlwaysDropExp;
     }
 
     public static boolean checkStriderSpawnRules(EntityType<Strider> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
@@ -161,6 +193,7 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new PanicGoal(this, 1.65D));
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
         this.temptGoal = new TemptGoal(this, 1.4D, Strider.TEMPT_ITEMS, false);
         this.goalSelector.addGoal(3, this.temptGoal);
@@ -414,7 +447,7 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
 
     @Override
     public boolean isSensitiveToWater() {
-        return true;
+        return this.level().purpurConfig.striderTakeDamageFromWater; // Purpur
     }
 
     @Override
@@ -456,6 +489,19 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         boolean flag = this.isFood(player.getItemInHand(hand));
 
+        // Purpur start
+        if (level().purpurConfig.striderGiveSaddleBack && player.isSecondaryUseActive() && !flag && isSaddled() && !isVehicle()) {
+            this.steering.setSaddle(false);
+            if (!player.getAbilities().instabuild) {
+                ItemStack saddle = new ItemStack(Items.SADDLE);
+                if (!player.getInventory().add(saddle)) {
+                    player.drop(saddle, false);
+                }
+            }
+            return InteractionResult.SUCCESS;
+        }
+        // Purpur end
+
         if (!flag && this.isSaddled() && !this.isVehicle() && !player.isSecondaryUseActive()) {
             if (!this.level().isClientSide) {
                 player.startRiding(this);
@@ -468,7 +514,7 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
             if (!enuminteractionresult.consumesAction()) {
                 ItemStack itemstack = player.getItemInHand(hand);
 
-                return itemstack.is(Items.SADDLE) ? itemstack.interactLivingEntity(player, this, hand) : InteractionResult.PASS;
+                return itemstack.is(Items.SADDLE) ? itemstack.interactLivingEntity(player, this, hand) : tryRide(player, hand); // Purpur
             } else {
                 if (flag && !this.isSilent()) {
                     this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.STRIDER_EAT, this.getSoundSource(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);

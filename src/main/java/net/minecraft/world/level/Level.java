@@ -175,6 +175,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
     // Gale end - Gale configuration
 
     public final com.destroystokyo.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
+    public final org.purpurmc.purpur.PurpurWorldConfig purpurConfig; // Purpur
     public final co.aikar.timings.WorldTimingsHandler timings; // Paper
     public static BlockPos lastPhysicsProblem; // Spigot
     private org.spigotmc.TickLimiter entityLimiter;
@@ -193,6 +194,49 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         });
     }
     // Paper end - fix and optimise world upgrading
+
+    // Purpur start
+    private com.google.common.cache.Cache<BreedingCooldownPair, Object> playerBreedingCooldowns;
+
+    private com.google.common.cache.Cache<BreedingCooldownPair, Object> getNewBreedingCooldownCache() {
+        return com.google.common.cache.CacheBuilder.newBuilder().expireAfterWrite(this.purpurConfig.animalBreedingCooldownSeconds, java.util.concurrent.TimeUnit.SECONDS).build();
+    }
+
+    public void resetBreedingCooldowns() {
+        this.playerBreedingCooldowns = this.getNewBreedingCooldownCache();
+    }
+
+    public boolean hasBreedingCooldown(java.util.UUID player, Class<? extends net.minecraft.world.entity.animal.Animal> animalType) { // Purpur
+        return this.playerBreedingCooldowns.getIfPresent(new BreedingCooldownPair(player, animalType)) != null;
+    }
+
+    public void addBreedingCooldown(java.util.UUID player, Class<? extends net.minecraft.world.entity.animal.Animal> animalType) {
+        this.playerBreedingCooldowns.put(new BreedingCooldownPair(player, animalType), new Object());
+    }
+
+    private static final class BreedingCooldownPair {
+        private final java.util.UUID playerUUID;
+        private final Class<? extends net.minecraft.world.entity.animal.Animal> animalType;
+
+        public BreedingCooldownPair(java.util.UUID playerUUID, Class<? extends net.minecraft.world.entity.animal.Animal> animalType) {
+            this.playerUUID = playerUUID;
+            this.animalType = animalType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            BreedingCooldownPair that = (BreedingCooldownPair) o;
+            return playerUUID.equals(that.playerUUID) && animalType.equals(that.animalType);
+        }
+
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(playerUUID, animalType);
+        }
+    }
+    // Purpur end
 
     public CraftWorld getWorld() {
         return this.world;
@@ -233,6 +277,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
         this.galeConfig = galeWorldConfigCreator.apply(this.spigotConfig); // Gale - Gale configuration
+        this.purpurConfig = new org.purpurmc.purpur.PurpurWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), env); // Purpur
+        this.playerBreedingCooldowns = this.getNewBreedingCooldownCache(); // Purpur
         this.generator = gen;
         this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
 
@@ -1920,4 +1966,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
         return null;
     }
     // Paper end - optimize redstone (Alternate Current)
+
+    // Purpur start
+    public boolean isNether() {
+        return getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER;
+    }
+
+    public boolean isTheEnd() {
+        return getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END;
+    }
+    // Purpur end
 }

@@ -314,7 +314,7 @@ public class ExperienceOrb extends Entity {
     public void playerTouch(Player player) {
         if (!this.level().isClientSide) {
             if (player.takeXpDelay == 0 && new com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent(((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) this.getBukkitEntity()).callEvent()) { // Paper - PlayerPickupExperienceEvent
-                player.takeXpDelay = CraftEventFactory.callPlayerXpCooldownEvent(player, 2, PlayerExpCooldownChangeEvent.ChangeReason.PICKUP_ORB).getNewCooldown(); // CraftBukkit - entityhuman.takeXpDelay = 2;
+                player.takeXpDelay = CraftEventFactory.callPlayerXpCooldownEvent(player, this.level().purpurConfig.playerExpPickupDelay, PlayerExpCooldownChangeEvent.ChangeReason.PICKUP_ORB).getNewCooldown(); // CraftBukkit - entityhuman.takeXpDelay = 2; // Purpur
                 player.take(this, 1);
                 int i = this.repairPlayerItems(player, this.value);
 
@@ -332,7 +332,7 @@ public class ExperienceOrb extends Entity {
     }
 
     private int repairPlayerItems(Player player, int amount) {
-        Entry<EquipmentSlot, ItemStack> entry = EnchantmentHelper.getRandomItemWith(Enchantments.MENDING, player, ItemStack::isDamaged);
+        Entry<EquipmentSlot, ItemStack> entry = level().purpurConfig.useBetterMending ? EnchantmentHelper.getMostDamagedEquipment(Enchantments.MENDING, player) : EnchantmentHelper.getRandomItemWith(Enchantments.MENDING, player, ItemStack::isDamaged); // Purpur
 
         if (entry != null) {
             ItemStack itemstack = (ItemStack) entry.getValue();
@@ -360,13 +360,15 @@ public class ExperienceOrb extends Entity {
         }
     }
 
+    // Purpur start
     public int durabilityToXp(int repairAmount) {
-        return repairAmount / 2;
+        return (int) (repairAmount / (2 * level().purpurConfig.mendingMultiplier));
     }
 
     public int xpToDurability(int experienceAmount) {
-        return experienceAmount * 2;
+        return (int) ((experienceAmount * 2) * level().purpurConfig.mendingMultiplier);
     }
+    // Purpur end
 
     public int getValue() {
         return this.value;

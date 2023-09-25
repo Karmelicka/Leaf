@@ -42,7 +42,6 @@ public class StackedContents {
             if (this.extrasMap != null && stack.hasTag() && this.extrasMap.accountStack(stack, j)) return; // Paper - Improve exact choice recipe ingredients; if an exact ingredient, don't include it
             this.put(i, j);
         }
-
     }
 
     public static int getStackingIndex(ItemStack stack) {

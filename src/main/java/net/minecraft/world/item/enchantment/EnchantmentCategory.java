@@ -121,6 +121,20 @@ public enum EnchantmentCategory {
         public boolean canEnchant(Item item) {
             return item instanceof Vanishable || Block.byItem(item) instanceof Vanishable || BREAKABLE.canEnchant(item);
         }
+    // Purpur start
+    },
+    BOW_AND_CROSSBOW {
+        @Override
+        public boolean canEnchant(Item item) {
+            return item instanceof BowItem || item instanceof CrossbowItem;
+        }
+    },
+    WEAPON_AND_SHEARS {
+        @Override
+        public boolean canEnchant(Item item) {
+            return WEAPON.canEnchant(item) || item instanceof net.minecraft.world.item.ShearsItem;
+        }
+    // Purpur end
     };
 
     public abstract boolean canEnchant(Item item);

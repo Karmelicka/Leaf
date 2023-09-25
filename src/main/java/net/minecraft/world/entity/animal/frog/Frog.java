@@ -79,14 +79,67 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
     public final AnimationState croakAnimationState = new AnimationState();
     public final AnimationState tongueAnimationState = new AnimationState();
     public final AnimationState swimIdleAnimationState = new AnimationState();
+    private org.purpurmc.purpur.controller.MoveControllerWASD purpurLandController; // Purpur
+    private org.purpurmc.purpur.controller.WaterMoveControllerWASD purpurWaterController; // Purpur
 
     public Frog(EntityType<? extends Animal> type, Level world) {
         super(type, world);
         this.lookControl = new Frog.FrogLookControl(this);
         this.setPathfindingMalus(BlockPathTypes.WATER, 4.0F);
         this.setPathfindingMalus(BlockPathTypes.TRAPDOOR, -1.0F);
-        this.moveControl = new SmoothSwimmingMoveControl(this, 85, 10, 0.02F, 0.1F, true);
+        // Purpur start
+        this.purpurLandController = new org.purpurmc.purpur.controller.MoveControllerWASD(this, 0.2F);
+        this.purpurWaterController = new org.purpurmc.purpur.controller.WaterMoveControllerWASD(this, 0.5F);
+        this.moveControl = new SmoothSwimmingMoveControl(this, 85, 10, 0.02F, 0.1F, true) {
+            @Override
+            public void tick() {
+                net.minecraft.world.entity.player.Player rider = mob.getRider();
+                if (rider != null && mob.isControllable()) {
+                    if (mob.isInWater()) {
+                        purpurWaterController.purpurTick(rider);
+                        mob.setDeltaMovement(mob.getDeltaMovement().add(0.0D, -0.005D, 0.0D));
+                    } else {
+                        purpurLandController.purpurTick(rider);
+                    }
+                } else {
+                    super.tick();
+                }
+            }
+        };
+        // Purpur end
         this.setMaxUpStep(1.0F);
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.frogRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.frogRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.frogControllable;
+    }
+
+    @Override
+    protected void registerGoals() {
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+    }
+
+    @Override
+    public float getJumpPower() {
+        return (getRider() != null && isControllable()) ? level().purpurConfig.frogRidableJumpHeight * this.getBlockJumpFactor() : super.getJumpPower();
+    }
+    // Purpur end
+
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.frogBreedingTicks;
     }
 
     @Override
@@ -162,7 +215,7 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
     private int behaviorTick = 0; // Pufferfish
     @Override
     protected void customServerAiStep() {
-        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
+        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish // Purpur - only use brain if no rider
         this.getBrain().tick((ServerLevel)this.level(), this);
         FrogAi.updateActivity(this);
         super.customServerAiStep();
@@ -345,7 +398,7 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
         return world.getBlockState(pos.below()).is(BlockTags.FROGS_SPAWNABLE_ON) && isBrightEnoughToSpawn(world, pos);
     }
 
-    class FrogLookControl extends LookControl {
+    class FrogLookControl extends org.purpurmc.purpur.controller.LookControllerWASD { // Purpur
         FrogLookControl(Mob entity) {
             super(entity);
         }

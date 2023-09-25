@@ -60,7 +60,7 @@ public class NetherPortalBlock extends Block {
 
     @Override
     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
-        if (world.spigotConfig.enableZombiePigmenPortalSpawns && world.dimensionType().natural() && world.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && random.nextInt(2000) < world.getDifficulty().getId()) { // Spigot
+        if (world.spigotConfig.enableZombiePigmenPortalSpawns && world.dimensionType().natural() && world.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && random.nextInt(world.purpurConfig.piglinPortalSpawnModifier) < world.getDifficulty().getId()) { // Spigot // Purpur
             while (world.getBlockState(pos).is((Block) this)) {
                 pos = pos.below();
             }
@@ -92,6 +92,14 @@ public class NetherPortalBlock extends Block {
     public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
         if (entity.canChangeDimensions()) {
+            // Purpur start
+            if (entity.isPassenger() || entity.isVehicle()) {
+                if (new org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent(entity.getBukkitEntity(), entity.isPassenger() ? org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent.Reason.IS_PASSENGER : org.purpurmc.purpur.event.entity.EntityTeleportHinderedEvent.Reason.IS_VEHICLE, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.NETHER_PORTAL).callEvent()) {
+                    this.entityInside(state, world, pos, entity);
+                }
+                return;
+            }
+            // Purpur end
             // CraftBukkit start - Entity in portal
             EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
             world.getCraftServer().getPluginManager().callEvent(event);

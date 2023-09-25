@@ -86,7 +86,7 @@ public class PistonStructureResolver {
             return true;
         } else {
             int i = 1;
-            if (i + this.toPush.size() > 12) {
+            if (i + this.toPush.size() > this.level.purpurConfig.pistonBlockPushLimit) { // Purpur
                 return false;
             } else {
                 while(isSticky(blockState)) {
@@ -98,7 +98,7 @@ public class PistonStructureResolver {
                     }
 
                     ++i;
-                    if (i + this.toPush.size() > 12) {
+                    if (i + this.toPush.size() > this.level.purpurConfig.pistonBlockPushLimit) { // Purpur
                         return false;
                     }
                 }
@@ -142,7 +142,7 @@ public class PistonStructureResolver {
                         return true;
                     }
 
-                    if (this.toPush.size() >= 12) {
+                    if (this.toPush.size() >= this.level.purpurConfig.pistonBlockPushLimit) { // Purpur
                         return false;
                     }
 

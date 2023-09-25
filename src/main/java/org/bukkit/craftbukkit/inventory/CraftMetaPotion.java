@@ -45,6 +45,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     static final ItemMetaKey POTION_COLOR = new ItemMetaKey("CustomPotionColor", "custom-color");
     static final ItemMetaKey ID = new ItemMetaKey("id", "potion-id");
     static final ItemMetaKey DEFAULT_POTION = new ItemMetaKey("Potion", "potion-type");
+    static final ItemMetaKey KEY = new ItemMetaKey("key", "namespacedkey"); // Purpur - add key
 
     // Having an initial "state" in ItemMeta seems bit dirty but the UNCRAFTABLE potion type
     // is treated as the empty form of the meta because it represents an empty potion with no effect
@@ -97,7 +98,13 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
                 boolean ambient = effect.getBoolean(CraftMetaPotion.AMBIENT.NBT);
                 boolean particles = effect.contains(CraftMetaPotion.SHOW_PARTICLES.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(CraftMetaPotion.SHOW_PARTICLES.NBT) : true;
                 boolean icon = effect.contains(CraftMetaPotion.SHOW_ICON.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(CraftMetaPotion.SHOW_ICON.NBT) : particles;
-                this.customEffects.add(new PotionEffect(type, duration, amp, ambient, particles, icon));
+                // Purpur start
+                NamespacedKey key = null;
+                if (tag.contains(CraftMetaPotion.KEY.NBT)) {
+                    key = NamespacedKey.fromString(effect.getString(CraftMetaPotion.KEY.NBT));
+                }
+                this.customEffects.add(new PotionEffect(type, duration, amp, ambient, particles, icon, key));
+                // Purpur end
             }
         }
     }
@@ -150,6 +157,11 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
                 effectData.putBoolean(CraftMetaPotion.AMBIENT.NBT, effect.isAmbient());
                 effectData.putBoolean(CraftMetaPotion.SHOW_PARTICLES.NBT, effect.hasParticles());
                 effectData.putBoolean(CraftMetaPotion.SHOW_ICON.NBT, effect.hasIcon());
+                // Purpur start
+                if (effect.hasKey()) {
+                    effectData.putString(CraftMetaPotion.KEY.NBT, effect.getKey().toString());
+                }
+                // Purpur end
                 effectList.add(effectData);
             }
         }
@@ -225,7 +237,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         if (index != -1) {
             if (overwrite) {
                 PotionEffect old = this.customEffects.get(index);
-                if (old.getAmplifier() == effect.getAmplifier() && old.getDuration() == effect.getDuration() && old.isAmbient() == effect.isAmbient()) {
+                if (old.getAmplifier() == effect.getAmplifier() && old.getDuration() == effect.getDuration() && old.isAmbient() == effect.isAmbient() && old.getKey() == effect.getKey()) { // Purpur - add key
                     return false;
                 }
                 this.customEffects.set(index, effect);

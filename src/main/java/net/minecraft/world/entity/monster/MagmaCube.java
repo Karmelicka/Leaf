@@ -25,6 +25,58 @@ public class MagmaCube extends Slime {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.magmaCubeRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.magmaCubeRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.magmaCubeControllable;
+    }
+
+    @Override
+    public float getJumpPower() {
+        return 0.42F * this.getBlockJumpFactor(); // from EntityLiving
+    }
+    // Purpur end
+
+    @Override
+    protected String getMaxHealthEquation() {
+        return level().purpurConfig.magmaCubeMaxHealth;
+    }
+
+    @Override
+    protected String getAttackDamageEquation() {
+        return level().purpurConfig.magmaCubeAttackDamage;
+    }
+
+    @Override
+    protected java.util.Map<Integer, Double> getMaxHealthCache() {
+        return level().purpurConfig.magmaCubeMaxHealthCache;
+    }
+
+    @Override
+    protected java.util.Map<Integer, Double> getAttackDamageCache() {
+        return level().purpurConfig.magmaCubeAttackDamageCache;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.magmaCubeTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.magmaCubeAlwaysDropExp;
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, (double)0.2F);
     }
@@ -70,11 +122,12 @@ public class MagmaCube extends Slime {
     }
 
     @Override
-    protected void jumpFromGround() {
+    public void jumpFromGround() { // Purpur - protected -> public
         Vec3 vec3 = this.getDeltaMovement();
         float f = (float)this.getSize() * 0.1F;
         this.setDeltaMovement(vec3.x, (double)(this.getJumpPower() + f), vec3.z);
         this.hasImpulse = true;
+        this.actualJump = false; // Purpur
     }
 
     @Override

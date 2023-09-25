@@ -121,7 +121,7 @@ public class Painting extends HangingEntity implements VariantHolder<Holder<Pain
 
     @Override
     public void readAdditionalSaveData(CompoundTag nbt) {
-        Holder<PaintingVariant> holder = loadVariant(nbt).orElseGet(Painting::getDefaultVariant);
+        Holder<PaintingVariant> holder = loadVariant(nbt).orElseGet(() -> (Holder.Reference<PaintingVariant>) getDefaultVariant()); // Purpur - decompile error TODO: still needed?
         this.setVariant(holder);
         this.direction = Direction.from2DDataValue(nbt.getByte("facing"));
         super.readAdditionalSaveData(nbt);
@@ -159,7 +159,13 @@ public class Painting extends HangingEntity implements VariantHolder<Holder<Pain
                 }
             }
 
-            this.spawnAtLocation(Items.PAINTING);
+            // Purpur start
+            final ItemStack painting = new ItemStack(Items.PAINTING);
+            if (this.level().purpurConfig.persistentDroppableEntityDisplayNames && this.hasCustomName()) {
+                painting.setHoverName(this.getCustomName());
+            }
+            this.spawnAtLocation(painting);
+            // Purpur end
         }
     }
 

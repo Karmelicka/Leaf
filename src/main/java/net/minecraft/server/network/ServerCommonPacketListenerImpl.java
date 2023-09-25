@@ -64,6 +64,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
     private static final long KEEPALIVE_LIMIT = KEEPALIVE_LIMIT_IN_SECONDS * 1000;
     // Gale end - Purpur - send multiple keep-alive packets
     protected static final ResourceLocation MINECRAFT_BRAND = new ResourceLocation("brand"); // Paper - Brand support
+    protected static final ResourceLocation PURPUR_CLIENT = new ResourceLocation("purpur", "client"); // Purpur
 
     public ServerCommonPacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, CommonListenerCookie commonlistenercookie, ServerPlayer player) { // CraftBukkit
         this.server = minecraftserver;
@@ -157,6 +158,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t register custom payload", ex);
                 this.disconnect("Invalid payload REGISTER!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
             }
+        // Purpur start
+        } else if (identifier.equals(PURPUR_CLIENT)) {
+            try {
+                player.purpurClient = true;
+            } catch (Exception ignore) {
+            }
+        // Purpur end
         } else if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_UNREGISTER)) {
             try {
                 String channels = payload.toString(com.google.common.base.Charsets.UTF_8);

@@ -14,6 +14,43 @@ public class Mule extends AbstractChestedHorse {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.muleRidableInWater;
+    }
+    // Purpur end
+
+    @Override
+    public float generateMaxHealth(net.minecraft.util.RandomSource random) {
+        return (float) generateMaxHealth(this.level().purpurConfig.muleMaxHealthMin, this.level().purpurConfig.muleMaxHealthMax);
+    }
+
+    @Override
+    public double generateJumpStrength(net.minecraft.util.RandomSource random) {
+        return generateJumpStrength(this.level().purpurConfig.muleJumpStrengthMin, this.level().purpurConfig.muleJumpStrengthMax);
+    }
+
+    @Override
+    public double generateSpeed(net.minecraft.util.RandomSource random) {
+        return generateSpeed(this.level().purpurConfig.muleMovementSpeedMin, this.level().purpurConfig.muleMovementSpeedMax);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.muleBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.muleTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.muleAlwaysDropExp;
+    }
+
     @Override
     protected SoundEvent getAmbientSound() {
         return SoundEvents.MULE_AMBIENT;

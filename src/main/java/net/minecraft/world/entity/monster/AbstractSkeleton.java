@@ -66,16 +66,19 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
     protected AbstractSkeleton(EntityType<? extends AbstractSkeleton> type, Level world) {
         super(type, world);
         this.reassessWeaponGoal();
+        this.setShouldBurnInDay(true); // Purpur
     }
 
     @Override
     protected void registerGoals() {
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(2, new RestrictSunGoal(this));
         this.goalSelector.addGoal(3, new FleeSunGoal(this, 1.0D));
         this.goalSelector.addGoal(3, new AvoidEntityGoal<>(this, Wolf.class, 6.0F, 1.0D, 1.2D));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this, new Class[0]));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
@@ -99,35 +102,14 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
     }
 
     // Paper start - shouldBurnInDay API
-    private boolean shouldBurnInDay = true;
+    // private boolean shouldBurnInDay = true; // Purpur - moved to LivingEntity - keep methods for ABI compatibility
     public boolean shouldBurnInDay() { return shouldBurnInDay; }
     public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
     // Paper end - shouldBurnInDay API
 
     @Override
     public void aiStep() {
-        boolean flag = shouldBurnInDay && this.isSunBurnTick(); // Paper - shouldBurnInDay API
-
-        if (flag) {
-            ItemStack itemstack = this.getItemBySlot(EquipmentSlot.HEAD);
-
-            if (!itemstack.isEmpty()) {
-                if (itemstack.isDamageableItem()) {
-                    itemstack.setDamageValue(itemstack.getDamageValue() + this.random.nextInt(2));
-                    if (itemstack.getDamageValue() >= itemstack.getMaxDamage()) {
-                        this.broadcastBreakEvent(EquipmentSlot.HEAD);
-                        this.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
-                    }
-                }
-
-                flag = false;
-            }
-
-            if (flag) {
-                this.setSecondsOnFire(8);
-            }
-        }
-
+        // Purpur start - implemented in LivingEntity
         super.aiStep();
     }
 
@@ -205,7 +187,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
         double d2 = target.getZ() - this.getZ();
         double d3 = Math.sqrt(d0 * d0 + d2 * d2);
 
-        entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level().getDifficulty().getId() * 4));
+        entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, this.level().purpurConfig.skeletonBowAccuracyMap.getOrDefault(this.level().getDifficulty().getId(), (float) (14 - this.level().getDifficulty().getId() * 4))); // Purpur
         // CraftBukkit start
         org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true); // Paper
         if (event.isCancelled()) {
@@ -236,7 +218,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
         this.reassessWeaponGoal();
         // Paper start - shouldBurnInDay API
         if (nbt.contains("Paper.ShouldBurnInDay")) {
-            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
+            // this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay"); // Purpur - implemented in LivingEntity
         }
         // Paper end - shouldBurnInDay API
     }
@@ -245,7 +227,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
     @Override
     public void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
-        nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
+        // nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay); // Purpur - implemented in LivingEntity
     }
     // Paper end - shouldBurnInDay API
 

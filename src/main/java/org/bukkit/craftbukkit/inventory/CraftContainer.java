@@ -184,8 +184,19 @@ public class CraftContainer extends AbstractContainerMenu {
             case PLAYER:
             case CHEST:
             case ENDER_CHEST:
+                // Purpur start
+                this.delegate = new ChestMenu(org.purpurmc.purpur.PurpurConfig.enderChestSixRows ? MenuType.GENERIC_9x6 : MenuType.GENERIC_9x3, windowId, bottom, top, top.getContainerSize() / 9);
+                break;
             case BARREL:
-                this.delegate = new ChestMenu(MenuType.GENERIC_9x3, windowId, bottom, top, top.getContainerSize() / 9);
+                this.delegate = new ChestMenu(switch (org.purpurmc.purpur.PurpurConfig.barrelRows) {
+                    case 6 -> MenuType.GENERIC_9x6;
+                    case 5 -> MenuType.GENERIC_9x5;
+                    case 4 -> MenuType.GENERIC_9x4;
+                    case 2 -> MenuType.GENERIC_9x2;
+                    case 1 -> MenuType.GENERIC_9x1;
+                    default -> MenuType.GENERIC_9x3;
+                }, windowId, bottom, top, top.getContainerSize() / 9);
+                // Purpur end
                 break;
             case DISPENSER:
             case DROPPER:

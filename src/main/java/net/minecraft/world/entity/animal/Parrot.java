@@ -131,10 +131,86 @@ public class Parrot extends ShoulderRidingEntity implements VariantHolder<Parrot
 
     public Parrot(EntityType<? extends Parrot> type, Level world) {
         super(type, world);
-        this.moveControl = new FlyingMoveControl(this, 10, false);
+        // Purpur start
+        final org.purpurmc.purpur.controller.FlyingWithSpacebarMoveControllerWASD flyingController = new org.purpurmc.purpur.controller.FlyingWithSpacebarMoveControllerWASD(this, 0.3F);
+        class ParrotMoveControl extends FlyingMoveControl {
+            public ParrotMoveControl(Mob entity, int maxPitchChange, boolean noGravity) {
+                super(entity, maxPitchChange, noGravity);
+            }
+
+            @Override
+            public void tick() {
+                if (mob.getRider() != null && mob.isControllable()) {
+                    flyingController.purpurTick(mob.getRider());
+                } else {
+                    super.tick();
+                }
+            }
+
+            @Override
+            public boolean hasWanted() {
+                return mob.getRider() != null && mob.isControllable() ? getForwardMot() != 0 || getStrafeMot() != 0 : super.hasWanted();
+            }
+        }
+        this.moveControl = new ParrotMoveControl(this, 10, false);
+        // Purpur end
         this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, -1.0F);
         this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, -1.0F);
         this.setPathfindingMalus(BlockPathTypes.COCOA, -1.0F);
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.parrotRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.parrotRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.parrotControllable;
+    }
+
+    @Override
+    public double getMaxY() {
+        return level().purpurConfig.parrotMaxY;
+    }
+
+    @Override
+    public void travel(Vec3 vec3) {
+        super.travel(vec3);
+        if (getRider() != null && this.isControllable() && !onGround) {
+            float speed = (float) getAttributeValue(Attributes.FLYING_SPEED) * 2;
+            setSpeed(speed);
+            Vec3 mot = getDeltaMovement();
+            move(net.minecraft.world.entity.MoverType.SELF, mot.multiply(speed, 0.25, speed));
+            setDeltaMovement(mot.scale(0.9D));
+        }
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.parrotMaxHealth);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return 6000;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.parrotTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.parrotAlwaysDropExp;
     }
 
     @Nullable
@@ -155,8 +231,11 @@ public class Parrot extends ShoulderRidingEntity implements VariantHolder<Parrot
 
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(0, new PanicGoal(this, 1.25D));
+        //this.goalSelector.addGoal(0, new PanicGoal(this, 1.25D)); // Purpur - move down
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        if (this.level().purpurConfig.parrotBreedable) this.goalSelector.addGoal(1, new net.minecraft.world.entity.ai.goal.BreedGoal(this, 1.0D)); // Purpur
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+        this.goalSelector.addGoal(1, new PanicGoal(this, 1.25D)); // Purpur
         this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
         this.goalSelector.addGoal(2, new FollowOwnerGoal(this, 1.0D, 5.0F, 1.0F, true));
@@ -263,7 +342,7 @@ public class Parrot extends ShoulderRidingEntity implements VariantHolder<Parrot
             }
 
             if (!this.level().isClientSide) {
-                if (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
+                if ((this.level().purpurConfig.alwaysTameInCreative && player.getAbilities().instabuild) || (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled())) { // CraftBukkit // Purpur
                     this.tame(player);
                     this.level().broadcastEntityEvent(this, (byte) 7);
                 } else {
@@ -271,6 +350,7 @@ public class Parrot extends ShoulderRidingEntity implements VariantHolder<Parrot
                 }
             }
 
+            if (this.level().purpurConfig.parrotBreedable) return super.mobInteract(player, hand); // Purpur
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         } else if (itemstack.is(Parrot.POISONOUS_FOOD)) {
             if (!player.getAbilities().instabuild) {
@@ -296,7 +376,7 @@ public class Parrot extends ShoulderRidingEntity implements VariantHolder<Parrot
 
     @Override
     public boolean isFood(ItemStack stack) {
-        return false;
+        return this.level().purpurConfig.parrotBreedable && Parrot.TAME_FOOD.contains(stack.getItem()); // Purpur
     }
 
     public static boolean checkParrotSpawnRules(EntityType<Parrot> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, RandomSource random) {
@@ -308,13 +388,13 @@ public class Parrot extends ShoulderRidingEntity implements VariantHolder<Parrot
 
     @Override
     public boolean canMate(Animal other) {
-        return false;
+        return super.canMate(other); // Purpur
     }
 
     @Nullable
     @Override
     public AgeableMob getBreedOffspring(ServerLevel world, AgeableMob entity) {
-        return null;
+        return world.purpurConfig.parrotBreedable ? EntityType.PARROT.create(world) : null; // Purpur
     }
 
     @Override

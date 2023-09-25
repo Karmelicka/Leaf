@@ -41,6 +41,38 @@ public class PiglinBrute extends AbstractPiglin {
         this.xpReward = 20;
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.piglinBruteRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.piglinBruteRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.piglinBruteControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.piglinBruteMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.piglinBruteTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.piglinBruteAlwaysDropExp;
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes().add(Attributes.MAX_HEALTH, 50.0D).add(Attributes.MOVEMENT_SPEED, (double)0.35F).add(Attributes.ATTACK_DAMAGE, 7.0D);
     }
@@ -85,6 +117,7 @@ public class PiglinBrute extends AbstractPiglin {
 
     @Override
     protected void customServerAiStep() {
+        if (getRider() == null || this.isControllable()) // Purpur - only use brain if no rider
         this.getBrain().tick((ServerLevel)this.level(), this);
         PiglinBruteAi.updateActivity(this);
         PiglinBruteAi.maybePlayActivitySound(this);

@@ -29,6 +29,7 @@ import net.minecraft.world.entity.ai.goal.MoveToBlockGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.RangedAttackGoal;
 import net.minecraft.world.entity.ai.goal.ZombieAttackGoal;
+import net.minecraft.world.entity.ai.goal.MoveThroughVillageGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
@@ -68,6 +69,58 @@ public class Drowned extends Zombie implements RangedAttackMob {
         this.groundNavigation = new GroundPathNavigation(this, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.drownedRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.drownedRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.drownedControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.drownedMaxHealth);
+    }
+
+    @Override
+    protected void randomizeReinforcementsChance() {
+        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * this.level().purpurConfig.drownedSpawnReinforcements);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.drownedTakeDamageFromWater;
+    }
+
+    @Override
+    public boolean jockeyOnlyBaby() {
+        return level().purpurConfig.drownedJockeyOnlyBaby;
+    }
+
+    @Override
+    public double jockeyChance() {
+        return level().purpurConfig.drownedJockeyChance;
+    }
+
+    @Override
+    public boolean jockeyTryExistingChickens() {
+        return level().purpurConfig.drownedJockeyTryExistingChickens;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.drownedAlwaysDropExp;
+    }
+
     @Override
     protected void addBehaviourGoals() {
         this.goalSelector.addGoal(1, new Drowned.DrownedGoToWaterGoal(this, 1.0D));
@@ -75,10 +128,23 @@ public class Drowned extends Zombie implements RangedAttackMob {
         this.goalSelector.addGoal(2, new Drowned.DrownedAttackGoal(this, 1.0D, false));
         this.goalSelector.addGoal(5, new Drowned.DrownedGoToBeachGoal(this, 1.0D));
         this.goalSelector.addGoal(6, new Drowned.DrownedSwimUpGoal(this, 1.0D, this.level().getSeaLevel()));
+        if (level().purpurConfig.drownedBreakDoors) this.goalSelector.addGoal(6, new MoveThroughVillageGoal(this, 1.0D, true, 4, this::canBreakDoors));
         this.goalSelector.addGoal(7, new RandomStrollGoal(this, 1.0D));
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[]{Drowned.class})).setAlertOthers(ZombifiedPiglin.class));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::okTarget));
-        if (this.level().spigotConfig.zombieAggressiveTowardsVillager) this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false)); // Paper - Check drowned for villager aggression config
+        // Purpur start
+        if (this.level().spigotConfig.zombieAggressiveTowardsVillager) this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false) { // Paper - Check drowned for villager aggression config
+            @Override
+            public boolean canUse() {
+                return (level().purpurConfig.zombieAggressiveTowardsVillagerWhenLagging || !level().getServer().server.isLagging()) && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return (level().purpurConfig.zombieAggressiveTowardsVillagerWhenLagging || !level().getServer().server.isLagging()) && super.canContinueToUse();
+            }
+        });
+        // Purpur end
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Axolotl.class, true, false));
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
@@ -112,7 +178,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
 
     @Override
     public boolean supportsBreakDoorGoal() {
-        return false;
+        return level().purpurConfig.drownedBreakDoors ? true : false;
     }
 
     @Override
@@ -259,8 +325,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
         this.searchingForLand = targetingUnderwater;
     }
 
-    private static class DrownedMoveControl extends MoveControl {
-
+    private static class DrownedMoveControl extends org.purpurmc.purpur.controller.MoveControllerWASD { // Purpur
         private final Drowned drowned;
 
         public DrownedMoveControl(Drowned drowned) {
@@ -269,7 +334,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
         }
 
         @Override
-        public void tick() {
+        public void vanillaTick() { // Purpur
             LivingEntity entityliving = this.drowned.getTarget();
 
             if (this.drowned.wantsToSwim() && this.drowned.isInWater()) {
@@ -292,7 +357,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
 
                 this.drowned.setYRot(this.rotlerp(this.drowned.getYRot(), f, 90.0F));
                 this.drowned.yBodyRot = this.drowned.getYRot();
-                float f1 = (float) (this.speedModifier * this.drowned.getAttributeValue(Attributes.MOVEMENT_SPEED));
+                float f1 = (float) (this.getSpeedModifier() * this.drowned.getAttributeValue(Attributes.MOVEMENT_SPEED)); // Purpur
                 float f2 = Mth.lerp(0.125F, this.drowned.getSpeed(), f1);
 
                 this.drowned.setSpeed(f2);
@@ -302,7 +367,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
                     this.drowned.setDeltaMovement(this.drowned.getDeltaMovement().add(0.0D, -0.008D, 0.0D));
                 }
 
-                super.tick();
+                super.vanillaTick(); // Purpur
             }
 
         }

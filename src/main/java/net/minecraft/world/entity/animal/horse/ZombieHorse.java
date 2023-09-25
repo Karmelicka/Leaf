@@ -26,6 +26,48 @@ public class ZombieHorse extends AbstractHorse {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.zombieHorseRidableInWater;
+    }
+
+    @Override
+    public boolean isTamed() {
+        return super.isTamed() || this.level().purpurConfig.zombieHorseRidable;
+    }
+    // Purpur end
+
+    @Override
+    public float generateMaxHealth(RandomSource random) {
+        return (float) generateMaxHealth(this.level().purpurConfig.zombieHorseMaxHealthMin, this.level().purpurConfig.zombieHorseMaxHealthMax);
+    }
+
+    @Override
+    public double generateJumpStrength(RandomSource random) {
+        return generateJumpStrength(this.level().purpurConfig.zombieHorseJumpStrengthMin, this.level().purpurConfig.zombieHorseJumpStrengthMax);
+    }
+
+    @Override
+    public double generateSpeed(RandomSource random) {
+        return generateSpeed(this.level().purpurConfig.zombieHorseMovementSpeedMin, this.level().purpurConfig.zombieHorseMovementSpeedMax);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return 6000;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.zombieHorseTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.zombieHorseAlwaysDropExp;
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return createBaseHorseAttributes().add(Attributes.MAX_HEALTH, 15.0D).add(Attributes.MOVEMENT_SPEED, (double)0.2F);
     }
@@ -76,6 +118,7 @@ public class ZombieHorse extends AbstractHorse {
 
     @Override
     protected void addBehaviourGoals() {
+        if (level().purpurConfig.zombieHorseCanSwim) goalSelector.addGoal(0, new net.minecraft.world.entity.ai.goal.FloatGoal(this)); // Purpur
     }
 
     @Override

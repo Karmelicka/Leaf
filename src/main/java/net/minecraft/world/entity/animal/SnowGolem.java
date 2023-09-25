@@ -49,17 +49,56 @@ public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackM
     private static final EntityDataAccessor<Byte> DATA_PUMPKIN_ID = SynchedEntityData.defineId(SnowGolem.class, EntityDataSerializers.BYTE);
     private static final byte PUMPKIN_FLAG = 16;
     private static final float EYE_HEIGHT = 1.7F;
+    @Nullable private java.util.UUID summoner; // Purpur
 
     public SnowGolem(EntityType<? extends SnowGolem> type, Level world) {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.snowGolemRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.snowGolemRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.snowGolemControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.snowGolemMaxHealth);
+    }
+
+    @Nullable
+    public java.util.UUID getSummoner() {
+        return summoner;
+    }
+
+    public void setSummoner(@Nullable java.util.UUID summoner) {
+        this.summoner = summoner;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.snowGolemAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(1, new RangedAttackGoal(this, 1.25D, 20, 10.0F));
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+        this.goalSelector.addGoal(1, new RangedAttackGoal(this, level().purpurConfig.snowGolemAttackDistance, level().purpurConfig.snowGolemSnowBallMin, level().purpurConfig.snowGolemSnowBallMax, level().purpurConfig.snowGolemSnowBallModifier)); // Purpur
         this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 1.0D, 1.0000001E-5F));
         this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Mob.class, 10, true, false, (entityliving) -> {
             return entityliving instanceof Enemy;
         }));
@@ -79,6 +118,7 @@ public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackM
     public void addAdditionalSaveData(CompoundTag nbt) {
         super.addAdditionalSaveData(nbt);
         nbt.putBoolean("Pumpkin", this.hasPumpkin());
+        if (getSummoner() != null) nbt.putUUID("Purpur.Summoner", getSummoner()); // Purpur
     }
 
     @Override
@@ -87,12 +127,13 @@ public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackM
         if (nbt.contains("Pumpkin")) {
             this.setPumpkin(nbt.getBoolean("Pumpkin"));
         }
+        if (nbt.contains("Purpur.Summoner")) setSummoner(nbt.getUUID("Purpur.Summoner")); // Purpur
 
     }
 
     @Override
     public boolean isSensitiveToWater() {
-        return true;
+        return this.level().purpurConfig.snowGolemTakeDamageFromWater; // Purpur
     }
 
     @Override
@@ -103,10 +144,11 @@ public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackM
                 this.hurt(this.damageSources().melting(), 1.0F); // CraftBukkit - DamageSources.ON_FIRE -> CraftEventFactory.MELTING
             }
 
-            if (!this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+            if (!this.level().purpurConfig.snowGolemBypassMobGriefing && !this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) { // Purpur
                 return;
             }
 
+            if (getRider() != null && this.isControllable() && !level().purpurConfig.snowGolemLeaveTrailWhenRidden) return; // Purpur - don't leave snow trail when being ridden
             BlockState iblockdata = Blocks.SNOW.defaultBlockState();
 
             for (int i = 0; i < 4; ++i) {
@@ -154,11 +196,11 @@ public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackM
         if (itemstack.is(Items.SHEARS) && this.readyForShearing()) {
             // CraftBukkit start
             // Paper start - custom shear drops
-            java.util.List<ItemStack> drops = this.generateDefaultDrops();
+            java.util.List<ItemStack> drops = this.generateDefaultDrops(net.minecraft.world.item.enchantment.EnchantmentHelper.getMobLooting(player)); // Purpur
             org.bukkit.event.player.PlayerShearEntityEvent event = CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand, drops);
             if (event != null) {
                 if (event.isCancelled()) {
-                    return InteractionResult.PASS;
+                    return tryRide(player, hand); // Purpur
                 }
                 drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
             }
@@ -173,19 +215,36 @@ public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackM
             }
 
             return InteractionResult.sidedSuccess(this.level().isClientSide);
+        // Purpur start
+        } else if (level().purpurConfig.snowGolemPutPumpkinBack && !hasPumpkin() && itemstack.getItem() == Blocks.CARVED_PUMPKIN.asItem()) {
+            setPumpkin(true);
+            if (!player.getAbilities().instabuild) {
+                itemstack.shrink(1);
+            }
+            return InteractionResult.SUCCESS;
+        // Purpur end
         } else {
-            return InteractionResult.PASS;
+            return tryRide(player, hand); // Purpur
         }
     }
 
     @Override
     public void shear(SoundSource shearedSoundCategory) {
         // Paper start - custom shear drops
-        this.shear(shearedSoundCategory, this.generateDefaultDrops());
+        this.shear(shearedSoundCategory, this.generateDefaultDrops(0)); // Purpur
     }
 
     @Override
-    public java.util.List<ItemStack> generateDefaultDrops() {
+    // Purpur start
+    public java.util.List<ItemStack> generateDefaultDrops(int looting) {
+        if (org.purpurmc.purpur.PurpurConfig.allowShearsLooting) {
+            java.util.ArrayList<ItemStack> list = new java.util.ArrayList<>();
+            for (int i = 0; i < 1 + looting; i++) {
+                list.add(new ItemStack(Items.CARVED_PUMPKIN));
+            }
+            return java.util.Collections.unmodifiableList(list);
+        }
+        // Purpur end
         return java.util.Collections.singletonList(new ItemStack(Items.CARVED_PUMPKIN));
     }
 

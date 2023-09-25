@@ -59,7 +59,7 @@ public class CombatTracker {
         }
 
         ItemStack itemStack = var10000;
-        return !itemStack.isEmpty() && itemStack.hasCustomHoverName() ? Component.translatable(itemDeathTranslationKey, this.mob.getDisplayName(), attackerDisplayName, itemStack.getDisplayName()) : Component.translatable(deathTranslationKey, this.mob.getDisplayName(), attackerDisplayName);
+        return !itemStack.isEmpty() && (org.purpurmc.purpur.PurpurConfig.playerDeathsAlwaysShowItem || itemStack.hasCustomHoverName()) ? Component.translatable(itemDeathTranslationKey, this.mob.getDisplayName(), attackerDisplayName, itemStack.getDisplayName()) : Component.translatable(deathTranslationKey, this.mob.getDisplayName(), attackerDisplayName);
     }
 
     private Component getFallMessage(CombatEntry damageRecord, @Nullable Entity attacker) {
@@ -99,6 +99,13 @@ public class CombatTracker {
                 Component component = ComponentUtils.wrapInSquareBrackets(Component.translatable(string + ".link")).withStyle(INTENTIONAL_GAME_DESIGN_STYLE);
                 return Component.translatable(string + ".message", this.mob.getDisplayName(), component);
             } else {
+                // Purpur start
+                if (damageSource.isScissors()) {
+                    return damageSource.getLocalizedDeathMessage(org.purpurmc.purpur.PurpurConfig.deathMsgRunWithScissors, this.mob);
+                } else if (damageSource.isStonecutter()) {
+                    return damageSource.getLocalizedDeathMessage(org.purpurmc.purpur.PurpurConfig.deathMsgStonecutter, this.mob);
+                }
+                // Purpur end
                 return damageSource.getLocalizedDeathMessage(this.mob);
             }
         }

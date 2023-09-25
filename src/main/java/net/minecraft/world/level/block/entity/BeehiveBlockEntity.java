@@ -47,7 +47,7 @@ public class BeehiveBlockEntity extends BlockEntity {
     private final List<BeehiveBlockEntity.BeeData> stored = Lists.newArrayList();
     @Nullable
     public BlockPos savedFlowerPos;
-    public int maxBees = 3; // CraftBukkit - allow setting max amount of bees a hive can hold
+    public int maxBees = org.purpurmc.purpur.PurpurConfig.beeInsideBeeHive; // CraftBukkit - allow setting max amount of bees a hive can hold // Purpur
 
     public BeehiveBlockEntity(BlockPos pos, BlockState state) {
         super(BlockEntityType.BEEHIVE, pos, state);
@@ -134,6 +134,22 @@ public class BeehiveBlockEntity extends BlockEntity {
         return list;
     }
 
+    // Purpur start
+    public List<Entity> releaseBee(BlockState iblockdata, BeeData data, BeehiveBlockEntity.BeeReleaseStatus tileentitybeehive_releasestatus, boolean force) {
+        List<Entity> list = Lists.newArrayList();
+
+        BeehiveBlockEntity.releaseBee(this.level, this.worldPosition, iblockdata, data, list, tileentitybeehive_releasestatus, this.savedFlowerPos, force);
+
+        if (!list.isEmpty()) {
+            stored.remove(data);
+
+            super.setChanged();
+        }
+
+        return list;
+    }
+    // Purpur end
+
     public void addOccupant(Entity entity, boolean hasNectar) {
         this.addOccupantWithPresetTicks(entity, hasNectar, 0);
     }
@@ -142,6 +158,12 @@ public class BeehiveBlockEntity extends BlockEntity {
     public int getOccupantCount() {
         return this.stored.size();
     }
+
+    // Purpur start
+    public List<BeeData> getStored() {
+        return stored;
+    }
+    // Purpur end
 
     // Paper start - Add EntityBlockStorage clearEntities
     public void clearBees() {
@@ -207,7 +229,7 @@ public class BeehiveBlockEntity extends BlockEntity {
     }
 
     private static boolean releaseBee(Level world, BlockPos blockposition, BlockState iblockdata, BeehiveBlockEntity.BeeData tileentitybeehive_hivebee, @Nullable List<Entity> list, BeehiveBlockEntity.BeeReleaseStatus tileentitybeehive_releasestatus, @Nullable BlockPos blockposition1, boolean force) {
-        if (!force && (world.isNight() || world.isRaining()) && tileentitybeehive_releasestatus != BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY) {
+        if (!force && ((world.isNight() && !world.purpurConfig.beeCanWorkAtNight) || (world.isRaining() && !world.purpurConfig.beeCanWorkInRain)) && tileentitybeehive_releasestatus != BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY) { // Purpur
             // CraftBukkit end
             return false;
         } else {
@@ -429,9 +451,9 @@ public class BeehiveBlockEntity extends BlockEntity {
         private BeeReleaseStatus() {}
     }
 
-    private static class BeeData {
+    public static class BeeData { // Purpur - change from private to public
 
-        final CompoundTag entityData;
+        public final CompoundTag entityData; // Purpur - make public
         int ticksInHive;
         int exitTickCounter; // Paper - Fix bees aging inside hives; separate counter for checking if bee should exit to reduce exit attempts
         final int minOccupationTicks;

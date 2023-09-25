@@ -15,6 +15,7 @@ import net.minecraft.util.ByIdMap;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.item.context.UseOnContext;
@@ -69,6 +70,14 @@ public class FireworkRocketItem extends Item {
                 com.destroystokyo.paper.event.player.PlayerElytraBoostEvent event = new com.destroystokyo.paper.event.player.PlayerElytraBoostEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Firework) fireworkRocketEntity.getBukkitEntity());
                 if (event.callEvent() && world.addFreshEntity(fireworkRocketEntity)) {
                     user.awardStat(Stats.ITEM_USED.get(this));
+                    // Purpur start
+                    if (world.purpurConfig.elytraDamagePerFireworkBoost > 0) {
+                        ItemStack chestItem = user.getItemBySlot(EquipmentSlot.CHEST);
+                        if (chestItem.getItem() == Items.ELYTRA) {
+                            chestItem.hurtAndBreak(world.purpurConfig.elytraDamagePerFireworkBoost, user, (entityliving) -> entityliving.broadcastBreakEvent(EquipmentSlot.CHEST));
+                        }
+                    }
+                    // Purpur end
                     if (event.shouldConsume() && !user.getAbilities().instabuild) {
                     itemStack.shrink(1);
                     } else ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();

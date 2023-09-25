@@ -75,9 +75,84 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
     private Llama caravanHead;
     @Nullable
     public Llama caravanTail; // Paper
+    public boolean shouldJoinCaravan = true; // Purpur
 
     public Llama(EntityType<? extends Llama> type, Level world) {
         super(type, world);
+        // Purpur start
+        this.moveControl = new org.purpurmc.purpur.controller.MoveControllerWASD(this) {
+            @Override
+            public void tick() {
+                if (entity.getRider() != null && entity.isControllable() && isSaddled()) {
+                    purpurTick(entity.getRider());
+                } else {
+                    vanillaTick();
+                }
+            }
+        };
+        this.lookControl = new org.purpurmc.purpur.controller.LookControllerWASD(this) {
+            @Override
+            public void tick() {
+                if (entity.getRider() != null && entity.isControllable() && isSaddled()) {
+                    purpurTick(entity.getRider());
+                } else {
+                    vanillaTick();
+                }
+            }
+        };
+        // Purpur end
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.llamaRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.llamaRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.llamaControllable;
+    }
+
+    @Override
+    public boolean isSaddled() {
+        return super.isSaddled() || (isTamed() && getSwag() != null);
+    }
+    // Purpur end
+
+    @Override
+    public float generateMaxHealth(RandomSource random) {
+        return (float) generateMaxHealth(this.level().purpurConfig.llamaMaxHealthMin, this.level().purpurConfig.llamaMaxHealthMax);
+    }
+
+    @Override
+    public double generateJumpStrength(RandomSource random) {
+        return generateJumpStrength(this.level().purpurConfig.llamaJumpStrengthMin, this.level().purpurConfig.llamaJumpStrengthMax);
+    }
+
+    @Override
+    public double generateSpeed(RandomSource random) {
+        return generateSpeed(this.level().purpurConfig.llamaMovementSpeedMin, this.level().purpurConfig.llamaMovementSpeedMax);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.llamaBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.llamaTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.llamaAlwaysDropExp;
     }
 
     public boolean isTraderLlama() {
@@ -111,7 +186,7 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
         if (!this.inventory.getItem(1).isEmpty()) {
             nbt.put("DecorItem", this.inventory.getItem(1).save(new CompoundTag()));
         }
-
+        nbt.putBoolean("Purpur.ShouldJoinCaravan", shouldJoinCaravan); // Purpur
     }
 
     @Override
@@ -122,13 +197,14 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
         if (nbt.contains("DecorItem", 10)) {
             this.inventory.setItem(1, ItemStack.of(nbt.getCompound("DecorItem")));
         }
-
+        if (nbt.contains("Purpur.ShouldJoinCaravan")) this.shouldJoinCaravan = nbt.getBoolean("Purpur.ShouldJoinCaravan"); // Purpur
         this.updateContainerEquipment();
     }
 
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.LlamaHasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new RunAroundLikeCrazyGoal(this, 1.2D));
         this.goalSelector.addGoal(2, new LlamaFollowCaravanGoal(this, 2.0999999046325684D));
         this.goalSelector.addGoal(3, new RangedAttackGoal(this, 1.25D, 40, 20.0F));
@@ -139,6 +215,7 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.7D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.LlamaHasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new Llama.LlamaHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new Llama.LlamaAttackWolfGoal(this));
     }
@@ -439,6 +516,7 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
 
     public void leaveCaravan() {
         if (this.caravanHead != null) {
+            new org.purpurmc.purpur.event.entity.LlamaLeaveCaravanEvent((org.bukkit.entity.Llama) getBukkitEntity()).callEvent(); // Purpur
             this.caravanHead.caravanTail = null;
         }
 
@@ -446,6 +524,7 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
     }
 
     public void joinCaravan(Llama llama) {
+        if (!this.level().purpurConfig.llamaJoinCaravans || !shouldJoinCaravan || !new org.purpurmc.purpur.event.entity.LlamaJoinCaravanEvent((org.bukkit.entity.Llama) getBukkitEntity(), (org.bukkit.entity.Llama) llama.getBukkitEntity()).callEvent()) return; // Purpur
         this.caravanHead = llama;
         this.caravanHead.caravanTail = this;
     }

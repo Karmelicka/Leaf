@@ -41,7 +41,7 @@ public class IceBlock extends HalfTransparentBlock {
     public void afterDestroy(Level world, BlockPos pos, ItemStack tool) {
         // Paper end - Improve Block#breakNaturally API
         if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, tool) == 0) {
-            if (world.dimensionType().ultraWarm()) {
+            if (world.isNether() || (world.isTheEnd() && !org.purpurmc.purpur.PurpurConfig.allowWaterPlacementInTheEnd)) { // Purpur
                 world.removeBlock(pos, false);
                 return;
             }
@@ -69,7 +69,7 @@ public class IceBlock extends HalfTransparentBlock {
             return;
         }
         // CraftBukkit end
-        if (world.dimensionType().ultraWarm()) {
+        if (world.isNether() || (world.isTheEnd() && !org.purpurmc.purpur.PurpurConfig.allowWaterPlacementInTheEnd)) { // Purpur
             world.removeBlock(pos, false);
         } else {
             world.setBlockAndUpdate(pos, IceBlock.meltsInto());

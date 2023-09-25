@@ -96,22 +96,69 @@ public class Zombie extends Monster {
     private int inWaterTime;
     public int conversionTime;
     private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
-    private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
+    // private boolean shouldBurnInDay = true; // Paper - Add more Zombie API // Purpur - implemented in LivingEntity
 
     public Zombie(EntityType<? extends Zombie> type, Level world) {
         super(type, world);
         this.breakDoorGoal = new BreakDoorGoal(this, com.google.common.base.Predicates.in(world.paperConfig().entities.behavior.doorBreakingDifficulty.getOrDefault(type, world.paperConfig().entities.behavior.doorBreakingDifficulty.get(EntityType.ZOMBIE)))); // Paper - Configurable door breaking difficulty
+        this.setShouldBurnInDay(true); // Purpur
     }
 
     public Zombie(Level world) {
         this(EntityType.ZOMBIE, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.zombieRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.zombieRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.zombieControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.zombieMaxHealth);
+    }
+
+    public boolean jockeyOnlyBaby() {
+        return level().purpurConfig.zombieJockeyOnlyBaby;
+    }
+
+    public double jockeyChance() {
+        return level().purpurConfig.zombieJockeyChance;
+    }
+
+    public boolean jockeyTryExistingChickens() {
+        return level().purpurConfig.zombieJockeyTryExistingChickens;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.zombieTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.zombieAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         if (this.level().paperConfig().entities.behavior.zombiesTargetTurtleEggs) this.goalSelector.addGoal(4, new Zombie.ZombieAttackTurtleEggGoal(this, 1.0D, 3)); // Paper - Add zombie targets turtle egg config
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.addBehaviourGoals();
     }
 
@@ -121,7 +168,19 @@ public class Zombie extends Monster {
         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers(ZombifiedPiglin.class));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
-        if ( this.level().spigotConfig.zombieAggressiveTowardsVillager ) this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false)); // Spigot
+        // Purpur start
+        if ( this.level().spigotConfig.zombieAggressiveTowardsVillager ) this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false) { // Spigot
+            @Override
+            public boolean canUse() {
+                return (level().purpurConfig.zombieAggressiveTowardsVillagerWhenLagging || !level().getServer().server.isLagging()) && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return (level().purpurConfig.zombieAggressiveTowardsVillagerWhenLagging || !level().getServer().server.isLagging()) && super.canContinueToUse();
+            }
+        });
+        // Purpur end
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
     }
@@ -243,30 +302,7 @@ public class Zombie extends Monster {
 
     @Override
     public void aiStep() {
-        if (this.isAlive()) {
-            boolean flag = this.isSunSensitive() && this.isSunBurnTick();
-
-            if (flag) {
-                ItemStack itemstack = this.getItemBySlot(EquipmentSlot.HEAD);
-
-                if (!itemstack.isEmpty()) {
-                    if (itemstack.isDamageableItem()) {
-                        itemstack.setDamageValue(itemstack.getDamageValue() + this.random.nextInt(2));
-                        if (itemstack.getDamageValue() >= itemstack.getMaxDamage()) {
-                            this.broadcastBreakEvent(EquipmentSlot.HEAD);
-                            this.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
-                        }
-                    }
-
-                    flag = false;
-                }
-
-                if (flag) {
-                    this.setSecondsOnFire(8);
-                }
-            }
-        }
-
+        // Purpur - implemented in LivingEntity
         super.aiStep();
     }
 
@@ -304,6 +340,7 @@ public class Zombie extends Monster {
 
     }
 
+    public boolean shouldBurnInDay() { return isSunSensitive(); } // Purpur - for ABI compatibility
     public boolean isSunSensitive() {
         return this.shouldBurnInDay; // Paper - Add more Zombie API
     }
@@ -433,7 +470,7 @@ public class Zombie extends Monster {
         nbt.putBoolean("CanBreakDoors", this.canBreakDoors());
         nbt.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
         nbt.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
-        nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay); // Paper - Add more Zombie API
+        //nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay); // Paper - Add more Zombie API // Purpur - implemented in LivingEntity
     }
 
     @Override
@@ -447,7 +484,7 @@ public class Zombie extends Monster {
         }
         // Paper start - Add more Zombie API
         if (nbt.contains("Paper.ShouldBurnInDay")) {
-            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
+            // this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay"); // Purpur - implemented in LivingEntity
         }
         // Paper end - Add more Zombie API
 
@@ -520,19 +557,20 @@ public class Zombie extends Monster {
         if (object instanceof Zombie.ZombieGroupData) {
             Zombie.ZombieGroupData entityzombie_groupdatazombie = (Zombie.ZombieGroupData) object;
 
-            if (entityzombie_groupdatazombie.isBaby) {
-                this.setBaby(true);
+            // Purpur start
+            if (!jockeyOnlyBaby() || entityzombie_groupdatazombie.isBaby) {
+                this.setBaby(entityzombie_groupdatazombie.isBaby);
                 if (entityzombie_groupdatazombie.canSpawnJockey) {
-                    if ((double) randomsource.nextFloat() < 0.05D) {
-                        List<Chicken> list = world.getEntitiesOfClass(Chicken.class, this.getBoundingBox().inflate(5.0D, 3.0D, 5.0D), EntitySelector.ENTITY_NOT_BEING_RIDDEN);
+                    if ((double) randomsource.nextFloat() < jockeyChance()) {
+                        List<Chicken> list = jockeyTryExistingChickens() ? world.getEntitiesOfClass(Chicken.class, this.getBoundingBox().inflate(5.0D, 3.0D, 5.0D), EntitySelector.ENTITY_NOT_BEING_RIDDEN) : java.util.Collections.emptyList();
+                        // Purpur end
 
                         if (!list.isEmpty()) {
                             Chicken entitychicken = (Chicken) list.get(0);
 
                             entitychicken.setChickenJockey(true);
                             this.startRiding(entitychicken);
-                        }
-                    } else if ((double) randomsource.nextFloat() < 0.05D) {
+                        } else { // Purpur
                         Chicken entitychicken1 = (Chicken) EntityType.CHICKEN.create(this.level());
 
                         if (entitychicken1 != null) {
@@ -542,6 +580,7 @@ public class Zombie extends Monster {
                             this.startRiding(entitychicken1);
                             world.addFreshEntity(entitychicken1, CreatureSpawnEvent.SpawnReason.MOUNT); // CraftBukkit
                         }
+                        } // Purpur
                     }
                 }
             }
@@ -588,7 +627,7 @@ public class Zombie extends Monster {
     }
 
     protected void randomizeReinforcementsChance() {
-        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * 0.10000000149011612D);
+        this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * this.level().purpurConfig.zombieSpawnReinforcements); // Purpur
     }
 
     @Override

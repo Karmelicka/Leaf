@@ -82,6 +82,58 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
         });
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.zombieVillagerRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.zombieVillagerRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.zombieVillagerControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.zombieVillagerMaxHealth);
+    }
+
+    @Override
+    protected void randomizeReinforcementsChance() {
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(this.random.nextDouble() * this.level().purpurConfig.zombieVillagerSpawnReinforcements);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.zombieVillagerTakeDamageFromWater;
+    }
+
+    @Override
+    public boolean jockeyOnlyBaby() {
+        return level().purpurConfig.zombieVillagerJockeyOnlyBaby;
+    }
+
+    @Override
+    public double jockeyChance() {
+        return level().purpurConfig.zombieVillagerJockeyChance;
+    }
+
+    @Override
+    public boolean jockeyTryExistingChickens() {
+        return level().purpurConfig.zombieVillagerJockeyTryExistingChickens;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.zombieVillagerAlwaysDropExp;
+    }
+
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
@@ -168,13 +220,13 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
         ItemStack itemstack = player.getItemInHand(hand);
 
         if (itemstack.is(Items.GOLDEN_APPLE)) {
-            if (this.hasEffect(MobEffects.WEAKNESS)) {
+            if (this.hasEffect(MobEffects.WEAKNESS) && level().purpurConfig.zombieVillagerCureEnabled) { // Purpur
                 if (!player.getAbilities().instabuild) {
                     itemstack.shrink(1);
                 }
 
                 if (!this.level().isClientSide) {
-                    this.startConverting(player.getUUID(), this.random.nextInt(2401) + 3600);
+                    this.startConverting(player.getUUID(), this.random.nextInt(level().purpurConfig.zombieVillagerCuringTimeMax - level().purpurConfig.zombieVillagerCuringTimeMin + 1) + level().purpurConfig.zombieVillagerCuringTimeMin); // Purpur
                 }
 
                 return InteractionResult.SUCCESS;

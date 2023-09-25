@@ -100,10 +100,23 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
     private float spinningAnimationTicks;
     private float spinningAnimationTicks0;
     public boolean forceDancing = false; // CraftBukkit
+    private org.purpurmc.purpur.controller.FlyingMoveControllerWASD purpurController; // Purpur
 
     public Allay(EntityType<? extends Allay> type, Level world) {
         super(type, world);
-        this.moveControl = new FlyingMoveControl(this, 20, true);
+        // Purpur start
+        this.purpurController = new org.purpurmc.purpur.controller.FlyingMoveControllerWASD(this, 0.1F, 0.5F);
+        this.moveControl = new FlyingMoveControl(this, 20, true) {
+            @Override
+            public void tick() {
+                if (mob.getRider() != null && mob.isControllable()) {
+                    purpurController.purpurTick(mob.getRider());
+                } else {
+                    super.tick();
+                }
+            }
+        };
+        // Purpur end
         this.setCanPickUpLoot(this.canPickUpLoot());
         this.vibrationUser = new Allay.VibrationUser();
         this.vibrationData = new VibrationSystem.Data();
@@ -116,6 +129,28 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
         this.entityData.set(Allay.DATA_CAN_DUPLICATE, canDuplicate);
     }
     // CraftBukkit end
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.allayRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.allayRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.allayControllable;
+    }
+
+    @Override
+    protected void registerGoals() {
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+    }
+    // Purpur end
 
     @Override
     protected Brain.Provider<Allay> brainProvider() {
@@ -224,7 +259,7 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
     private int behaviorTick = 0; // Pufferfish
     @Override
     protected void customServerAiStep() {
-        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
+        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish // Purpur - only use brain if no rider
         this.getBrain().tick((ServerLevel) this.level(), this);
         AllayAi.updateActivity(this);
         super.customServerAiStep();
@@ -367,9 +402,31 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
 
     @Override
     public boolean wantsToPickUp(ItemStack stack) {
-        ItemStack itemstack1 = this.getItemInHand(InteractionHand.MAIN_HAND);
-
-        return !itemstack1.isEmpty() && this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && this.inventory.canAddItem(stack) && this.allayConsidersItemEqual(itemstack1, stack);
+        // Purpur start
+        if (!this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+            return false;
+        }
+        ItemStack itemStack = this.getItemInHand(InteractionHand.MAIN_HAND);
+        if (itemStack.isEmpty()) {
+            return false;
+        }
+        if (!allayConsidersItemEqual(itemStack, stack)) {
+            return false;
+        }
+        if (!this.inventory.canAddItem(stack)) {
+            return false;
+        }
+        for (String tag : this.level().purpurConfig.allayRespectNBT) {
+            if (stack.hasTag() && itemStack.hasTag()) {
+                Tag tag1 = stack.getTag().get(tag);
+                Tag tag2 = itemStack.getTag().get(tag);
+                if (!Objects.equals(tag1, tag2)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+        // Purpur end
     }
 
     private boolean allayConsidersItemEqual(ItemStack stack, ItemStack stack2) {

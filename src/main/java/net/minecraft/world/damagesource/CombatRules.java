@@ -11,12 +11,12 @@ public class CombatRules {
 
     public static float getDamageAfterAbsorb(float damage, float armor, float armorToughness) {
         float f = 2.0F + armorToughness / 4.0F;
-        float g = Mth.clamp(armor - damage / f, armor * 0.2F, 20.0F);
+        float g = Mth.clamp(armor - damage / f, armor * 0.2F, org.purpurmc.purpur.PurpurConfig.limitArmor ? 20F : Float.MAX_VALUE); // Purpur
         return damage * (1.0F - g / 25.0F);
     }
 
     public static float getDamageAfterMagicAbsorb(float damageDealt, float protection) {
-        float f = Mth.clamp(protection, 0.0F, 20.0F);
+        float f = Mth.clamp(protection, 0.0F, org.purpurmc.purpur.PurpurConfig.limitArmor ? 20F : Float.MAX_VALUE); // Purpur
         return damageDealt * (1.0F - f / 25.0F);
     }
 }

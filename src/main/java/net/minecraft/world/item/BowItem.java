@@ -38,13 +38,13 @@ public class BowItem extends ProjectileWeaponItem implements Vanishable {
                 float f = BowItem.getPowerForTime(j);
 
                 if ((double) f >= 0.1D) {
-                    boolean flag1 = flag && itemstack1.is(Items.ARROW);
+                    boolean flag1 = flag && ((itemstack1.is(Items.ARROW) && world.purpurConfig.infinityWorksWithNormalArrows) || (itemstack1.is(Items.TIPPED_ARROW) && world.purpurConfig.infinityWorksWithTippedArrows) || (itemstack1.is(Items.SPECTRAL_ARROW) && world.purpurConfig.infinityWorksWithSpectralArrows)); // Purpur                    if (!world.isClientSide) {
 
                     if (!world.isClientSide) {
                         ArrowItem itemarrow = (ArrowItem) (itemstack1.getItem() instanceof ArrowItem ? itemstack1.getItem() : Items.ARROW);
                         AbstractArrow entityarrow = itemarrow.createArrow(world, itemstack1, entityhuman);
 
-                        entityarrow.shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, f * 3.0F, 1.0F);
+                        entityarrow.shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, f * 3.0F, (float) world.purpurConfig.bowProjectileOffset); // Purpur
                         if (f == 1.0F) {
                             entityarrow.setCritArrow(true);
                         }
@@ -64,6 +64,13 @@ public class BowItem extends ProjectileWeaponItem implements Vanishable {
                         if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.FLAMING_ARROWS, stack) > 0) {
                             entityarrow.setSecondsOnFire(100);
                         }
+                        // Purpur start
+                        int lootingLevel = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MOB_LOOTING, stack);
+
+                        if (lootingLevel > 0) {
+                            entityarrow.setLootingLevel(lootingLevel);
+                        }
+                        // Purpur end
                         // CraftBukkit start
                         org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(entityhuman, stack, itemstack1, entityarrow, entityhuman.getUsedItemHand(), f, !flag1);
                         if (event.isCancelled()) {
@@ -132,7 +139,7 @@ public class BowItem extends ProjectileWeaponItem implements Vanishable {
         ItemStack itemstack = user.getItemInHand(hand);
         boolean flag = !user.getProjectile(itemstack).isEmpty();
 
-        if (!user.getAbilities().instabuild && !flag) {
+        if (!(world.purpurConfig.infinityWorksWithoutArrows && EnchantmentHelper.getItemEnchantmentLevel(Enchantments.INFINITY_ARROWS, itemstack) > 0) && !user.getAbilities().instabuild && !flag) { // Purpur
             return InteractionResultHolder.fail(itemstack);
         } else {
             user.startUsingItem(hand);

@@ -19,6 +19,7 @@ import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -46,11 +47,58 @@ public class Bat extends AmbientCreature {
 
     public Bat(EntityType<? extends Bat> type, Level world) {
         super(type, world);
+        this.moveControl = new org.purpurmc.purpur.controller.FlyingWithSpacebarMoveControllerWASD(this, 0.075F); // Purpur
         if (!world.isClientSide) {
             this.setResting(true);
         }
 
     }
+
+    // Purpur start
+    @Override
+    public boolean shouldSendAttribute(net.minecraft.world.entity.ai.attributes.Attribute attribute) { return attribute != Attributes.FLYING_SPEED; } // Fixes log spam on clients
+
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.batRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.batRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.batControllable;
+    }
+
+    @Override
+    public double getMaxY() {
+        return level().purpurConfig.batMaxY;
+    }
+
+    @Override
+    public void onMount(Player rider) {
+        super.onMount(rider);
+        if (isResting()) {
+            setResting(false);
+            level().levelEvent(null, 1025, new BlockPos(this).above(), 0);
+        }
+    }
+
+    @Override
+    public void travel(Vec3 vec3) {
+        super.travel(vec3);
+        if (getRider() != null && this.isControllable() && !onGround) {
+            float speed = (float) getAttributeValue(Attributes.FLYING_SPEED) * 2;
+            setSpeed(speed);
+            Vec3 mot = getDeltaMovement();
+            move(MoverType.SELF, mot.multiply(speed, 0.25, speed));
+            setDeltaMovement(mot.scale(0.9D));
+        }
+    }
+    // Purpur end
 
     @Override
     public boolean isFlapping() {
@@ -101,7 +149,7 @@ public class Bat extends AmbientCreature {
     protected void pushEntities() {}
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 6.0D);
+        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 6.0D).add(Attributes.FLYING_SPEED, 0.6D); // Purpur
     }
 
     public boolean isResting() {
@@ -134,6 +182,14 @@ public class Bat extends AmbientCreature {
 
     @Override
     protected void customServerAiStep() {
+        // Purpur start
+        if (getRider() != null && this.isControllable()) {
+            Vec3 mot = getDeltaMovement();
+            setDeltaMovement(mot.x(), mot.y() + (getVerticalMot() > 0 ? 0.07D : 0.0D), mot.z());
+            return;
+        }
+        // Purpur end
+
         super.customServerAiStep();
         BlockPos blockposition = this.blockPosition();
         BlockPos blockposition1 = blockposition.above();
@@ -210,6 +266,28 @@ public class Bat extends AmbientCreature {
 
             return super.hurt(source, amount);
         }
+    }
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.batMaxHealth);
+        this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(this.level().purpurConfig.batFollowRange);
+        this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(this.level().purpurConfig.batKnockbackResistance);
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.level().purpurConfig.batMovementSpeed);
+        this.getAttribute(Attributes.FLYING_SPEED).setBaseValue(this.level().purpurConfig.batFlyingSpeed);
+        this.getAttribute(Attributes.ARMOR).setBaseValue(this.level().purpurConfig.batArmor);
+        this.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(this.level().purpurConfig.batArmorToughness);
+        this.getAttribute(Attributes.ATTACK_KNOCKBACK).setBaseValue(this.level().purpurConfig.batAttackKnockback);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.batTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.batAlwaysDropExp;
     }
 
     @Override

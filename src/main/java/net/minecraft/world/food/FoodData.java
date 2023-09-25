@@ -33,8 +33,10 @@ public class FoodData {
     // CraftBukkit end
 
     public void eat(int food, float saturationModifier) {
+        int oldValue = this.foodLevel; // Purpur
         this.foodLevel = Math.min(food + this.foodLevel, 20);
         this.saturationLevel = Math.min(this.saturationLevel + (float) food * saturationModifier * 2.0F, (float) this.foodLevel);
+        if (this.entityhuman.level().purpurConfig.playerBurpWhenFull && this.foodLevel == 20 && oldValue < 20) this.entityhuman.burpDelay = this.entityhuman.level().purpurConfig.playerBurpDelay; // Purpur
     }
 
     public void eat(Item item, ItemStack stack) {
@@ -100,7 +102,7 @@ public class FoodData {
             ++this.tickTimer;
             if (this.tickTimer >= this.starvationRate) { // CraftBukkit - add regen rate manipulation
                 if (player.getHealth() > 10.0F || enumdifficulty == Difficulty.HARD || player.getHealth() > 1.0F && enumdifficulty == Difficulty.NORMAL) {
-                    player.hurt(player.damageSources().starve(), 1.0F);
+                    player.hurt(player.damageSources().starve(), player.level().purpurConfig.hungerStarvationDamage); // Purpur
                 }
 
                 this.tickTimer = 0;

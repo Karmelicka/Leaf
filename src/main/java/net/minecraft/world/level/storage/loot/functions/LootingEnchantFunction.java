@@ -57,6 +57,13 @@ public class LootingEnchantFunction extends LootItemConditionalFunction {
 
         if (entity instanceof LivingEntity) {
             int i = EnchantmentHelper.getMobLooting((LivingEntity) entity);
+            // Purpur start
+            if (org.purpurmc.purpur.PurpurConfig.fixProjectileLootingTransfer &&
+                    context.getParamOrNull(LootContextParams.DIRECT_KILLER_ENTITY)
+                        instanceof net.minecraft.world.entity.projectile.AbstractArrow arrow) {
+                i = arrow.lootingLevel;
+            }
+            // Purpur end
             // CraftBukkit start - use lootingModifier if set by plugin
             if (context.hasParam(LootContextParams.LOOTING_MOD)) {
                 i = context.getParamOrNull(LootContextParams.LOOTING_MOD);

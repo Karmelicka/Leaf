@@ -60,21 +60,99 @@ public class Creeper extends Monster implements PowerableMob {
     public int maxSwell = 30;
     public int explosionRadius = 3;
     private int droppedSkulls;
+    // Purpur start
+    private int spacebarCharge = 0;
+    private int prevSpacebarCharge = 0;
+    private int powerToggleDelay = 0;
+    private boolean exploding = false;
+    // Purpur end
 
     public Creeper(EntityType<? extends Creeper> type, Level world) {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.creeperRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.creeperRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.creeperControllable;
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        if (powerToggleDelay > 0) {
+            powerToggleDelay--;
+        }
+        if (getRider() != null && this.isControllable()) {
+            if (getRider().getForwardMot() != 0 || getRider().getStrafeMot() != 0) {
+                spacebarCharge = 0;
+                setIgnited(false);
+                setSwellDir(-1);
+            }
+            if (spacebarCharge == prevSpacebarCharge) {
+                spacebarCharge = 0;
+            }
+            prevSpacebarCharge = spacebarCharge;
+        }
+        super.customServerAiStep();
+    }
+
+    @Override
+    public void onMount(Player rider) {
+        super.onMount(rider);
+        setIgnited(false);
+        setSwellDir(-1);
+    }
+
+    @Override
+    public boolean onSpacebar() {
+        if (powerToggleDelay > 0) {
+            return true; // just toggled power, do not jump or ignite
+        }
+        spacebarCharge++;
+        if (spacebarCharge > maxSwell - 2) {
+            spacebarCharge = 0;
+            if (getRider() != null && getRider().getBukkitEntity().hasPermission("allow.powered.creeper")) {
+                powerToggleDelay = 20;
+                setPowered(!isPowered());
+                setIgnited(false);
+                setSwellDir(-1);
+                return true;
+            }
+        }
+        if (!isIgnited()) {
+            if (getRider() != null && getRider().getForwardMot() == 0 && getRider().getStrafeMot() == 0 &&
+                    getRider().getBukkitEntity().hasPermission("allow.special.creeper")) {
+                setIgnited(true);
+                setSwellDir(1);
+                return true;
+            }
+        }
+        return getForwardMot() == 0 && getStrafeMot() == 0; // do not jump if standing still
+    }
+    // Purpur end
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
         this.goalSelector.addGoal(2, new SwellGoal(this));
+        this.goalSelector.addGoal(3, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(3, new AvoidEntityGoal<>(this, Ocelot.class, 6.0F, 1.0D, 1.2D));
         this.goalSelector.addGoal(3, new AvoidEntityGoal<>(this, Cat.class, 6.0F, 1.0D, 1.2D));
         this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, false));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.targetSelector.addGoal(2, new HurtByTargetGoal(this, new Class[0]));
     }
@@ -175,6 +253,37 @@ public class Creeper extends Monster implements PowerableMob {
     }
 
     @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.creeperMaxHealth);
+    }
+
+    public net.minecraft.world.entity.SpawnGroupData finalizeSpawn(net.minecraft.world.level.ServerLevelAccessor world, net.minecraft.world.DifficultyInstance difficulty, net.minecraft.world.entity.MobSpawnType spawnReason, @Nullable net.minecraft.world.entity.SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
+        double chance = world.getLevel().purpurConfig.creeperChargedChance;
+        if (chance > 0D && random.nextDouble() <= chance) {
+            setPowered(true);
+        }
+        return super.finalizeSpawn(world, difficulty, spawnReason, entityData, entityNbt);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.creeperTakeDamageFromWater;
+    }
+
+    @Override
+    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(DamageSource damagesource) {
+        if (!exploding && this.level().purpurConfig.creeperExplodeWhenKilled && damagesource.getEntity() instanceof net.minecraft.server.level.ServerPlayer) {
+            this.explodeCreeper();
+        }
+        return super.dropAllDeathLoot(damagesource);
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.creeperAlwaysDropExp;
+    }
+
+    @Override
     protected SoundEvent getHurtSound(DamageSource source) {
         return SoundEvents.CREEPER_HURT;
     }
@@ -265,15 +374,17 @@ public class Creeper extends Monster implements PowerableMob {
     }
 
     public void explodeCreeper() {
+        this.exploding = true; // Purpur
         if (!this.level().isClientSide) {
             float f = this.isPowered() ? 2.0F : 1.0F;
+            float multiplier = this.level().purpurConfig.creeperHealthRadius ? this.getHealth() / this.getMaxHealth() : 1; // Purpur
 
             // CraftBukkit start
-            ExplosionPrimeEvent event = CraftEventFactory.callExplosionPrimeEvent(this, this.explosionRadius * f, false);
+            ExplosionPrimeEvent event = CraftEventFactory.callExplosionPrimeEvent(this, (this.explosionRadius * f) * multiplier, false); // Purpur
             if (!event.isCancelled()) {
             // CraftBukkit end
             this.dead = true;
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
+            this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), this.level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING) && level().purpurConfig.creeperAllowGriefing ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE); // CraftBukkit // Purpur
             this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
             this.spawnLingeringCloud();
             // CraftBukkit start
@@ -283,7 +394,7 @@ public class Creeper extends Monster implements PowerableMob {
             }
             // CraftBukkit end
         }
-
+        this.exploding = false; // Purpur
     }
 
     private void spawnLingeringCloud() {
@@ -325,6 +436,7 @@ public class Creeper extends Monster implements PowerableMob {
             com.destroystokyo.paper.event.entity.CreeperIgniteEvent event = new com.destroystokyo.paper.event.entity.CreeperIgniteEvent((org.bukkit.entity.Creeper) getBukkitEntity(), ignited);
             if (event.callEvent()) {
                 this.entityData.set(Creeper.DATA_IS_IGNITED, event.isIgnited());
+                if (!event.isIgnited()) setSwellDir(-1); // Purpur
             }
         }
         // Paper end - CreeperIgniteEvent

@@ -15,6 +15,43 @@ public class Donkey extends AbstractChestedHorse {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.donkeyRidableInWater;
+    }
+    // Purpur end
+
+    @Override
+    public float generateMaxHealth(net.minecraft.util.RandomSource random) {
+        return (float) generateMaxHealth(this.level().purpurConfig.donkeyMaxHealthMin, this.level().purpurConfig.donkeyMaxHealthMax);
+    }
+
+    @Override
+    public double generateJumpStrength(net.minecraft.util.RandomSource random) {
+        return generateJumpStrength(this.level().purpurConfig.donkeyJumpStrengthMin, this.level().purpurConfig.donkeyJumpStrengthMax);
+    }
+
+    @Override
+    public double generateSpeed(net.minecraft.util.RandomSource random) {
+        return generateSpeed(this.level().purpurConfig.donkeyMovementSpeedMin, this.level().purpurConfig.donkeyMovementSpeedMax);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.donkeyBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.donkeyTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.donkeyAlwaysDropExp;
+    }
+
     @Override
     protected SoundEvent getAmbientSound() {
         return SoundEvents.DONKEY_AMBIENT;

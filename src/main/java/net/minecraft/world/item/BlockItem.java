@@ -152,7 +152,24 @@ public class BlockItem extends Item {
     }
 
     protected boolean updateCustomBlockEntityTag(BlockPos pos, Level world, @Nullable Player player, ItemStack stack, BlockState state) {
-        return BlockItem.updateCustomBlockEntityTag(world, player, pos, stack);
+        // Purpur start
+        boolean handled = updateCustomBlockEntityTag(world, player, pos, stack);
+        if (world.purpurConfig.persistentTileEntityDisplayNames && stack.hasTag()) {
+            CompoundTag display = stack.getTagElement("display");
+            if (display != null) {
+                BlockEntity blockEntity = world.getBlockEntity(pos);
+                if (blockEntity != null) {
+                    if (display.contains("Name", 8)) {
+                        blockEntity.setPersistentDisplayName(display.getString("Name"));
+                    }
+                    if (display.contains("Lore", 9)) {
+                        blockEntity.setPersistentLore(display.getList("Lore", 8));
+                    }
+                }
+            }
+        }
+        return handled;
+        // Purpur end
     }
 
     @Nullable
@@ -287,7 +304,7 @@ public class BlockItem extends Item {
 
     @Override
     public void onDestroyed(ItemEntity entity) {
-        if (this.block instanceof ShulkerBoxBlock) {
+        if (this.block instanceof ShulkerBoxBlock && entity.level().purpurConfig.shulkerBoxItemDropContentsWhenDestroyed) {
             ItemStack itemstack = entity.getItem();
             CompoundTag nbttagcompound = BlockItem.getBlockEntityData(itemstack);
 

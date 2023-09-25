@@ -95,7 +95,7 @@ public class InventoryMenu extends RecipeBookMenu<CraftingContainer> {
                 public boolean mayPickup(Player playerEntity) {
                     ItemStack itemstack = this.getItem();
 
-                    return !itemstack.isEmpty() && !playerEntity.isCreative() && EnchantmentHelper.hasBindingCurse(itemstack) ? false : super.mayPickup(playerEntity);
+                    return !itemstack.isEmpty() && !playerEntity.isCreative() && EnchantmentHelper.hasBindingCurse(itemstack) ? playerEntity.level().purpurConfig.playerRemoveBindingWithWeakness && playerEntity.hasEffect(net.minecraft.world.effect.MobEffects.WEAKNESS) : super.mayPickup(playerEntity); // Purpur
                 }
 
                 @Override

@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.alchemy.Potion;
+import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
@@ -46,4 +47,27 @@ public class PotionTest extends AbstractTestingBase {
             assertEquals(bukkit, byName, "Same type not returned by name " + key);
         }
     }
+
+    // Purpur start
+    @Test
+    public void testNamespacedKey() {
+        NamespacedKey key = new NamespacedKey("testnamespace", "testkey");
+        PotionEffect namedSpacedEffect = new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 20, 0, true, true, true, key);
+        assertNotNull(namedSpacedEffect.getKey());
+        assertTrue(namedSpacedEffect.hasKey());
+        assertFalse(namedSpacedEffect.withKey(null).hasKey());
+
+        PotionEffect effect = new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 20, 0, true, true, true);
+        assertNull(effect.getKey());
+        assertFalse(effect.hasKey());
+        assertTrue(namedSpacedEffect.withKey(key).hasKey());
+
+        Map<String, Object> s1 = namedSpacedEffect.serialize();
+        Map<String, Object> s2 = effect.serialize();
+        assertTrue(s1.containsKey("namespacedKey"));
+        assertFalse(s2.containsKey("namespacedKey"));
+        assertNotNull(new PotionEffect(s1).getKey());
+        assertNull(new PotionEffect(s2).getKey());
+    }
+    // Purpur end
 }

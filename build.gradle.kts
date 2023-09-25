@@ -66,6 +66,12 @@ dependencies {
     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
 
+    // Purpur start
+    implementation("org.mozilla:rhino-runtime:1.7.14")
+    implementation("org.mozilla:rhino-engine:1.7.14")
+    implementation("dev.omega24:upnp4j:1.0")
+    // Purpur end
+
     testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.hamcrest:hamcrest:2.2")
@@ -182,7 +188,7 @@ fun TaskContainer.registerRunTask(
     name: String,
     block: JavaExec.() -> Unit
 ): TaskProvider<JavaExec> = register<JavaExec>(name) {
-    group = "paper"
+    group = "paperweight" // Purpur
     mainClass.set("org.bukkit.craftbukkit.Main")
     standardInput = System.`in`
     workingDir = rootProject.layout.projectDirectory

@@ -1145,8 +1145,8 @@ public class Blocks {
     public static final Block CAVE_VINES = register("cave_vines", new CaveVinesBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).randomTicks().noCollission().lightLevel(CaveVines.emission(14)).instabreak().sound(SoundType.CAVE_VINES).pushReaction(PushReaction.DESTROY)));
     public static final Block CAVE_VINES_PLANT = register("cave_vines_plant", new CaveVinesPlantBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).noCollission().lightLevel(CaveVines.emission(14)).instabreak().sound(SoundType.CAVE_VINES).pushReaction(PushReaction.DESTROY)));
     public static final Block SPORE_BLOSSOM = register("spore_blossom", new SporeBlossomBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).instabreak().noCollission().sound(SoundType.SPORE_BLOSSOM).pushReaction(PushReaction.DESTROY)));
-    public static final Block AZALEA = register("azalea", new AzaleaBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).forceSolidOff().instabreak().sound(SoundType.AZALEA).noOcclusion().pushReaction(PushReaction.DESTROY)));
-    public static final Block FLOWERING_AZALEA = register("flowering_azalea", new AzaleaBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).forceSolidOff().instabreak().sound(SoundType.FLOWERING_AZALEA).noOcclusion().pushReaction(PushReaction.DESTROY)));
+    public static final Block AZALEA = register("azalea", new AzaleaBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).forceSolidOff().randomTicks().instabreak().sound(SoundType.AZALEA).noOcclusion().pushReaction(PushReaction.DESTROY))); // Purpur
+    public static final Block FLOWERING_AZALEA = register("flowering_azalea", new AzaleaBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).forceSolidOff().randomTicks().instabreak().sound(SoundType.FLOWERING_AZALEA).noOcclusion().pushReaction(PushReaction.DESTROY))); // Purpur
     public static final Block MOSS_CARPET = register("moss_carpet", new CarpetBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(0.1F).sound(SoundType.MOSS_CARPET).pushReaction(PushReaction.DESTROY)));
     public static final Block PINK_PETALS = register("pink_petals", new PinkPetalsBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).noCollission().sound(SoundType.PINK_PETALS).pushReaction(PushReaction.DESTROY)));
     public static final Block MOSS_BLOCK = register("moss_block", new MossBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(0.1F).sound(SoundType.MOSS).pushReaction(PushReaction.DESTROY)));
@@ -1215,7 +1215,7 @@ public class Blocks {
     }
 
     private static Boolean ocelotOrParrot(BlockState state, BlockGetter world, BlockPos pos, EntityType<?> type) {
-        return (boolean)type == EntityType.OCELOT || type == EntityType.PARROT;
+        return type == EntityType.OCELOT || type == EntityType.PARROT; // Purpur - decompile error
     }
 
     private static Block bed(DyeColor color) {

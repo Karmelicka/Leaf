@@ -46,7 +46,7 @@ public class EnchantmentHelper {
     }
 
     public static int getEnchantmentLevel(CompoundTag nbt) {
-        return Mth.clamp(nbt.getInt("lvl"), 0, 255);
+        return Mth.clamp(nbt.getInt("lvl"), 0, (org.purpurmc.purpur.PurpurConfig.clampEnchantLevels) ? 255 : 32767); // Purpur
     }
 
     @Nullable
@@ -277,6 +277,29 @@ public class EnchantmentHelper {
     public static boolean hasChanneling(ItemStack stack) {
         return getItemEnchantmentLevel(Enchantments.CHANNELING, stack) > 0;
     }
+
+    // Purpur start
+    @Nullable
+    public static Map.Entry<EquipmentSlot, ItemStack> getMostDamagedEquipment(Enchantment enchantment, LivingEntity entity) {
+        Map<EquipmentSlot, ItemStack> map = enchantment.getSlotItems(entity);
+        if (map.isEmpty()) {
+            return null;
+        }
+        Map.Entry<EquipmentSlot, ItemStack> item = null;
+        float maxPercent = 0F;
+        for (Map.Entry<EquipmentSlot, ItemStack> entry : map.entrySet()) {
+            ItemStack itemstack = entry.getValue();
+            if (!itemstack.isEmpty() && itemstack.isDamaged() && getItemEnchantmentLevel(enchantment, itemstack) > 0) {
+                float percent = itemstack.getDamagePercent();
+                if (item == null || percent > maxPercent) {
+                    item = entry;
+                    maxPercent = percent;
+                }
+            }
+        }
+        return item;
+    }
+    // Purpur end
 
     @Nullable
     public static Map.Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {

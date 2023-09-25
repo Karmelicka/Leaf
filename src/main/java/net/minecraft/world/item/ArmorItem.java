@@ -67,7 +67,7 @@ public class ArmorItem extends Item implements Equipable {
             return false;
         } else {
             LivingEntity entityliving = (LivingEntity) list.get(0);
-            EquipmentSlot enumitemslot = Mob.getEquipmentSlotForItem(armor);
+            EquipmentSlot enumitemslot = pointer.level().purpurConfig.dispenserApplyCursedArmor ? Mob.getEquipmentSlotForItem(armor) : Mob.getSlotForDispenser(armor); if (enumitemslot == null) return false; // Purpur
             ItemStack itemstack1 = armor.copyWithCount(1); // Paper - shrink below and single item in event
             // CraftBukkit start
             Level world = pointer.level();

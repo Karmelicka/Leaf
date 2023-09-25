@@ -50,6 +50,8 @@ public class Phantom extends FlyingMob implements Enemy {
     Vec3 moveTargetPoint;
     public BlockPos anchorPoint;
     Phantom.AttackPhase attackPhase;
+    private static final net.minecraft.world.item.crafting.Ingredient TORCH = net.minecraft.world.item.crafting.Ingredient.of(net.minecraft.world.item.Items.TORCH, net.minecraft.world.item.Items.SOUL_TORCH); // Purpur
+    Vec3 crystalPosition; // Purpur
 
     public Phantom(EntityType<? extends Phantom> type, Level world) {
         super(type, world);
@@ -59,6 +61,92 @@ public class Phantom extends FlyingMob implements Enemy {
         this.xpReward = 5;
         this.moveControl = new Phantom.PhantomMoveControl(this);
         this.lookControl = new Phantom.PhantomLookControl(this);
+        this.setShouldBurnInDay(true); // Purpur
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.phantomRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.phantomRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.phantomControllable;
+    }
+
+    @Override
+    public double getMaxY() {
+        return level().purpurConfig.phantomMaxY;
+    }
+
+    @Override
+    public void travel(Vec3 vec3) {
+        super.travel(vec3);
+        if (getRider() != null && this.isControllable() && !onGround) {
+            float speed = (float) getAttributeValue(Attributes.FLYING_SPEED);
+            setSpeed(speed);
+            Vec3 mot = getDeltaMovement();
+            move(net.minecraft.world.entity.MoverType.SELF, mot.multiply(speed, speed, speed));
+            setDeltaMovement(mot.scale(0.9D));
+        }
+    }
+
+    public static net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder createAttributes() {
+        return Monster.createMonsterAttributes().add(Attributes.FLYING_SPEED, 3.0D);
+    }
+
+    @Override
+    public boolean onSpacebar() {
+        if (getRider() != null && getRider().getBukkitEntity().hasPermission("allow.special.phantom")) {
+            shoot();
+        }
+        return false;
+    }
+
+    public boolean shoot() {
+        org.bukkit.Location loc = ((org.bukkit.entity.LivingEntity) getBukkitEntity()).getEyeLocation();
+        loc.setPitch(-loc.getPitch());
+        org.bukkit.util.Vector target = loc.getDirection().normalize().multiply(100).add(loc.toVector());
+
+        org.purpurmc.purpur.entity.PhantomFlames flames = new org.purpurmc.purpur.entity.PhantomFlames(level(), this);
+        flames.canGrief = level().purpurConfig.phantomAllowGriefing;
+        flames.shoot(target.getX() - getX(), target.getY() - getY(), target.getZ() - getZ(), 1.0F, 5.0F);
+        level().addFreshEntity(flames);
+        return true;
+    }
+
+    @Override
+    protected void dropFromLootTable(DamageSource damageSource, boolean causedByPlayer) {
+        boolean dropped = false;
+        if (lastHurtByPlayer == null && damageSource.getEntity() instanceof net.minecraft.world.entity.boss.enderdragon.EndCrystal) {
+            if (random.nextInt(5) < 1) {
+                dropped = spawnAtLocation(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.PHANTOM_MEMBRANE)) != null;
+            }
+        }
+        if (!dropped) {
+            super.dropFromLootTable(damageSource, causedByPlayer);
+        }
+    }
+
+    public boolean isCirclingCrystal() {
+        return crystalPosition != null;
+    }
+    // Purpur end
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.phantomTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.phantomAlwaysDropExp;
     }
 
     @Override
@@ -73,9 +161,17 @@ public class Phantom extends FlyingMob implements Enemy {
 
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(1, new Phantom.PhantomAttackStrategyGoal());
-        this.goalSelector.addGoal(2, new Phantom.PhantomSweepAttackGoal());
-        this.goalSelector.addGoal(3, new Phantom.PhantomCircleAroundAnchorGoal());
+        // Purpur start
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this));
+        if (level().purpurConfig.phantomOrbitCrystalRadius > 0) {
+            this.goalSelector.addGoal(1, new FindCrystalGoal(this));
+            this.goalSelector.addGoal(2, new OrbitCrystalGoal(this));
+        }
+        this.goalSelector.addGoal(3, new Phantom.PhantomAttackStrategyGoal());
+        this.goalSelector.addGoal(4, new Phantom.PhantomSweepAttackGoal());
+        this.goalSelector.addGoal(5, new Phantom.PhantomCircleAroundAnchorGoal());
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this));
+        // Purpur end
         this.targetSelector.addGoal(1, new Phantom.PhantomAttackPlayerTargetGoal());
     }
 
@@ -91,7 +187,10 @@ public class Phantom extends FlyingMob implements Enemy {
 
     private void updatePhantomSizeInfo() {
         this.refreshDimensions();
-        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue((double) (6 + this.getPhantomSize()));
+        // Purpur start
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(getFromCache(() -> this.level().purpurConfig.phantomMaxHealth, () -> this.level().purpurConfig.phantomMaxHealthCache, () -> 20.0D));
+        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(getFromCache(() -> this.level().purpurConfig.phantomAttackDamage, () -> this.level().purpurConfig.phantomAttackDamageCache, () -> (double) 6 + this.getPhantomSize()));
+        // Purpur end
     }
 
     public int getPhantomSize() {
@@ -121,6 +220,21 @@ public class Phantom extends FlyingMob implements Enemy {
         return true;
     }
 
+    private double getFromCache(java.util.function.Supplier<String> equation, java.util.function.Supplier<java.util.Map<Integer, Double>> cache, java.util.function.Supplier<Double> defaultValue) {
+        int size = getPhantomSize();
+        Double value = cache.get().get(size);
+        if (value == null) {
+            try {
+                value = ((Number) scriptEngine.eval("let size = " + size + "; " + equation.get())).doubleValue();
+            } catch (javax.script.ScriptException e) {
+                e.printStackTrace();
+                value = defaultValue.get();
+            }
+            cache.get().put(size, value);
+        }
+        return value;
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -141,14 +255,12 @@ public class Phantom extends FlyingMob implements Enemy {
             this.level().addParticle(ParticleTypes.MYCELIUM, this.getX() - (double) f2, this.getY() + (double) f4, this.getZ() - (double) f3, 0.0D, 0.0D, 0.0D);
         }
 
+        if (level().purpurConfig.phantomFlamesOnSwoop && attackPhase == AttackPhase.SWOOP) shoot(); // Purpur
     }
 
     @Override
     public void aiStep() {
-        if (this.isAlive() && shouldBurnInDay && this.isSunBurnTick()) { // Paper - shouldBurnInDay API
-            this.setSecondsOnFire(8);
-        }
-
+        // Purpur - moved down to shouldBurnInDay()
         super.aiStep();
     }
 
@@ -160,7 +272,11 @@ public class Phantom extends FlyingMob implements Enemy {
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData, @Nullable CompoundTag entityNbt) {
         this.anchorPoint = this.blockPosition().above(5);
-        this.setPhantomSize(0);
+        // Purpur start
+        int min = world.getLevel().purpurConfig.phantomMinSize;
+        int max = world.getLevel().purpurConfig.phantomMaxSize;
+        this.setPhantomSize(min == max ? min : world.getRandom().nextInt(max + 1 - min) + min);
+        // Purpur end
         return super.finalizeSpawn(world, difficulty, spawnReason, entityData, entityNbt);
     }
 
@@ -176,7 +292,7 @@ public class Phantom extends FlyingMob implements Enemy {
         if (nbt.hasUUID("Paper.SpawningEntity")) {
             this.spawningEntity = nbt.getUUID("Paper.SpawningEntity");
         }
-        if (nbt.contains("Paper.ShouldBurnInDay")) {
+        if (false && nbt.contains("Paper.ShouldBurnInDay")) { // Purpur - implemented in LivingEntity
             this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
         }
         // Paper end
@@ -193,7 +309,7 @@ public class Phantom extends FlyingMob implements Enemy {
         if (this.spawningEntity != null) {
             nbt.putUUID("Paper.SpawningEntity", this.spawningEntity);
         }
-        nbt.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay);
+        // nbt.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay); // Purpur - implemented in LivingEntity
         // Paper end
     }
 
@@ -262,8 +378,14 @@ public class Phantom extends FlyingMob implements Enemy {
         return spawningEntity;
     }
     public void setSpawningEntity(java.util.UUID entity) { this.spawningEntity = entity; }
-    private boolean shouldBurnInDay = true;
-    public boolean shouldBurnInDay() { return shouldBurnInDay; }
+    // private boolean shouldBurnInDay = true; // Purpur - moved to LivingEntity - keep methods for ABI compatibility
+    // Purpur start
+    public boolean shouldBurnInDay() {
+        boolean burnFromDaylight = this.shouldBurnInDay && this.level().purpurConfig.phantomBurnInDaylight;
+        boolean burnFromLightSource = this.level().purpurConfig.phantomBurnInLight > 0 && this.level().getMaxLocalRawBrightness(blockPosition()) >= this.level().purpurConfig.phantomBurnInLight;
+        return burnFromDaylight || burnFromLightSource;
+    }
+    // Purpur End
     public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
     // Paper end
     private static enum AttackPhase {
@@ -273,7 +395,125 @@ public class Phantom extends FlyingMob implements Enemy {
         private AttackPhase() {}
     }
 
-    private class PhantomMoveControl extends MoveControl {
+    // Purpur start
+    class FindCrystalGoal extends Goal {
+        private final Phantom phantom;
+        private net.minecraft.world.entity.boss.enderdragon.EndCrystal crystal;
+        private Comparator<net.minecraft.world.entity.boss.enderdragon.EndCrystal> comparator;
+
+        FindCrystalGoal(Phantom phantom) {
+            this.phantom = phantom;
+            this.comparator = Comparator.comparingDouble(phantom::distanceToSqr);
+            this.setFlags(EnumSet.of(Flag.LOOK));
+        }
+
+        @Override
+        public boolean canUse() {
+            double range = maxTargetRange();
+            List<net.minecraft.world.entity.boss.enderdragon.EndCrystal> crystals = level().getEntitiesOfClass(net.minecraft.world.entity.boss.enderdragon.EndCrystal.class, phantom.getBoundingBox().inflate(range));
+            if (crystals.isEmpty()) {
+                return false;
+            }
+            crystals.sort(comparator);
+            crystal = crystals.get(0);
+            if (phantom.distanceToSqr(crystal) > range * range) {
+                crystal = null;
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            if (crystal == null || !crystal.isAlive()) {
+                return false;
+            }
+            double range = maxTargetRange();
+            return phantom.distanceToSqr(crystal) <= (range * range) * 2;
+        }
+
+        @Override
+        public void start() {
+            phantom.crystalPosition = new Vec3(crystal.getX(), crystal.getY() + (phantom.random.nextInt(10) + 10), crystal.getZ());
+        }
+
+        @Override
+        public void stop() {
+            crystal = null;
+            phantom.crystalPosition = null;
+            super.stop();
+        }
+
+        private double maxTargetRange() {
+            return phantom.level().purpurConfig.phantomOrbitCrystalRadius;
+        }
+    }
+
+    class OrbitCrystalGoal extends Goal {
+        private final Phantom phantom;
+        private float offset;
+        private float radius;
+        private float verticalChange;
+        private float direction;
+
+        OrbitCrystalGoal(Phantom phantom) {
+            this.phantom = phantom;
+            this.setFlags(EnumSet.of(Flag.MOVE));
+        }
+
+        @Override
+        public boolean canUse() {
+            return phantom.isCirclingCrystal();
+        }
+
+        @Override
+        public void start() {
+            this.radius = 5.0F + phantom.random.nextFloat() * 10.0F;
+            this.verticalChange = -4.0F + phantom.random.nextFloat() * 9.0F;
+            this.direction = phantom.random.nextBoolean() ? 1.0F : -1.0F;
+            updateOffset();
+        }
+
+        @Override
+        public void tick() {
+            if (phantom.random.nextInt(350) == 0) {
+                this.verticalChange = -4.0F + phantom.random.nextFloat() * 9.0F;
+            }
+            if (phantom.random.nextInt(250) == 0) {
+                ++this.radius;
+                if (this.radius > 15.0F) {
+                    this.radius = 5.0F;
+                    this.direction = -this.direction;
+                }
+            }
+            if (phantom.random.nextInt(450) == 0) {
+                this.offset = phantom.random.nextFloat() * 2.0F * 3.1415927F;
+                updateOffset();
+            }
+            if (phantom.moveTargetPoint.distanceToSqr(phantom.getX(), phantom.getY(), phantom.getZ()) < 4.0D) {
+                updateOffset();
+            }
+            if (phantom.moveTargetPoint.y < phantom.getY() && !phantom.level().isEmptyBlock(new BlockPos(phantom).below(1))) {
+                this.verticalChange = Math.max(1.0F, this.verticalChange);
+                updateOffset();
+            }
+            if (phantom.moveTargetPoint.y > phantom.getY() && !phantom.level().isEmptyBlock(new BlockPos(phantom).above(1))) {
+                this.verticalChange = Math.min(-1.0F, this.verticalChange);
+                updateOffset();
+            }
+        }
+
+        private void updateOffset() {
+            this.offset += this.direction * 15.0F * 0.017453292F;
+            phantom.moveTargetPoint = phantom.crystalPosition.add(
+                    this.radius * Mth.cos(this.offset),
+                    -4.0F + this.verticalChange,
+                    this.radius * Mth.sin(this.offset));
+        }
+    }
+    // Purpur end
+
+    private class PhantomMoveControl extends org.purpurmc.purpur.controller.FlyingMoveControllerWASD { // Purpur
 
         private float speed = 0.1F;
 
@@ -281,8 +521,19 @@ public class Phantom extends FlyingMob implements Enemy {
             super(entity);
         }
 
+        // Purpur start
+        public void purpurTick(Player rider) {
+            if (!Phantom.this.onGround) {
+                // phantom is always in motion when flying
+                // TODO - FIX THIS
+                // rider.setForward(1.0F);
+            }
+            super.purpurTick(rider);
+        }
+        // Purpur end
+
         @Override
-        public void tick() {
+        public void vanillaTick() { // Purpur
             if (Phantom.this.horizontalCollision) {
                 Phantom.this.setYRot(Phantom.this.getYRot() + 180.0F);
                 this.speed = 0.1F;
@@ -328,14 +579,20 @@ public class Phantom extends FlyingMob implements Enemy {
         }
     }
 
-    private class PhantomLookControl extends LookControl {
+    private class PhantomLookControl extends org.purpurmc.purpur.controller.LookControllerWASD { // Purpur
 
         public PhantomLookControl(Mob entity) {
             super(entity);
         }
 
+        // Purpur start
+        public void purpurTick(Player rider) {
+            setYawPitch(rider.getYRot(), -rider.xRotO * 0.75F);
+        }
+        // Purpur end
+
         @Override
-        public void tick() {}
+        public void vanillaTick() {} // Purpur
     }
 
     private class PhantomBodyRotationControl extends BodyRotationControl {
@@ -422,6 +679,12 @@ public class Phantom extends FlyingMob implements Enemy {
                 return false;
             } else if (!entityliving.isAlive()) {
                 return false;
+            // Purpur start
+            } else if (level().purpurConfig.phantomBurnInLight > 0 && level().getLightEmission(new BlockPos(Phantom.this)) >= level().purpurConfig.phantomBurnInLight) {
+                return false;
+            } else if (level().purpurConfig.phantomIgnorePlayersWithTorch && (TORCH.test(entityliving.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND)) || TORCH.test(entityliving.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND)))) {
+                return false;
+            // Purpur end
             } else {
                 if (entityliving instanceof Player) {
                     Player entityhuman = (Player) entityliving;
@@ -567,6 +830,7 @@ public class Phantom extends FlyingMob implements Enemy {
                 this.nextScanTick = reducedTickDelay(60);
                 List<Player> list = Phantom.this.level().getNearbyPlayers(this.attackTargeting, Phantom.this, Phantom.this.getBoundingBox().inflate(16.0D, 64.0D, 16.0D));
 
+                if (level().purpurConfig.phantomIgnorePlayersWithTorch) list.removeIf(human -> TORCH.test(human.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND)) || TORCH.test(human.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND)));// Purpur
                 if (!list.isEmpty()) {
                     list.sort(Comparator.comparing((Entity e) -> { return e.getY(); }).reversed()); // CraftBukkit - decompile error
                     Iterator iterator = list.iterator();

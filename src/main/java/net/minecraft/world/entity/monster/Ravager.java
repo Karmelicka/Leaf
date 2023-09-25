@@ -71,14 +71,54 @@ public class Ravager extends Raider {
         this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0F);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.ravagerRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.ravagerRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.ravagerControllable;
+    }
+
+    @Override
+    public void onMount(Player rider) {
+        super.onMount(rider);
+        getNavigation().stop();
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.ravagerMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.ravagerTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.ravagerAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
         super.registerGoals();
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, true));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.4D));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Mob.class, 8.0F));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(2, (new HurtByTargetGoal(this, new Class[]{Raider.class})).setAlertOthers());
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, true, (entityliving) -> {
@@ -136,7 +176,7 @@ public class Ravager extends Raider {
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.isAlive()) {
+        if (this.isAlive() && (getRider() == null || !this.isControllable())) { // Purpur
             if (this.isImmobile()) {
                 this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
             } else {
@@ -146,7 +186,7 @@ public class Ravager extends Raider {
                 this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(Mth.lerp(0.1D, d1, d0));
             }
 
-            if (this.horizontalCollision && this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+            if (this.horizontalCollision && (this.level().purpurConfig.ravagerBypassMobGriefing || this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // Purpur
                 boolean flag = false;
                 AABB axisalignedbb = this.getBoundingBox().inflate(0.2D);
                 Iterator iterator = BlockPos.betweenClosed(Mth.floor(axisalignedbb.minX), Mth.floor(axisalignedbb.minY), Mth.floor(axisalignedbb.minZ), Mth.floor(axisalignedbb.maxX), Mth.floor(axisalignedbb.maxY), Mth.floor(axisalignedbb.maxZ)).iterator();
@@ -156,7 +196,7 @@ public class Ravager extends Raider {
                     BlockState iblockdata = this.level().getBlockState(blockposition);
                     Block block = iblockdata.getBlock();
 
-                    if (block instanceof LeavesBlock) {
+                    if (this.level().purpurConfig.ravagerGriefableBlocks.contains(block)) { // Purpur
                         // CraftBukkit start
                         if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
                             continue;

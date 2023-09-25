@@ -36,6 +36,33 @@ public class ElderGuardian extends Guardian {
 
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.elderGuardianRidable;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.elderGuardianControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.elderGuardianMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.elderGuardianTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.elderGuardianAlwaysDropExp;
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return Guardian.createAttributes().add(Attributes.MOVEMENT_SPEED, 0.30000001192092896D).add(Attributes.ATTACK_DAMAGE, 8.0D).add(Attributes.MAX_HEALTH, 80.0D);
     }

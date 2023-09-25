@@ -64,7 +64,7 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
         ItemStack itemstack = user.getItemInHand(hand);
 
         if (CrossbowItem.isCharged(itemstack)) {
-            CrossbowItem.performShooting(world, user, hand, itemstack, CrossbowItem.getShootingPower(itemstack), 1.0F);
+            CrossbowItem.performShooting(world, user, hand, itemstack, CrossbowItem.getShootingPower(itemstack), (float) world.purpurConfig.crossbowProjectileOffset); // Purpur
             CrossbowItem.setCharged(itemstack, false);
             return InteractionResultHolder.consume(itemstack);
         } else if (!user.getProjectile(itemstack).isEmpty()) {
@@ -114,7 +114,7 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
         // Paper end - Add EntityLoadCrossbowEvent
         int i = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MULTISHOT, crossbow);
         int j = i == 0 ? 1 : 3;
-        boolean flag = !consume || shooter instanceof Player && ((Player) shooter).getAbilities().instabuild; // Paper - Add EntityLoadCrossbowEvent
+        boolean flag = !consume || shooter instanceof Player && ((Player) shooter).getAbilities().instabuild || (org.purpurmc.purpur.PurpurConfig.allowCrossbowInfinity && EnchantmentHelper.getItemEnchantmentLevel(Enchantments.INFINITY_ARROWS, crossbow) > 0); // Paper - Add EntityLoadCrossbowEvent // Purpur
         ItemStack itemstack1 = shooter.getProjectile(crossbow);
         ItemStack itemstack2 = itemstack1.copy();
 
@@ -291,6 +291,14 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
             entityarrow.setPierceLevel((byte) i);
         }
 
+        // Purpur start
+        int lootingLevel = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MOB_LOOTING, crossbow);
+
+        if (lootingLevel > 0) {
+            entityarrow.setLootingLevel(lootingLevel);
+        }
+        // Purpur end
+
         return entityarrow;
     }
 
@@ -300,7 +308,7 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
 
         for (int i = 0; i < list.size(); ++i) {
             ItemStack itemstack1 = (ItemStack) list.get(i);
-            boolean flag = entity instanceof Player && ((Player) entity).getAbilities().instabuild;
+            boolean flag = entity instanceof Player && ((Player) entity).getAbilities().instabuild || (org.purpurmc.purpur.PurpurConfig.allowCrossbowInfinity && EnchantmentHelper.getItemEnchantmentLevel(Enchantments.INFINITY_ARROWS, stack) > 0); // Purpur
 
             if (!itemstack1.isEmpty()) {
                 if (i == 0) {

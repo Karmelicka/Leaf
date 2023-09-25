@@ -178,7 +178,9 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
 
+            this.activeQuickItem = itemstack; // Purpur
             slot1.onTake(player, itemstack1);
+            this.activeQuickItem = null; // Purpur
         }
 
         return itemstack;

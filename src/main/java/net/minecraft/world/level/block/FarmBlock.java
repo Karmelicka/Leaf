@@ -110,7 +110,7 @@ public class FarmBlock extends Block {
     @Override
     public void fallOn(Level world, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
         super.fallOn(world, state, pos, entity, fallDistance); // CraftBukkit - moved here as game rules / events shouldn't affect fall damage.
-        if (!world.isClientSide && world.random.nextFloat() < fallDistance - 0.5F && entity instanceof LivingEntity && (entity instanceof Player || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
+        if (!world.isClientSide && (world.purpurConfig.farmlandTrampleHeight >= 0D ? fallDistance >= world.purpurConfig.farmlandTrampleHeight : world.random.nextFloat() < fallDistance - 0.5F) && entity instanceof LivingEntity && (entity instanceof Player || world.purpurConfig.farmlandBypassMobGriefing || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) { // Purpur
             // CraftBukkit start - Interact soil
             org.bukkit.event.Cancellable cancellable;
             if (entity instanceof Player) {
@@ -124,6 +124,22 @@ public class FarmBlock extends Block {
                 return;
             }
 
+            // Purpur start
+            if (world.purpurConfig.farmlandTramplingDisabled) return;
+            if (world.purpurConfig.farmlandTramplingOnlyPlayers && !(entity instanceof Player)) return;
+            if (world.purpurConfig.farmlandAlpha) {
+                Block block = world.getBlockState(pos.below()).getBlock();
+                if (block instanceof FenceBlock || block instanceof WallBlock) {
+                    return;
+                }
+            }
+            if (world.purpurConfig.farmlandTramplingFeatherFalling) {
+                Iterator<net.minecraft.world.item.ItemStack> armor = entity.getArmorSlots().iterator();
+                if (armor.hasNext() && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FALL_PROTECTION, armor.next()) >= (int) entity.fallDistance) {
+                    return;
+                }
+            }
+            // Purpur end
             if (!CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.DIRT.defaultBlockState())) {
                 return;
             }
@@ -171,7 +187,7 @@ public class FarmBlock extends Block {
             }
         }
 
-        return false;
+        return ((ServerLevel) world).purpurConfig.farmlandGetsMoistFromBelow && world.getFluidState(pos.relative(Direction.DOWN)).is(FluidTags.WATER); // Purpur;
         // Paper end - Perf: remove abstract block iteration
     }
 

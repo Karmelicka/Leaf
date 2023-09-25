@@ -108,6 +108,7 @@ public class EnderDragon extends Mob implements Enemy {
     @Nullable
     private BlockPos podium;
     // Paper end - Allow changing the EnderDragon podium
+    private boolean hadRider; // Purpur
 
     public EnderDragon(EntityType<? extends EnderDragon> entitytypes, Level world) {
         super(EntityType.ENDER_DRAGON, world);
@@ -130,6 +131,37 @@ public class EnderDragon extends Mob implements Enemy {
         this.noCulling = true;
         this.phaseManager = new EnderDragonPhaseManager(this);
         this.explosionSource = new Explosion(world, this, null, null, Double.NaN, Double.NaN, Double.NaN, Float.NaN, true, Explosion.BlockInteraction.DESTROY, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE); // CraftBukkit
+
+        // Purpur start
+        this.moveControl = new org.purpurmc.purpur.controller.FlyingMoveControllerWASD(this) {
+            @Override
+            public void vanillaTick() {
+                // dragon doesn't use the controller. do nothing
+            }
+        };
+        this.lookControl = new org.purpurmc.purpur.controller.LookControllerWASD(this) {
+            @Override
+            public void vanillaTick() {
+                // dragon doesn't use the controller. do nothing
+            }
+
+            @Override
+            public void purpurTick(Player rider) {
+                setYawPitch(rider.getYRot() - 180F, rider.xRotO * 0.5F);
+            }
+        };
+        // Purpur end
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.enderDragonRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.enderDragonRidableInWater;
     }
 
     public void setDragonFight(EndDragonFight fight) {
@@ -142,6 +174,27 @@ public class EnderDragon extends Mob implements Enemy {
 
     public BlockPos getFightOrigin() {
         return this.fightOrigin;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.enderDragonControllable;
+    }
+
+    @Override
+    public double getMaxY() {
+        return level().purpurConfig.enderDragonMaxY;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.enderDragonMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.enderDragonTakeDamageFromWater;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -205,6 +258,37 @@ public class EnderDragon extends Mob implements Enemy {
 
     @Override
     public void aiStep() {
+        // Purpur start
+        boolean hasRider = getRider() != null && this.isControllable();
+        if (hasRider) {
+            if (!hadRider) {
+                hadRider = true;
+                noPhysics = false;
+                this.dimensions = net.minecraft.world.entity.EntityDimensions.scalable(4.0F, 2.0F);
+            }
+
+            // dragon doesn't use controllers, so must tick manually
+            moveControl.tick();
+            lookControl.tick();
+
+            moveRelative((float) getAttributeValue(Attributes.MOVEMENT_SPEED) * 0.1F, new Vec3(-getStrafeMot(), getVerticalMot(), -getForwardMot()));
+            Vec3 mot = getDeltaMovement();
+            setDeltaMovement(mot);
+            move(MoverType.PLAYER, mot);
+
+            mot = mot.multiply(0.9F, 0.9F, 0.9F);
+            setDeltaMovement(mot);
+
+            // control wing flap speed on client
+            phaseManager.setPhase(mot.x() * mot.x() + mot.z() * mot.z() < 0.005F ? EnderDragonPhase.HOVERING : EnderDragonPhase.HOLDING_PATTERN);
+        } else if (hadRider) {
+            hadRider = false;
+            noPhysics = true;
+            this.dimensions = net.minecraft.world.entity.EntityDimensions.scalable(16.0F, 8.0F);
+            phaseManager.setPhase(EnderDragonPhase.HOLDING_PATTERN); // HoldingPattern
+        }
+        // Purpur end
+
         this.processFlappingMovement();
         if (this.level().isClientSide) {
             this.setHealth(this.getHealth());
@@ -231,6 +315,8 @@ public class EnderDragon extends Mob implements Enemy {
         float f;
 
         if (this.isDeadOrDying()) {
+            if (hasRider) ejectPassengers(); // Purpur
+
             float f1 = (this.random.nextFloat() - 0.5F) * 8.0F;
 
             f = (this.random.nextFloat() - 0.5F) * 4.0F;
@@ -243,9 +329,9 @@ public class EnderDragon extends Mob implements Enemy {
 
             f = 0.2F / ((float) vec3d.horizontalDistance() * 10.0F + 1.0F);
             f *= (float) Math.pow(2.0D, vec3d.y);
-            if (this.phaseManager.getCurrentPhase().isSitting()) {
+            if (!hasRider && this.phaseManager.getCurrentPhase().isSitting()) { // Purpur
                 this.flapTime += 0.1F;
-            } else if (this.inWall) {
+            } else if (!hasRider && this.inWall) { // Purpur
                 this.flapTime += f * 0.5F;
             } else {
                 this.flapTime += f;
@@ -279,7 +365,7 @@ public class EnderDragon extends Mob implements Enemy {
                     }
 
                     this.phaseManager.getCurrentPhase().doClientTick();
-                } else {
+                } else if (!hasRider) { // Purpur
                     DragonPhaseInstance idragoncontroller = this.phaseManager.getCurrentPhase();
 
                     idragoncontroller.doServerTick();
@@ -348,7 +434,7 @@ public class EnderDragon extends Mob implements Enemy {
                 this.tickPart(this.body, (double) (f11 * 0.5F), 0.0D, (double) (-f12 * 0.5F));
                 this.tickPart(this.wing1, (double) (f12 * 4.5F), 2.0D, (double) (f11 * 4.5F));
                 this.tickPart(this.wing2, (double) (f12 * -4.5F), 2.0D, (double) (f11 * -4.5F));
-                if (!this.level().isClientSide && this.hurtTime == 0) {
+                if (!hasRider && !this.level().isClientSide && this.hurtTime == 0) { // Purpur
                     this.knockBack(this.level().getEntities((Entity) this, this.wing1.getBoundingBox().inflate(4.0D, 2.0D, 4.0D).move(0.0D, -2.0D, 0.0D), EntitySelector.NO_CREATIVE_OR_SPECTATOR));
                     this.knockBack(this.level().getEntities((Entity) this, this.wing2.getBoundingBox().inflate(4.0D, 2.0D, 4.0D).move(0.0D, -2.0D, 0.0D), EntitySelector.NO_CREATIVE_OR_SPECTATOR));
                     this.hurt(this.level().getEntities((Entity) this, this.head.getBoundingBox().inflate(1.0D), EntitySelector.NO_CREATIVE_OR_SPECTATOR));
@@ -392,7 +478,7 @@ public class EnderDragon extends Mob implements Enemy {
                 }
 
                 if (!this.level().isClientSide) {
-                    this.inWall = this.checkWalls(this.head.getBoundingBox()) | this.checkWalls(this.neck.getBoundingBox()) | this.checkWalls(this.body.getBoundingBox());
+                    this.inWall = !hasRider && this.checkWalls(this.head.getBoundingBox()) | this.checkWalls(this.neck.getBoundingBox()) | this.checkWalls(this.body.getBoundingBox()); // Purpur
                     if (this.dragonFight != null) {
                         this.dragonFight.updateDragon(this);
                     }
@@ -524,7 +610,7 @@ public class EnderDragon extends Mob implements Enemy {
                     BlockState iblockdata = this.level().getBlockState(blockposition);
 
                     if (!iblockdata.isAir() && !iblockdata.is(BlockTags.DRAGON_TRANSPARENT)) {
-                        if (this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.is(BlockTags.DRAGON_IMMUNE)) {
+                        if ((this.level().purpurConfig.enderDragonBypassMobGriefing || this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) && !iblockdata.is(BlockTags.DRAGON_IMMUNE)) { // Purpur
                             // CraftBukkit start - Add blocks to list rather than destroying them
                             // flag1 = this.level().removeBlock(blockposition, false) || flag1;
                             flag1 = true;
@@ -668,7 +754,7 @@ public class EnderDragon extends Mob implements Enemy {
         boolean flag = this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
         short short0 = 500;
 
-        if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
+        if (this.dragonFight != null && (level().purpurConfig.enderDragonAlwaysDropsFullExp || !this.dragonFight.hasPreviouslyKilledDragon())) {
             short0 = 12000;
         }
 
@@ -1104,6 +1190,7 @@ public class EnderDragon extends Mob implements Enemy {
 
     @Override
     protected boolean canRide(Entity entity) {
+        if (this.level().purpurConfig.enderDragonCanRideVehicles) return this.boardingCooldown <= 0; // Purpur
         return false;
     }
 

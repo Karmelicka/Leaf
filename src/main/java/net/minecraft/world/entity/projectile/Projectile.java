@@ -70,7 +70,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
                 int maxChunkLoadsPerProjectile = maxProjectileChunkLoadsConfig.perProjectile.max;
                 if (maxChunkLoadsPerProjectile >= 0 && this.chunksLoadedByProjectile >= maxChunkLoadsPerProjectile) {
                     if (maxProjectileChunkLoadsConfig.perProjectile.removeFromWorldAfterReachLimit) {
-                        this.discard();
+                        this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Purpur
                     } else if (maxProjectileChunkLoadsConfig.perProjectile.resetMovementAfterReachLimit) {
                         this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
                     }
@@ -343,7 +343,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
     public boolean mayInteract(Level world, BlockPos pos) {
         Entity entity = this.getOwner();
 
-        return entity instanceof Player ? entity.mayInteract(world, pos) : entity == null || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+        return entity instanceof Player ? entity.mayInteract(world, pos) : entity == null || world.purpurConfig.projectilesBypassMobGriefing || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
     }
 
     public boolean mayBreak(Level world) {

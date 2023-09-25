@@ -16,8 +16,15 @@ import org.bukkit.entity.Bee;
 
 public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> implements Beehive {
 
+    private final List<org.purpurmc.purpur.entity.StoredEntity<Bee>> storage = new ArrayList<>(); // Purpur
+
     public CraftBeehive(World world, BeehiveBlockEntity tileEntity) {
         super(world, tileEntity);
+        // Purpur start - load bees to be able to modify them individually
+        for(BeehiveBlockEntity.BeeData data : tileEntity.getStored()) {
+            storage.add(new org.purpurmc.purpur.entity.PurpurStoredBee(data, this));
+        }
+        // Purpur end
     }
 
     protected CraftBeehive(CraftBeehive state) {
@@ -75,15 +82,54 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
                 bees.add((Bee) bee.getBukkitEntity());
             }
         }
-
+        storage.clear(); // Purpur
         return bees;
     }
+
+    // Purpur start
+    @Override
+    public Bee releaseEntity(org.purpurmc.purpur.entity.StoredEntity<Bee> entity) {
+        ensureNoWorldGeneration();
+
+        if(!getEntities().contains(entity)) {
+            return null;
+        }
+
+        if(isPlaced()) {
+            BeehiveBlockEntity beehive = ((BeehiveBlockEntity) this.getTileEntityFromWorld());
+            BeehiveBlockEntity.BeeData data = ((org.purpurmc.purpur.entity.PurpurStoredBee) entity).getHandle();
+
+            List<Entity> list = beehive.releaseBee(getHandle(), data, BeeReleaseStatus.BEE_RELEASED, true);
+
+            if (list.size() == 1) {
+                storage.remove(entity);
+
+                return (Bee) list.get(0).getBukkitEntity();
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public List<org.purpurmc.purpur.entity.StoredEntity<Bee>> getEntities() {
+        return new ArrayList<>(storage);
+    }
+    // Purpur end
 
     @Override
     public void addEntity(Bee entity) {
         Preconditions.checkArgument(entity != null, "Entity must not be null");
 
-        this.getSnapshot().addOccupant(((CraftBee) entity).getHandle(), false);
+        int length = this.getSnapshot().getStored().size();  // Purpur
+        getSnapshot().addOccupant(((CraftBee) entity).getHandle(), false);
+
+        // Purpur start - check if new bee was added, and if yes, add to stored bees
+        List<BeehiveBlockEntity.BeeData> s = this.getSnapshot().getStored();
+        if(length < s.size()) {
+            storage.add(new org.purpurmc.purpur.entity.PurpurStoredBee(s.get(s.size() - 1), this));
+        }
+        // Purpur end
     }
 
     @Override
@@ -95,6 +141,7 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
     @Override
     public void clearEntities() {
         getSnapshot().clearBees();
+        storage.clear(); // Purpur
     }
     // Paper end
 }

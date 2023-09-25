@@ -29,7 +29,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
     @Override
     public int getRange() {
         requirePlaced();
-        return this.getTileEntity().effectBlocks.size() / 7 * 16;
+        return this.getTileEntity().effectBlocks.size() / 7 * this.world.getHandle().purpurConfig.conduitDistance; // Purpur
     }
 
     @Override

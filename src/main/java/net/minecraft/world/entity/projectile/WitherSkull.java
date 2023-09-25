@@ -99,7 +99,7 @@ public class WitherSkull extends AbstractHurtingProjectile {
         if (!this.level().isClientSide) {
             // CraftBukkit start
             // this.level().explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, false, World.a.MOB);
-            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 1.0F, false);
+            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.level().purpurConfig.witherExplosionRadius, false); // Purpur
             this.level().getCraftServer().getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
@@ -109,6 +109,17 @@ public class WitherSkull extends AbstractHurtingProjectile {
             this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
         }
 
+    }
+
+    @Override
+    public boolean canHitEntity(Entity target) {
+        // do not hit rider
+        return target != this.getRider() && super.canHitEntity(target);
+    }
+
+    @Override
+    public boolean canSaveToDisk() {
+        return false;
     }
 
     @Override

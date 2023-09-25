@@ -60,9 +60,79 @@ public class PolarBear extends Animal implements NeutralMob {
     private int remainingPersistentAngerTime;
     @Nullable
     private UUID persistentAngerTarget;
+    private int standTimer = 0; // Purpur
 
     public PolarBear(EntityType<? extends PolarBear> type, Level world) {
         super(type, world);
+    }
+
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.polarBearRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.polarBearRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.polarBearControllable;
+    }
+
+    @Override
+    public boolean onSpacebar() {
+        if (!isStanding()) {
+            if (getRider() != null && getRider().getForwardMot() == 0 && getRider().getStrafeMot() == 0) {
+                setStanding(true);
+                playSound(SoundEvents.POLAR_BEAR_WARNING, 1.0F, 1.0F);
+            }
+        }
+        return false;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.polarBearMaxHealth);
+    }
+
+    public boolean canMate(Animal other) {
+        if (other == this) {
+            return false;
+        } else if (this.isStanding()) {
+            return false;
+        } else if (this.getTarget() != null) {
+            return false;
+        } else if (!(other instanceof PolarBear)) {
+            return false;
+        } else {
+            PolarBear bear = (PolarBear) other;
+            if (bear.isStanding()) {
+                return false;
+            }
+            if (bear.getTarget() != null) {
+                return false;
+            }
+            return this.isInLove() && bear.isInLove();
+        }
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return this.level().purpurConfig.polarBearBreedingTicks;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.polarBearTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.polarBearAlwaysDropExp;
     }
 
     @Nullable
@@ -73,19 +143,27 @@ public class PolarBear extends Animal implements NeutralMob {
 
     @Override
     public boolean isFood(ItemStack stack) {
-        return false;
+        return level().purpurConfig.polarBearBreedableItem != null && stack.getItem() == level().purpurConfig.polarBearBreedableItem; // Purpur
     }
 
     @Override
     protected void registerGoals() {
         super.registerGoals();
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new PolarBear.PolarBearMeleeAttackGoal());
         this.goalSelector.addGoal(1, new PolarBear.PolarBearPanicGoal());
+        // Purpur start
+        if (level().purpurConfig.polarBearBreedableItem != null) {
+            this.goalSelector.addGoal(2, new net.minecraft.world.entity.ai.goal.BreedGoal(this, 1.0D));
+            this.goalSelector.addGoal(3, new net.minecraft.world.entity.ai.goal.TemptGoal(this, 1.0D, net.minecraft.world.item.crafting.Ingredient.of(level().purpurConfig.polarBearBreedableItem), false));
+        }
+        // Purpur end
         this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.25D));
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, new PolarBear.PolarBearHurtByTargetGoal());
         this.targetSelector.addGoal(2, new PolarBear.PolarBearAttackPlayersGoal());
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
@@ -202,6 +280,11 @@ public class PolarBear extends Animal implements NeutralMob {
             this.updatePersistentAnger((ServerLevel)this.level(), true);
         }
 
+        // Purpur start
+        if (isStanding() && --standTimer <= 0) {
+            setStanding(false);
+        }
+        // Purpur end
     }
 
     @Override
@@ -231,6 +314,7 @@ public class PolarBear extends Animal implements NeutralMob {
 
     public void setStanding(boolean warning) {
         this.entityData.set(DATA_STANDING_ID, warning);
+        standTimer = warning ? 20 : -1; // Purpur
     }
 
     public float getStandingAnimationScale(float tickDelta) {

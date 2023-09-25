@@ -599,19 +599,32 @@ public class PiglinAi {
         Iterator iterator = iterable.iterator();
 
         Item item;
+        ItemStack itemstack; // Purpur
 
         do {
             if (!iterator.hasNext()) {
                 return false;
             }
 
-            ItemStack itemstack = (ItemStack) iterator.next();
+            itemstack = (ItemStack) iterator.next(); // Purpur
 
             item = itemstack.getItem();
-        } while (!(item instanceof ArmorItem) || ((ArmorItem) item).getMaterial() != ArmorMaterials.GOLD);
+        } while (!(item instanceof ArmorItem) || ((ArmorItem) item).getMaterial() != ArmorMaterials.GOLD && (!entity.level().purpurConfig.piglinIgnoresArmorWithGoldTrim || !isWearingGoldTrim(entity, itemstack))); // Purpur
 
         return true;
     }
+
+    // Purpur start
+    private static boolean isWearingGoldTrim(LivingEntity entity, ItemStack itemstack) {
+        Optional<net.minecraft.world.item.armortrim.ArmorTrim> optionalArmorTrim = net.minecraft.world.item.armortrim.ArmorTrim.getTrim(entity.level().registryAccess(), itemstack, true);
+
+        if (optionalArmorTrim.isEmpty()) return false;
+
+        net.minecraft.world.item.armortrim.ArmorTrim armorTrim = optionalArmorTrim.get();
+
+        return armorTrim.material().is(net.minecraft.world.item.armortrim.TrimMaterials.GOLD);
+    }
+    // Purpur end
 
     private static void stopWalking(Piglin piglin) {
         piglin.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);

@@ -219,8 +219,8 @@ public class Commands {
             JfrCommand.register(this.dispatcher);
         }
 
-        if (SharedConstants.IS_RUNNING_IN_IDE) {
-            TestCommand.register(this.dispatcher);
+        if (org.purpurmc.purpur.PurpurConfig.registerMinecraftDebugCommands || SharedConstants.IS_RUNNING_IN_IDE) { // Purpur
+            if (!org.purpurmc.purpur.PurpurConfig.registerMinecraftDebugCommands) TestCommand.register(this.dispatcher); // Purpur
             ResetChunksCommand.register(this.dispatcher);
             RaidCommand.register(this.dispatcher);
             DebugPathCommand.register(this.dispatcher);
@@ -248,6 +248,14 @@ public class Commands {
             SetPlayerIdleTimeoutCommand.register(this.dispatcher);
             StopCommand.register(this.dispatcher);
             WhitelistCommand.register(this.dispatcher);
+            org.purpurmc.purpur.command.CreditsCommand.register(this.dispatcher); // Purpur
+            org.purpurmc.purpur.command.DemoCommand.register(this.dispatcher); // Purpur
+            org.purpurmc.purpur.command.PingCommand.register(this.dispatcher); // Purpur
+            org.purpurmc.purpur.command.UptimeCommand.register(this.dispatcher); // Purpur
+            org.purpurmc.purpur.command.TPSBarCommand.register(this.dispatcher); // Purpur
+            org.purpurmc.purpur.command.CompassCommand.register(this.dispatcher); // Purpur
+            org.purpurmc.purpur.command.RamBarCommand.register(this.dispatcher); // Purpur
+            org.purpurmc.purpur.command.RamCommand.register(this.dispatcher); // Purpur
         }
 
         if (environment.includeIntegrated) {

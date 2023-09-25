@@ -95,9 +95,11 @@ public class GrindstoneMenu extends AbstractContainerMenu {
 
             @Override
             public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                ItemStack itemstack = activeQuickItem == null ? stack : activeQuickItem; // Purpur
                 context.execute((world, blockposition) -> {
+                    org.purpurmc.purpur.event.inventory.GrindstoneTakeResultEvent grindstoneTakeResultEvent = new org.purpurmc.purpur.event.inventory.GrindstoneTakeResultEvent(player.getBukkitEntity(), getBukkitView(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), this.getExperienceAmount(world)); grindstoneTakeResultEvent.callEvent(); // Purpur
                     if (world instanceof ServerLevel) {
-                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper
+                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), grindstoneTakeResultEvent.getExperienceAmount(), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper // Purpur
                     }
 
                     world.levelEvent(1042, blockposition, 0);
@@ -130,7 +132,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
                     Enchantment enchantment = (Enchantment) entry.getKey();
                     Integer integer = (Integer) entry.getValue();
 
-                    if (!enchantment.isCurse()) {
+                    if (!org.purpurmc.purpur.PurpurConfig.grindstoneIgnoredEnchants.contains(enchantment)) { // Purpur
                         j += enchantment.getMinCost(integer);
                     }
                 }
@@ -230,7 +232,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
             Entry<Enchantment, Integer> entry = (Entry) iterator.next();
             Enchantment enchantment = (Enchantment) entry.getKey();
 
-            if (!enchantment.isCurse() || EnchantmentHelper.getItemEnchantmentLevel(enchantment, itemstack2) == 0) {
+            if (!org.purpurmc.purpur.PurpurConfig.grindstoneIgnoredEnchants.contains(enchantment) || EnchantmentHelper.getItemEnchantmentLevel(enchantment, itemstack2) == 0) { // Purpur
                 itemstack2.enchant(enchantment, (Integer) entry.getValue());
             }
         }
@@ -250,7 +252,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
         }
 
         Map<Enchantment, Integer> map = (Map) EnchantmentHelper.getEnchantments(item).entrySet().stream().filter((entry) -> {
-            return ((Enchantment) entry.getKey()).isCurse();
+            return org.purpurmc.purpur.PurpurConfig.grindstoneIgnoredEnchants.contains((Enchantment) entry.getKey()); // Purpur
         }).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
         EnchantmentHelper.setEnchantments(map, itemstack1);
@@ -265,6 +267,20 @@ public class GrindstoneMenu extends AbstractContainerMenu {
         for (int k = 0; k < map.size(); ++k) {
             itemstack1.setRepairCost(AnvilMenu.calculateIncreasedRepairCost(itemstack1.getBaseRepairCost()));
         }
+
+        // Purpur start
+        if (org.purpurmc.purpur.PurpurConfig.grindstoneRemoveAttributes && itemstack1.getTag() != null) {
+            for (String key : itemstack1.getTag().getAllKeys()) {
+                if (!key.equals("display")) {
+                    itemstack1.getTag().remove(key);
+                }
+            }
+        }
+
+        if (org.purpurmc.purpur.PurpurConfig.grindstoneRemoveDisplay && itemstack1.getTag() != null) {
+            itemstack1.getTag().remove("display");
+        }
+        // Purpur end
 
         return itemstack1;
     }
@@ -327,7 +343,9 @@ public class GrindstoneMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
 
+            this.activeQuickItem = itemstack; // Purpur
             slot1.onTake(player, itemstack1);
+            this.activeQuickItem = null; // Purpur
         }
 
         return itemstack;

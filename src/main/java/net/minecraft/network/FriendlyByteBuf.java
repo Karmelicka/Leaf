@@ -95,6 +95,8 @@ public class FriendlyByteBuf extends ByteBuf {
     private static final int MAX_PUBLIC_KEY_LENGTH = 512;
     private static final Gson GSON = new Gson();
 
+    public static boolean hasItemSerializeEvent = false; // Purpur
+
     public FriendlyByteBuf(ByteBuf parent) {
         this.source = parent;
     }
@@ -640,6 +642,17 @@ public class FriendlyByteBuf extends ByteBuf {
             this.writeBoolean(false);
         } else {
             this.writeBoolean(true);
+            // Purpur start
+            if (hasItemSerializeEvent) {
+                var event = new org.purpurmc.purpur.event.packet.NetworkItemSerializeEvent(stack.asBukkitCopy());
+                event.callEvent();
+                ItemStack newStack = ItemStack.fromBukkitCopy(event.getItemStack());
+                if (org.purpurmc.purpur.PurpurConfig.fixNetworkSerializedItemsInCreative && !ItemStack.matches(stack, newStack)) {
+                    stack.save(newStack.getOrCreateTagElement("Purpur.OriginalItem"));
+                }
+                stack = newStack;
+            }
+            // Purpur end
             Item item = stack.getItem();
 
             this.writeId(BuiltInRegistries.ITEM, item);

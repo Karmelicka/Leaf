@@ -58,14 +58,48 @@ public class Vindicator extends AbstractIllager {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.vindicatorRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.vindicatorRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.vindicatorControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.vindicatorMaxHealth);
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.vindicatorTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.vindicatorAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
         super.registerGoals();
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.goalSelector.addGoal(1, new Vindicator.VindicatorBreakDoorGoal(this));
         this.goalSelector.addGoal(2, new AbstractIllager.RaiderOpenDoorGoal(this));
         this.goalSelector.addGoal(3, new Raider.HoldGroundAttackGoal(this, 10.0F));
         this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, false));
+        this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, Raider.class)).setAlertOthers());
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, true));
@@ -130,6 +164,12 @@ public class Vindicator extends AbstractIllager {
         RandomSource randomSource = world.getRandom();
         this.populateDefaultEquipmentSlots(randomSource, difficulty);
         this.populateDefaultEquipmentEnchantments(randomSource, difficulty);
+        // Purpur start
+        Level level = world.getMinecraftWorld();
+        if (level().purpurConfig.vindicatorJohnnySpawnChance > 0D && random.nextDouble() <= level().purpurConfig.vindicatorJohnnySpawnChance) {
+            setCustomName(Component.translatable("Johnny"));
+        }
+        // Purpur end
         return spawnGroupData;
     }
 

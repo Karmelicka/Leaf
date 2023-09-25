@@ -48,7 +48,7 @@ public class HangingEntityItem extends Item {
             return InteractionResult.FAIL;
         } else {
             Level world = context.getLevel();
-            Object object;
+            Entity object; // Purpur
 
             if (this.type == EntityType.PAINTING) {
                 Optional<Painting> optional = Painting.create(world, blockposition1, enumdirection);
@@ -72,6 +72,11 @@ public class HangingEntityItem extends Item {
 
             if (nbttagcompound != null) {
                 EntityType.updateCustomEntityTag(world, entityhuman, (Entity) object, nbttagcompound);
+                // Purpur start
+                if (world.purpurConfig.persistentDroppableEntityDisplayNames && itemstack.hasCustomHoverName()) {
+                    object.setCustomName(itemstack.getHoverName());
+                }
+                // Purpur end
             }
 
             if (((HangingEntity) object).survives()) {

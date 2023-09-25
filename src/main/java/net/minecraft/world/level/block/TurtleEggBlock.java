@@ -169,7 +169,7 @@ public class TurtleEggBlock extends Block {
     private boolean shouldUpdateHatchLevel(Level world) {
         float f = world.getTimeOfDay(1.0F);
 
-        return (double) f < 0.69D && (double) f > 0.65D ? true : world.random.nextInt(500) == 0;
+        return (double) f < 0.69D && (double) f > 0.65D ? true : world.random.nextInt(world.purpurConfig.turtleEggsRandomTickCrackChance) == 0;
     }
 
     @Override
@@ -202,6 +202,31 @@ public class TurtleEggBlock extends Block {
     }
 
     private boolean canDestroyEgg(Level world, Entity entity) {
-        return !(entity instanceof Turtle) && !(entity instanceof Bat) ? (!(entity instanceof LivingEntity) ? false : entity instanceof Player || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) : false;
+        // Purpur start
+        if (entity instanceof Turtle || entity instanceof Bat) {
+            return false;
+        }
+        if (world.purpurConfig.turtleEggsBreakFromExpOrbs && entity instanceof net.minecraft.world.entity.ExperienceOrb) {
+            return true;
+        }
+        if (world.purpurConfig.turtleEggsBreakFromItems && entity instanceof net.minecraft.world.entity.item.ItemEntity) {
+            return true;
+        }
+        if (world.purpurConfig.turtleEggsBreakFromMinecarts && entity instanceof net.minecraft.world.entity.vehicle.AbstractMinecart) {
+            return true;
+        }
+        if (!(entity instanceof LivingEntity)) {
+            return false;
+        }
+        if (world.purpurConfig.turtleEggsTramplingFeatherFalling) {
+            java.util.Iterator<ItemStack> armor = entity.getArmorSlots().iterator();
+            return !armor.hasNext() || net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FALL_PROTECTION, armor.next()) < (int) entity.fallDistance;
+        }
+        if (entity instanceof Player) {
+            return true;
+        }
+
+        return world.purpurConfig.turtleEggsBypassMobGriefing || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+        // Purpur end
     }
 }

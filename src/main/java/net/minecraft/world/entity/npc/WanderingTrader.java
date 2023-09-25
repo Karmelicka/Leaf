@@ -71,6 +71,43 @@ public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVill
         //this.setDespawnDelay(48000); // CraftBukkit - set default from MobSpawnerTrader // Paper - move back to MobSpawnerTrader - Vanilla behavior is that only traders spawned by it have this value set.
     }
 
+    // Purpur - start
+    @Override
+    public boolean isRidable() {
+        return level().purpurConfig.wanderingTraderRidable;
+    }
+
+    @Override
+    public boolean dismountsUnderwater() {
+        return level().purpurConfig.useDismountsUnderwaterTag ? super.dismountsUnderwater() : !level().purpurConfig.wanderingTraderRidableInWater;
+    }
+
+    @Override
+    public boolean isControllable() {
+        return level().purpurConfig.wanderingTraderControllable;
+    }
+    // Purpur end
+
+    @Override
+    public void initAttributes() {
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.wanderingTraderMaxHealth);
+    }
+
+    @Override
+    public boolean canBeLeashed(Player player) {
+        return level().purpurConfig.wanderingTraderCanBeLeashed && !this.isLeashed();
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.wanderingTraderTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.wanderingTraderAlwaysDropExp;
+    }
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
@@ -78,7 +115,7 @@ public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVill
             return this.canDrinkPotion && this.level().isNight() && !entityvillagertrader.isInvisible(); // Paper - Add more WanderingTrader API
         }));
         this.goalSelector.addGoal(0, new UseItemGoal<>(this, new ItemStack(Items.MILK_BUCKET), SoundEvents.WANDERING_TRADER_REAPPEARED, (entityvillagertrader) -> {
-            return this.canDrinkMilk && this.level().isDay() && entityvillagertrader.isInvisible(); // Paper - Add more WanderingTrader API
+            return level().purpurConfig.milkClearsBeneficialEffects && this.canDrinkMilk && this.level().isDay() && entityvillagertrader.isInvisible(); // Paper - Add more WanderingTrader API // Purpur
         }));
         this.goalSelector.addGoal(1, new TradeWithPlayerGoal(this));
         this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Zombie.class, 8.0F, 0.5D, 0.5D));
@@ -91,6 +128,7 @@ public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVill
         this.goalSelector.addGoal(1, new PanicGoal(this, 0.5D));
         this.goalSelector.addGoal(1, new LookAtTradingPlayerGoal(this));
         this.goalSelector.addGoal(2, new WanderingTrader.WanderToPositionGoal(this, 2.0D, 0.35D));
+        if (level().purpurConfig.wanderingTraderFollowEmeraldBlock) this.goalSelector.addGoal(3, new net.minecraft.world.entity.ai.goal.TemptGoal(this, 1.0D, TEMPT_ITEMS, false)); // Purpur
         this.goalSelector.addGoal(4, new MoveTowardsRestrictionGoal(this, 0.35D));
         this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.35D));
         this.goalSelector.addGoal(9, new InteractGoal(this, Player.class, 3.0F, 1.0F));
@@ -118,9 +156,10 @@ public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVill
             }
 
             if (this.getOffers().isEmpty()) {
-                return InteractionResult.sidedSuccess(this.level().isClientSide);
+                return tryRide(player, hand, InteractionResult.sidedSuccess(this.level().isClientSide)); // Purpur
             } else {
-                if (!this.level().isClientSide) {
+                if (level().purpurConfig.wanderingTraderRidable && itemstack.isEmpty()) return tryRide(player, hand); // Purpur
+                if (this.level().purpurConfig.wanderingTraderAllowTrading) {
                     this.setTradingPlayer(player);
                     this.openTradingScreen(player, this.getDisplayName(), 1);
                 }

@@ -31,6 +31,13 @@ public class SecondaryPoiSensor extends Sensor<Villager> {
             return;
         }
         // Gale end - Lithium - skip secondary POI sensor if absent
+        // Purpur start - make sure clerics don't wander to soul sand when the option is off
+        Brain<?> brain = entity.getBrain();
+        if (!world.purpurConfig.villagerClericsFarmWarts && entity.getVillagerData().getProfession() == net.minecraft.world.entity.npc.VillagerProfession.CLERIC) {
+            brain.eraseMemory(MemoryModuleType.SECONDARY_JOB_SITE);
+            return;
+        }
+        // Purpur end
         ResourceKey<Level> resourceKey = world.dimension();
         BlockPos blockPos = entity.blockPosition();
         @Nullable ArrayList<GlobalPos> list = null; // Gale - optimize villager data storage
@@ -52,7 +59,7 @@ public class SecondaryPoiSensor extends Sensor<Villager> {
             }
         }
 
-        Brain<?> brain = entity.getBrain();
+        //Brain<?> brain = entity.getBrain(); // Purpur - moved up
         // Gale start - optimize villager data storage
         if (list != null) {
             list.trimToSize();

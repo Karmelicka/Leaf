@@ -46,4 +46,10 @@ public class CraftMapRenderer extends MapRenderer {
         }
     }
 
+    // Purpur - start
+    @Override
+    public boolean isExplorerMap() {
+        return this.worldMap.isExplorerMap;
+    }
+    // Purpur - end
 }

@@ -57,7 +57,7 @@ public class InteractWithDoor {
 
                         if (iblockdata.is(BlockTags.WOODEN_DOORS, (blockbase_blockdata) -> {
                             return blockbase_blockdata.getBlock() instanceof DoorBlock;
-                        })) {
+        }) && !DoorBlock.requiresRedstone(entityliving.level(), iblockdata, blockposition)) { // Purpur
                             DoorBlock blockdoor = (DoorBlock) iblockdata.getBlock();
 
                             if (!blockdoor.isOpen(iblockdata)) {
@@ -79,7 +79,7 @@ public class InteractWithDoor {
 
                         if (iblockdata1.is(BlockTags.WOODEN_DOORS, (blockbase_blockdata) -> {
                             return blockbase_blockdata.getBlock() instanceof DoorBlock;
-                        })) {
+        }) && !DoorBlock.requiresRedstone(entityliving.level(), iblockdata, blockposition1)) { // Purpur
                             DoorBlock blockdoor1 = (DoorBlock) iblockdata1.getBlock();
 
                             if (!blockdoor1.isOpen(iblockdata1)) {
@@ -122,7 +122,7 @@ public class InteractWithDoor {
 
                     if (!iblockdata.is(BlockTags.WOODEN_DOORS, (blockbase_blockdata) -> {
                         return blockbase_blockdata.getBlock() instanceof DoorBlock;
-                    })) {
+                        }) || DoorBlock.requiresRedstone(entity.level(), iblockdata, blockposition)) { // Purpur
                         iterator.remove();
                     } else {
                         DoorBlock blockdoor = (DoorBlock) iblockdata.getBlock();

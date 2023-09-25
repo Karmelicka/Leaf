@@ -42,6 +42,43 @@ public class SkeletonHorse extends AbstractHorse {
         super(type, world);
     }
 
+    // Purpur start
+    @Override
+    public boolean isTamed() {
+        return super.isTamed() || this.level().purpurConfig.skeletonHorseRidable;
+    }
+    // Purpur end
+
+    @Override
+    public float generateMaxHealth(RandomSource random) {
+        return (float) generateMaxHealth(this.level().purpurConfig.skeletonHorseMaxHealthMin, this.level().purpurConfig.skeletonHorseMaxHealthMax);
+    }
+
+    @Override
+    public double generateJumpStrength(RandomSource random) {
+        return generateJumpStrength(this.level().purpurConfig.skeletonHorseJumpStrengthMin, this.level().purpurConfig.skeletonHorseJumpStrengthMax);
+    }
+
+    @Override
+    public double generateSpeed(RandomSource random) {
+        return generateSpeed(this.level().purpurConfig.skeletonHorseMovementSpeedMin, this.level().purpurConfig.skeletonHorseMovementSpeedMax);
+    }
+
+    @Override
+    public int getPurpurBreedTime() {
+        return 6000;
+    }
+
+    @Override
+    public boolean isSensitiveToWater() {
+        return this.level().purpurConfig.skeletonHorseTakeDamageFromWater;
+    }
+
+    @Override
+    protected boolean isAlwaysExperienceDropper() {
+        return this.level().purpurConfig.skeletonHorseAlwaysDropExp;
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return createBaseHorseAttributes().add(Attributes.MAX_HEALTH, 15.0D).add(Attributes.MOVEMENT_SPEED, 0.20000000298023224D);
     }
@@ -59,7 +96,9 @@ public class SkeletonHorse extends AbstractHorse {
     }
 
     @Override
-    protected void addBehaviourGoals() {}
+    protected void addBehaviourGoals() {
+        if (level().purpurConfig.skeletonHorseCanSwim) goalSelector.addGoal(0, new net.minecraft.world.entity.ai.goal.FloatGoal(this));
+    }
 
     @Override
     protected SoundEvent getAmbientSound() {
