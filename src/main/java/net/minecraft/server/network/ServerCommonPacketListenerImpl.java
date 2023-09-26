@@ -136,6 +136,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
 
     @Override
     public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
+        top.leavesmc.leaves.protocol.core.LeavesProtocolManager.handlePayload(player, packet.payload()); // Leaves - protocol
         // Paper start - Brand support
         if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload brandPayload) {
             this.player.clientBrandName = brandPayload.brand();
@@ -153,6 +154,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                 String channels = payload.toString(com.google.common.base.Charsets.UTF_8);
                 for (String channel : channels.split("\0")) {
                     this.getCraftPlayer().addChannel(channel);
+                    top.leavesmc.leaves.protocol.core.LeavesProtocolManager.handleMinecraftRegister(channel, player); // Leaves - protocol
                 }
             } catch (Exception ex) {
                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t register custom payload", ex);

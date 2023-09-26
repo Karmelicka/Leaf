@@ -362,6 +362,7 @@ public abstract class PlayerList {
         }
 
         player.didPlayerJoinEvent = true; // Gale - EMC - do not process chat/commands before player has joined
+        top.leavesmc.leaves.protocol.core.LeavesProtocolManager.handlePlayerJoin(player); // Leaves - protocol
 
         final net.kyori.adventure.text.Component jm = playerJoinEvent.joinMessage();
 
@@ -620,6 +621,7 @@ public abstract class PlayerList {
         return this.remove(entityplayer, net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(entityplayer.getDisplayName())));
     }
     public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer, net.kyori.adventure.text.Component leaveMessage) {
+        top.leavesmc.leaves.protocol.core.LeavesProtocolManager.handlePlayerLeave(entityplayer); // Leaves - protocol
         // Paper end - Fix kick event leave message not being sent
         org.purpurmc.purpur.task.BossBarTask.removeFromAll(entityplayer.getBukkitEntity()); // Purpur
         ServerLevel worldserver = entityplayer.serverLevel();

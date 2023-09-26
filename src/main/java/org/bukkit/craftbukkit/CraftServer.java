@@ -482,6 +482,7 @@ public final class CraftServer implements Server {
             MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
         }
         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
+        top.leavesmc.leaves.protocol.core.LeavesProtocolManager.init(); // Leaves - protocol
     }
 
     public boolean getCommandBlockOverride(String command) {
@@ -1107,6 +1108,7 @@ public final class CraftServer implements Server {
         org.purpurmc.purpur.PurpurConfig.registerCommands(); // Purpur
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+        top.leavesmc.leaves.protocol.core.LeavesProtocolManager.handleServerReload(); // Leaves - protocol
 
         int pollCount = 0;
 

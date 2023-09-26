@@ -1711,6 +1711,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
             GameTestTicker.SINGLETON.tick();
         }
 
+        top.leavesmc.leaves.protocol.core.LeavesProtocolManager.handleTick(); // Leaves - protocol
+
         for (int i = 0; i < this.tickables.size(); ++i) {
             ((Runnable) this.tickables.get(i)).run();
         }

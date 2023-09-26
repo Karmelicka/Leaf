@@ -20,7 +20,12 @@ public record ServerboundCustomPayloadPacket(CustomPacketPayload payload) implem
 
     private static CustomPacketPayload readPayload(ResourceLocation id, FriendlyByteBuf buf) {
         FriendlyByteBuf.Reader<? extends CustomPacketPayload> packetdataserializer_a = (FriendlyByteBuf.Reader) ServerboundCustomPayloadPacket.KNOWN_TYPES.get(id);
-
+        // Leaves start - protocol
+        CustomPacketPayload leavesPayload = top.leavesmc.leaves.protocol.core.LeavesProtocolManager.getPayload(id, buf);
+        if (leavesPayload != null) {
+            return leavesPayload;
+        }
+        // Leaves end - protocol
         return (CustomPacketPayload) (packetdataserializer_a != null ? (CustomPacketPayload) packetdataserializer_a.apply(buf) : readUnknownPayload(id, buf));
     }
 
