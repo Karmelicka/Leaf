@@ -170,10 +170,12 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
         return dimensions.height - 0.1F * this.getScale();
     }
 
+    private int behaviorTick = 0; // Plazma - Add missing pufferfish configurations
     @Override
     protected void customServerAiStep() {
         Brain<Camel> behaviorcontroller = (Brain<Camel>) this.getBrain(); // CraftBukkit - decompile error
 
+        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Plazma - Add missing pufferfish configurations
         behaviorcontroller.tick((ServerLevel) this.level(), this);
         CamelAi.updateActivity(this);
         super.customServerAiStep();

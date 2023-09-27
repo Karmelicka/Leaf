@@ -527,8 +527,10 @@ public class Sniffer extends Animal {
         return Brain.provider(SnifferAi.MEMORY_TYPES, SnifferAi.SENSOR_TYPES);
     }
 
+    private int behaviorTick; // Plazma - Add missing pufferfish configurations
     @Override
     protected void customServerAiStep() {
+        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Plazma - Add missing pufferfish configurations
         this.getBrain().tick((ServerLevel) this.level(), this);
         SnifferAi.updateActivity(this);
         super.customServerAiStep();
