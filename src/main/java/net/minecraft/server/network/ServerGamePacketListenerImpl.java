@@ -579,7 +579,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                 }
                 // Paper end - Prevent moving into unloaded chunks
 
-                if (d10 - d9 > Math.max(100.0D, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
+                if (!org.dreeam.leaf.config.modules.gameplay.DisableMovedWronglyThreshold.enabled && d10 - d9 > Math.max(100.0D, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) { // Leaves - disable can
                 // CraftBukkit end
                     ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", new Object[]{entity.getName().getString(), this.player.getName().getString(), d6, d7, d8});
                     this.send(new ClientboundMoveVehiclePacket(entity));
@@ -615,7 +615,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                 d10 = d6 * d6 + d7 * d7 + d8 * d8;
                 boolean flag2 = false;
 
-                if (d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
+                if (!org.dreeam.leaf.config.modules.gameplay.DisableMovedWronglyThreshold.enabled && d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot // Leaves - disable can
                     flag2 = true; // Paper - diff on change, this should be moved wrongly
                     ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", new Object[]{entity.getName().getString(), this.player.getName().getString(), Math.sqrt(d10)});
                 }
@@ -1498,7 +1498,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                         io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY,
                                             toX, toY, toZ, toYaw, toPitch, true);
                                         if (!event.isAllowed()) {
-                                            if (event.getLogWarning())
+                                            if (!org.dreeam.leaf.config.modules.gameplay.DisableMovedWronglyThreshold.enabled && event.getLogWarning()) // Leaves - disable can
                                                 ServerGamePacketListenerImpl.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d6, d7, d8});
                                             this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
                                             return;
@@ -1568,7 +1568,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                             d10 = d6 * d6 + d7 * d7 + d8 * d8;
                             boolean movedWrongly = false; // Paper - Add fail move event; rename
 
-                            if (!this.player.isChangingDimension() && d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.isSleeping() && !this.player.gameMode.isCreative() && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) { // Spigot
+                            if (!org.dreeam.leaf.config.modules.gameplay.DisableMovedWronglyThreshold.enabled && !this.player.isChangingDimension() && d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.isSleeping() && !this.player.gameMode.isCreative() && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) { // Spigot // Leaves - disable can
                                 // Paper start - Add fail move event
                                 io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_WRONGLY,
                                     toX, toY, toZ, toYaw, toPitch, true);
