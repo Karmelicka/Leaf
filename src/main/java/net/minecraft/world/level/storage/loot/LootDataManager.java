@@ -103,7 +103,7 @@ public class LootDataManager implements PreparableReloadListener, LootDataResolv
         });
         // CraftBukkit start
         map1.forEach((key, lootTable) -> {
-            if (object instanceof LootTable table) {
+            if (lootTable instanceof LootTable table) { // Paper - Use correct variable for initializing CraftLootTable
                 table.craftLootTable = new CraftLootTable(CraftNamespacedKey.fromMinecraft(key.location()), table);
             }
         });
