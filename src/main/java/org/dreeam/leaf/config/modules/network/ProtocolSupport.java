@@ -5,7 +5,7 @@ import org.dreeam.leaf.config.ConfigInfo;
 import org.dreeam.leaf.config.EnumConfigCategory;
 import org.dreeam.leaf.config.IConfigModule;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ProtocolSupport implements IConfigModule {
 
@@ -28,7 +28,7 @@ public class ProtocolSupport implements IConfigModule {
     @ConfigInfo(baseName = "xaero-map-protocol")
     public static boolean xaeroMapProtocol = false;
     @ConfigInfo(baseName = "xaero-map-server-id")
-    public static int xaeroMapServerID = new Random().nextInt();
+    public static int xaeroMapServerID = ThreadLocalRandom.current().nextInt(); // Leaf - Faster Random
 
     @ConfigInfo(baseName = "syncmatica-enabled")
     public static boolean syncmaticaProtocol = false;
