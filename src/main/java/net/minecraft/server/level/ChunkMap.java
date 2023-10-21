@@ -1752,7 +1752,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                 // Paper end - Configurable entity tracking range by Y
 
                 // CraftBukkit start - respect vanish API
-                if (!player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {
+                if (flag && !player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) { // Paper - only consider hits
                     flag = false;
                 }
                 // CraftBukkit end
