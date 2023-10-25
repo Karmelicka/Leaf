@@ -678,7 +678,7 @@ public class PurpurWorldConfig {
             dropsMap.forEach((itemId, chance) -> {
                 Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId.toString()));
                 if (item == Items.AIR) { PurpurConfig.log(Level.SEVERE, "Invalid item for `tools.axe.strippables." + blockId + ".drops`: " + itemId); return; }
-                drops.put(item, (double) chance);
+                drops.put(item, (Double) chance); // Leaf - Fix casting
             });
             axeStrippables.put(block, new Strippable(into, drops));
         });
@@ -732,7 +732,7 @@ public class PurpurWorldConfig {
             dropsMap.forEach((itemId, chance) -> {
                 Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId.toString()));
                 if (item == Items.AIR) { PurpurConfig.log(Level.SEVERE, "Invalid item for `tools.axe.waxables." + blockId + ".drops`: " + itemId); return; }
-                drops.put(item, (double) chance);
+                drops.put(item, (Double) chance); // Leaf - Fix casting
             });
             axeWaxables.put(block, new Waxable(into, drops));
         });
@@ -777,7 +777,7 @@ public class PurpurWorldConfig {
             dropsMap.forEach((itemId, chance) -> {
                 Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId.toString()));
                 if (item == Items.AIR) { PurpurConfig.log(Level.SEVERE, "Invalid item for `tools.axe.weatherables." + blockId + ".drops`: " + itemId); return; }
-                drops.put(item, (double) chance);
+                drops.put(item, (Double) chance); // Leaf - Fix casting
             });
             axeWeatherables.put(block, new Weatherable(into, drops));
         });
@@ -803,7 +803,7 @@ public class PurpurWorldConfig {
             dropsMap.forEach((itemId, chance) -> {
                 Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId.toString()));
                 if (item == Items.AIR) { PurpurConfig.log(Level.SEVERE, "Invalid item for `tools.hoe.tillables." + blockId + ".drops`: " + itemId); return; }
-                drops.put(item, (double) chance);
+                drops.put(item, (Double) chance); // Leaf - Fix casting
             });
             hoeTillables.put(block, new Tillable(condition, into, drops));
         });
@@ -827,7 +827,7 @@ public class PurpurWorldConfig {
             dropsMap.forEach((itemId, chance) -> {
                 Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId.toString()));
                 if (item == Items.AIR) { PurpurConfig.log(Level.SEVERE, "Invalid item for `tools.shovel.flattenables." + blockId + ".drops`: " + itemId); return; }
-                drops.put(item, (double) chance);
+                drops.put(item, (Double) chance); // Leaf - Fix casting
             });
             shovelFlattenables.put(block, new Flattenable(into, drops));
         });
