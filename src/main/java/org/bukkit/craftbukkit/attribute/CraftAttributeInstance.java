@@ -44,6 +44,21 @@ public class CraftAttributeInstance implements AttributeInstance {
         return result;
     }
 
+    // Paper start
+    @Override
+    public AttributeModifier getModifier(java.util.UUID uuid) {
+        Preconditions.checkArgument(uuid != null, "UUID cannot be null");
+        net.minecraft.world.entity.ai.attributes.AttributeModifier modifier = this.handle.getModifier(uuid);
+        return modifier == null ? null : CraftAttributeInstance.convert(modifier);
+    }
+
+    @Override
+    public void removeModifier(java.util.UUID uuid) {
+        Preconditions.checkArgument(uuid != null, "UUID cannot be null");
+        this.handle.removeModifier(uuid);
+    }
+    // Paper end
+
     @Override
     public void addModifier(AttributeModifier modifier) {
         Preconditions.checkArgument(modifier != null, "modifier");
