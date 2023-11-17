@@ -325,7 +325,7 @@ public class MapItem extends ComplexItem {
                     worldmap.tickCarriedBy(entityhuman, stack);
                 }
 
-                if (!worldmap.locked && (selected || entity instanceof Player && ((Player) entity).getOffhandItem() == stack)) {
+                if (!worldmap.locked && (!org.dreeam.leaf.config.modules.opt.SkipMapItemDataUpdates.enabled || worldmap.mapView.getRenderers().stream().anyMatch(mapRenderer -> mapRenderer.getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class)) && (selected || entity instanceof Player && ((Player) entity).getOffhandItem() == stack)) { // SparklyPaper - don't update maps if they don't have the CraftMapRenderer in the render list
                     this.update(world, entity, worldmap);
                 }
 
