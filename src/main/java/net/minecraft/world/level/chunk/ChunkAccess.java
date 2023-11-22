@@ -62,7 +62,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
     protected final ShortList[] postProcessing;
     protected volatile boolean unsaved;
     private volatile boolean isLightCorrect;
-    protected final ChunkPos chunkPos; public final long coordinateKey; public final int locX; public final int locZ; // Paper - cache coordinate key
+    protected final ChunkPos chunkPos; public final long coordinateKey; public final long nearbyPlayersCoordinateKey; public final int locX; public final int locZ; // Paper - cache coordinate key // SparklyPaper - cache coordinate key used for nearby players
     private long inhabitedTime;
     /** @deprecated */
     @Nullable
@@ -136,7 +136,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
         }
         // Paper end - rewrite light engine
         this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
-        this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
+        this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); this.nearbyPlayersCoordinateKey = io.papermc.paper.util.CoordinateUtils.getChunkKey(locX, locZ); // Paper - cache long key // SparklyPaper - cache coordinate key used for nearby players
         this.upgradeData = upgradeData;
         this.levelHeightAccessor = heightLimitView;
         this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];

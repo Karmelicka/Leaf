@@ -106,6 +106,14 @@ public final class NearbyPlayers {
         return chunk == null ? null : chunk.players[type.ordinal()];
     }
 
+    // SparklyPaper start - cache coordinate key used for nearby players
+    public ReferenceList<ServerPlayer> getPlayers(final long nearbyPlayersCoordinateKey, final NearbyMapType type) {
+        final TrackedChunk chunk = this.byChunk.get(nearbyPlayersCoordinateKey);
+
+        return chunk == null ? null : chunk.players[type.ordinal()];
+    }
+    // SparklyPaper end
+
     public ReferenceList<ServerPlayer> getPlayersByChunk(final int chunkX, final int chunkZ, final NearbyMapType type) {
         final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
 

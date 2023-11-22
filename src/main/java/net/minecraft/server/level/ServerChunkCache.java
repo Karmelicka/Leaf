@@ -594,7 +594,7 @@ public class ServerChunkCache extends ChunkSource {
 
                     // Paper start - optimise chunk tick iteration
                     com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> playersNearby
-                        = nearbyPlayers.getPlayers(chunkcoordintpair, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.SPAWN_RANGE);
+                    = nearbyPlayers.getPlayers(chunk1.nearbyPlayersCoordinateKey, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.SPAWN_RANGE); // nearbyPlayers.getPlayers(chunkcoordintpair, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.SPAWN_RANGE); // SparklyPaper - cache coordinate key used for nearby players
                     if (playersNearby == null) {
                         continue;
                     }
