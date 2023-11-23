@@ -182,7 +182,7 @@ public class Spider extends Monster {
             MobEffect mobeffectlist = entityspider_groupdataspider.effect;
 
             if (mobeffectlist != null) {
-                this.addEffect(new MobEffectInstance(mobeffectlist, -1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN); // CraftBukkit
+                this.addEffect(new MobEffectInstance(mobeffectlist, -1), null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN, world instanceof net.minecraft.server.level.ServerLevel); // CraftBukkit // Paper - Don't fire sync event during generation; only if this is happening in a ServerLevel
             }
         }
 
