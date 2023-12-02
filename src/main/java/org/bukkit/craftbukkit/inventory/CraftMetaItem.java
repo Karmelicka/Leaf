@@ -1174,7 +1174,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         Preconditions.checkNotNull(modifier, "AttributeModifier cannot be null");
         this.checkAttributeList();
         for (Map.Entry<Attribute, AttributeModifier> entry : this.attributeModifiers.entries()) {
-            Preconditions.checkArgument(!entry.getValue().getUniqueId().equals(modifier.getUniqueId()), "Cannot register AttributeModifier. Modifier is already applied! %s", modifier);
+            Preconditions.checkArgument(!(entry.getValue().getUniqueId().equals(modifier.getUniqueId()) && entry.getKey() == attribute), "Cannot register AttributeModifier. Modifier is already applied! %s", modifier); // Paper
         }
         return this.attributeModifiers.put(attribute, modifier);
     }
