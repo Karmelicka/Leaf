@@ -241,7 +241,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         if (GaleGlobalConfiguration.get().misc.keepalive.sendMultiple) {
             if (elapsedTime >= 1000L) { // 1 second
                 if (!this.processedDisconnect && this.keepAlives.size() >= KEEPALIVE_LIMIT_IN_SECONDS) {
-                    LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName());
+                    LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // Leaf - Fix keepalive kicked name
                     disconnect(Component.translatable("disconnect.timeout"), org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT);
                 } else {
                     this.keepAliveTime = currentTime; // hijack this field for 1 second intervals
