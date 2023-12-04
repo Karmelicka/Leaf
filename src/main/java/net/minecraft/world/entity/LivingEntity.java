@@ -1439,7 +1439,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
                 player.setRealHealth(health);
             }
 
-            player.updateScaledHealth(false);
+            //player.updateScaledHealth(false); // Leaf - Commented out to fix sprint glitch
+            this.entityData.set(LivingEntity.DATA_HEALTH_ID, player.getScaledHealth()); // Leaf - Sprint glitch fixed by pafias
             return;
         }
         // CraftBukkit end
