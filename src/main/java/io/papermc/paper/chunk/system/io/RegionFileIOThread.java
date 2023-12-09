@@ -835,7 +835,8 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
                     return Boolean.TRUE;
                 }
 
-                return file.hasChunk(chunkPos) ? Boolean.TRUE : Boolean.FALSE;
+                //return file.hasChunk(chunkPos) ? Boolean.TRUE : Boolean.FALSE;
+                return Boolean.TRUE;
             });
         }
     }
@@ -1146,7 +1147,7 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
                 return function.apply(regionFile);
             } finally {
                 if (regionFile != null) {
-                    regionFile.getFileLock().unlock(); // LinearPurpur
+                    //regionFile.getFileLock().unlock(); // LinearPurpur
                 }
             }
         }
@@ -1158,7 +1159,7 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
             synchronized (cache) {
                 regionFile = cache.getRegionFileIfLoaded(new ChunkPos(chunkX, chunkZ));
                 if (regionFile != null) {
-                    regionFile.getFileLock().lock(); // LinearPurpur
+                    //regionFile.getFileLock().lock(); // LinearPurpur
                 }
             }
 
@@ -1166,7 +1167,7 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
                 return function.apply(regionFile);
             } finally {
                 if (regionFile != null) {
-                    regionFile.getFileLock().unlock(); // LinearPurpur
+                    //regionFile.getFileLock().unlock(); // LinearPurpur
                 }
             }
         }

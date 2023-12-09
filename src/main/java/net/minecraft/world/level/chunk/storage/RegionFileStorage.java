@@ -137,7 +137,7 @@ public class RegionFileStorage implements AutoCloseable {
             // Paper start
             if (lock) {
                 // must be in this synchronized block
-                regionfile.getFileLock().lock(); // LinearPurpur
+                //regionfile.getFileLock().lock(); // LinearPurpur
             }
             // Paper end
             return regionfile;
@@ -149,6 +149,7 @@ public class RegionFileStorage implements AutoCloseable {
             // Paper end - cache regionfile does not exist state
             if (this.regionCache.size() >= io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize) { // Paper - Sanitise RegionFileCache and make configurable
                 this.regionCache.removeLast().close(); // LinearPurpur
+                //System.out.println("Region file cache overflowed, closing " + this.regionCache.size()); // LinearPurpur
             }
 
             // Paper - only create directory if not existing only - moved down
@@ -186,7 +187,7 @@ public class RegionFileStorage implements AutoCloseable {
             // Paper start
             if (lock) {
                 // must be in this synchronized block
-                regionfile1.getFileLock().lock(); // LinearPurpur
+                //regionfile1.getFileLock().lock(); // LinearPurpur
             }
             // Paper end
             return regionfile1;
@@ -266,7 +267,7 @@ public class RegionFileStorage implements AutoCloseable {
                         if (!chunkPos.equals(pos)) {
                             net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos + " but got chunk data for " + chunkPos + " instead! Attempting regionfile recalculation for regionfile " + regionfile.getRegionFile().toAbsolutePath()); // LinearPurpur
                             if (regionfile.recalculateHeader()) {
-                                regionfile.getFileLock().lock(); // otherwise we will unlock twice and only lock once. // LinearPurpur
+                                //regionfile.getFileLock().lock(); // otherwise we will unlock twice and only lock once. // LinearPurpur
                                 return this.read(pos, regionfile);
                             }
                             net.minecraft.server.MinecraftServer.LOGGER.error("Can't recalculate regionfile header, regenerating chunk " + pos + " for " + regionfile.getRegionFile().toAbsolutePath()); // LinearPurpur
@@ -303,7 +304,7 @@ public class RegionFileStorage implements AutoCloseable {
 
         return nbttagcompound;
         } finally { // Paper start
-            regionfile.getFileLock().unlock(); // LinearPurpur
+            //regionfile.getFileLock().unlock(); // LinearPurpur
         } // Paper end
     }
 
@@ -395,7 +396,7 @@ public class RegionFileStorage implements AutoCloseable {
         // Paper end - Chunk save reattempt
         // Paper start - rewrite chunk system
         } finally {
-            regionfile.getFileLock().unlock(); // LinearPurpur
+            //regionfile.getFileLock().unlock(); // LinearPurpur
         }
         // Paper end - rewrite chunk system
     }

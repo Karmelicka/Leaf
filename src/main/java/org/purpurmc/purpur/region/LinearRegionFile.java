@@ -61,6 +61,11 @@ public class LinearRegionFile implements AbstractRegionFile, AutoCloseable {
 
         if (!regionFile.canRead()) return;
 
+        // LinearPurpur start - Remove all locks
+        long start = System.currentTimeMillis();
+        //if (regionFile.toString().contains("region")) while (System.currentTimeMillis() < start + 2000);
+        // LinearPurpur end
+
         try (FileInputStream fileStream = new FileInputStream(regionFile);
              DataInputStream rawDataStream = new DataInputStream(fileStream)) {
 
@@ -113,6 +118,7 @@ public class LinearRegionFile implements AbstractRegionFile, AutoCloseable {
                         this.bufferUncompressedSize[i] = size;
                     }
                 }
+                //System.out.println("Opening region file " + this.regionFile + " took " + (System.currentTimeMillis() - start) + "ms"); // LinearPurpur - Remove all locks
             }
         }
     }
