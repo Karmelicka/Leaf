@@ -129,7 +129,7 @@ public class FollowOwnerGoal extends Goal {
         } else {
             // CraftBukkit start
             EntityTeleportEvent event = CraftEventFactory.callEntityTeleportEvent(this.tamable, (double) x + 0.5D, (double) y, (double) z + 0.5D);
-            if (event.isCancelled()) {
+            if (event.isCancelled() || event.getTo() == null) { // Paper
                 return false;
             }
             Location to = event.getTo();
