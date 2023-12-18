@@ -1530,6 +1530,7 @@ public class PurpurWorldConfig {
     public boolean drownedTakeDamageFromWater = false;
     public boolean drownedBreakDoors = false;
     public boolean drownedAlwaysDropExp = false;
+    public double drownedMovementSpeed = 0.23000000417232513D; // Leaf - Configurable drowned movement speed
     private void drownedSettings() {
         drownedRidable = getBoolean("mobs.drowned.ridable", drownedRidable);
         drownedRidableInWater = getBoolean("mobs.drowned.ridable-in-water", drownedRidableInWater);
@@ -1547,6 +1548,7 @@ public class PurpurWorldConfig {
         drownedTakeDamageFromWater = getBoolean("mobs.drowned.takes-damage-from-water", drownedTakeDamageFromWater);
         drownedBreakDoors = getBoolean("mobs.drowned.can-break-doors", drownedBreakDoors);
         drownedAlwaysDropExp = getBoolean("mobs.drowned.always-drop-exp", drownedAlwaysDropExp);
+        drownedMovementSpeed = getDouble("mobs.drowned.movement-speed", drownedMovementSpeed); // Leaf - Configurable drowned movement speed
     }
 
     public boolean elderGuardianRidable = false;
@@ -1893,6 +1895,7 @@ public class PurpurWorldConfig {
     public boolean huskJockeyTryExistingChickens = true;
     public boolean huskTakeDamageFromWater = false;
     public boolean huskAlwaysDropExp = false;
+    public double huskMovementSpeed = 0.23000000417232513D; // Leaf - Configurable husk movement speed
     private void huskSettings() {
         huskRidable = getBoolean("mobs.husk.ridable", huskRidable);
         huskRidableInWater = getBoolean("mobs.husk.ridable-in-water", huskRidableInWater);
@@ -1909,6 +1912,7 @@ public class PurpurWorldConfig {
         huskJockeyTryExistingChickens = getBoolean("mobs.husk.jockey.try-existing-chickens", huskJockeyTryExistingChickens);
         huskTakeDamageFromWater = getBoolean("mobs.husk.takes-damage-from-water", huskTakeDamageFromWater);
         huskAlwaysDropExp = getBoolean("mobs.husk.always-drop-exp", huskAlwaysDropExp);
+        huskMovementSpeed = getDouble("mobs.husk.movement-speed", huskMovementSpeed); // Leaf - Configurable husk movement speed
     }
 
     public boolean illusionerRidable = false;
@@ -3119,6 +3123,7 @@ public class PurpurWorldConfig {
     public boolean zombieTakeDamageFromWater = false;
     public boolean zombieAlwaysDropExp = false;
     public double zombieHeadVisibilityPercent = 0.5D;
+    public double zombieMovementSpeed = 0.23000000417232513D; // Leaf - Configurable zombie movement speed
     private void zombieSettings() {
         zombieRidable = getBoolean("mobs.zombie.ridable", zombieRidable);
         zombieRidableInWater = getBoolean("mobs.zombie.ridable-in-water", zombieRidableInWater);
@@ -3138,6 +3143,7 @@ public class PurpurWorldConfig {
         zombieTakeDamageFromWater = getBoolean("mobs.zombie.takes-damage-from-water", zombieTakeDamageFromWater);
         zombieAlwaysDropExp = getBoolean("mobs.zombie.always-drop-exp", zombieAlwaysDropExp);
         zombieHeadVisibilityPercent = getDouble("mobs.zombie.head-visibility-percent", zombieHeadVisibilityPercent);
+        zombieMovementSpeed = getDouble("mobs.zombie.movement-speed", zombieMovementSpeed); // Leaf - Configurable zombie movement speed
     }
 
     public boolean zombieHorseRidable = false;
@@ -3186,6 +3192,7 @@ public class PurpurWorldConfig {
     public int zombieVillagerCuringTimeMax = 6000;
     public boolean zombieVillagerCureEnabled = true;
     public boolean zombieVillagerAlwaysDropExp = false;
+    public double zombieVillagerMovementSpeed = 0.23000000417232513D; // Leaf - Configurable zombieVillager movement speed
     private void zombieVillagerSettings() {
         zombieVillagerRidable = getBoolean("mobs.zombie_villager.ridable", zombieVillagerRidable);
         zombieVillagerRidableInWater = getBoolean("mobs.zombie_villager.ridable-in-water", zombieVillagerRidableInWater);
@@ -3205,6 +3212,7 @@ public class PurpurWorldConfig {
         zombieVillagerCuringTimeMax = getInt("mobs.zombie_villager.curing_time.max", zombieVillagerCuringTimeMax);
         zombieVillagerCureEnabled = getBoolean("mobs.zombie_villager.cure.enabled", zombieVillagerCureEnabled);
         zombieVillagerAlwaysDropExp = getBoolean("mobs.zombie_villager.always-drop-exp", zombieVillagerAlwaysDropExp);
+        zombieVillagerMovementSpeed = getDouble("mobs.zombie_villager.movement-speed", zombieVillagerMovementSpeed); // Leaf - Configurable zombieVillager movement speed
     }
 
     public boolean zombifiedPiglinRidable = false;
@@ -3218,6 +3226,7 @@ public class PurpurWorldConfig {
     public boolean zombifiedPiglinCountAsPlayerKillWhenAngry = true;
     public boolean zombifiedPiglinTakeDamageFromWater = false;
     public boolean zombifiedPiglinAlwaysDropExp = false;
+    public double zombifiedPiglinMovementSpeed = 0.23000000417232513D; // Leaf - Configurable zombifiedPiglin movement speed
     private void zombifiedPiglinSettings() {
         zombifiedPiglinRidable = getBoolean("mobs.zombified_piglin.ridable", zombifiedPiglinRidable);
         zombifiedPiglinRidableInWater = getBoolean("mobs.zombified_piglin.ridable-in-water", zombifiedPiglinRidableInWater);
@@ -3235,6 +3244,7 @@ public class PurpurWorldConfig {
         zombifiedPiglinCountAsPlayerKillWhenAngry = getBoolean("mobs.zombified_piglin.count-as-player-kill-when-angry", zombifiedPiglinCountAsPlayerKillWhenAngry);
         zombifiedPiglinTakeDamageFromWater = getBoolean("mobs.zombified_piglin.takes-damage-from-water", zombifiedPiglinTakeDamageFromWater);
         zombifiedPiglinAlwaysDropExp = getBoolean("mobs.zombified_piglin.always-drop-exp", zombifiedPiglinAlwaysDropExp);
+        zombifiedPiglinMovementSpeed = getDouble("mobs.zombified_piglin.movement-speed", zombifiedPiglinMovementSpeed); // Leaf - Configurable zombifiedPiglin movement speed
     }
 
     public float hungerStarvationDamage = 1.0F;

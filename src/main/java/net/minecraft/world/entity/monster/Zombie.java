@@ -128,6 +128,7 @@ public class Zombie extends Monster {
     @Override
     public void initAttributes() {
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.zombieMaxHealth);
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.level().purpurConfig.zombieMovementSpeed); // Leaf - Configurable zombie movement speed
     }
 
     public boolean jockeyOnlyBaby() {
@@ -185,9 +186,15 @@ public class Zombie extends Monster {
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
     }
 
+    // Leaf start - Configurable zombie movement speed
     public static AttributeSupplier.Builder createAttributes() {
-        return Monster.createMonsterAttributes().add(Attributes.FOLLOW_RANGE, 35.0D).add(Attributes.MOVEMENT_SPEED, 0.23000000417232513D).add(Attributes.ATTACK_DAMAGE, 3.0D).add(Attributes.ARMOR, 2.0D).add(Attributes.SPAWN_REINFORCEMENTS_CHANCE);
+        return Monster.createMonsterAttributes()
+                .add(Attributes.FOLLOW_RANGE, 35.0D)
+                .add(Attributes.ATTACK_DAMAGE, 3.0D)
+                .add(Attributes.ARMOR, 2.0D)
+                .add(Attributes.SPAWN_REINFORCEMENTS_CHANCE);
     }
+    // Leaf end
 
     @Override
     protected void defineSynchedData() {

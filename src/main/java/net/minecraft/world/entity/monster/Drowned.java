@@ -89,6 +89,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
     @Override
     public void initAttributes() {
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.drownedMaxHealth);
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.level().purpurConfig.drownedMovementSpeed); // Leaf - Configurable drowned movement speed
     }
 
     @Override

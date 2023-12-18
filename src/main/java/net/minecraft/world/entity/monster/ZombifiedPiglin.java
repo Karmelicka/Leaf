@@ -84,6 +84,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
     @Override
     public void initAttributes() {
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.zombifiedPiglinMaxHealth);
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.level().purpurConfig.zombifiedPiglinMovementSpeed); // Leaf - Configurable zombifiedPiglin movement speed
     }
 
     @Override
@@ -125,9 +126,13 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
         this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
     }
 
+    // Leaf start - Configurable zombieVillager movement speed
     public static AttributeSupplier.Builder createAttributes() {
-        return Zombie.createAttributes().add(Attributes.SPAWN_REINFORCEMENTS_CHANCE, 0.0D).add(Attributes.MOVEMENT_SPEED, 0.23000000417232513D).add(Attributes.ATTACK_DAMAGE, 5.0D);
+        return Zombie.createAttributes()
+                .add(Attributes.SPAWN_REINFORCEMENTS_CHANCE, 0.0D)
+                .add(Attributes.ATTACK_DAMAGE, 5.0D);
     }
+    // Leaf end
 
     @Override
     protected float getStandingEyeHeight(Pose pose, EntityDimensions dimensions) {
