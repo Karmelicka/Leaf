@@ -49,7 +49,14 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
                 if (type == null) {
                     continue;
                 }
-                int duration = effect.getInt(CraftMetaSuspiciousStew.DURATION.NBT);
+                // Paper start - default duration is 160
+                final int duration;
+                if (effect.contains(CraftMetaSuspiciousStew.DURATION.NBT)) {
+                    duration = effect.getInt(CraftMetaSuspiciousStew.DURATION.NBT);
+                } else {
+                    duration = net.minecraft.world.item.SuspiciousStewItem.DEFAULT_DURATION;
+                }
+                // Paper end start - default duration is 160
                 this.customEffects.add(new PotionEffect(type, duration, 0));
             }
         }
@@ -80,7 +87,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
             for (PotionEffect effect : this.customEffects) {
                 CompoundTag effectData = new CompoundTag();
                 effectData.putString(CraftMetaSuspiciousStew.ID.NBT, effect.getType().getKey().toString());
-                effectData.putInt(CraftMetaSuspiciousStew.DURATION.NBT, effect.getDuration());
+                if (effect.getDuration() != net.minecraft.world.item.SuspiciousStewItem.DEFAULT_DURATION) effectData.putInt(CraftMetaSuspiciousStew.DURATION.NBT, effect.getDuration()); // Paper - don't save duration if it's the default value
                 effectList.add(effectData);
             }
         }
