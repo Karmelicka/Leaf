@@ -33,7 +33,7 @@ dependencies {
 
     // Paper start
     implementation("org.jline:jline-terminal-jansi:3.25.1") // Leaf - Bump Dependencies
-    implementation("net.minecrell:terminalconsoleappender:1.3.0")
+    implementation("com.github.Dreeam-qwq:TerminalConsoleAppender:360a0759") // Leaf - Use own TerminalConsoleAppender fork to fix some issues under latest version of jline/log4j
     implementation("net.kyori:adventure-text-serializer-ansi:4.16.0") // Keep in sync with adventureVersion from Paper-API build file // Leaf - Bump Dependencies
     implementation("net.kyori:ansi:1.0.3") // Manually bump beyond above transitive dep
     /*

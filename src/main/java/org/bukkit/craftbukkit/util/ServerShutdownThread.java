@@ -31,10 +31,12 @@ public class ServerShutdownThread extends Thread {
             // Paper end
         } finally {
             org.apache.logging.log4j.LogManager.shutdown(); // Paper
-            try {
+            // Leaf - Remove empty try catch
+            //try {
                 //net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Move into stop
-            } catch (Exception e) {
-            }
+            //} catch (Exception e) {
+            //}
+            // Leaf end
         }
     }
 }

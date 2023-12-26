@@ -1270,10 +1270,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
 
                 //org.spigotmc.WatchdogThread.doStop(); // Spigot // Paper - move into stop
                 // CraftBukkit start - Restore terminal to original settings
-                try {
+                // Leaf - Remove empty try catch
+                //try {
                     //net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Move into stop
-                } catch (Exception ignored) {
-                }
+                //} catch (Exception ignored) {
+                //}
+                // Leaf end
                 // CraftBukkit end
                 //io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
                 //this.onServerExit(); // Paper - moved into stop
