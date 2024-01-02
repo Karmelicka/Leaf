@@ -353,7 +353,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             }
         }
 
-        if (tag.contains(CraftMetaItem.CUSTOM_MODEL_DATA.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
+        if (tag.contains(CraftMetaItem.CUSTOM_MODEL_DATA.NBT, CraftMagicNumbers.NBT.TAG_ANY_NUMBER)) { // Paper - correctly allow any number type
             this.customModelData = tag.getInt(CraftMetaItem.CUSTOM_MODEL_DATA.NBT);
         }
         if (tag.contains(CraftMetaItem.BLOCK_DATA.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
