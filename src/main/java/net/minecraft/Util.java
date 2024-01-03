@@ -409,9 +409,11 @@ public class Util {
             return futures.get(0).thenApply(List::of);
         } else {
             CompletableFuture<Void> completableFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-            return completableFuture.thenApply((void_) -> {
-                return futures.stream().map(CompletableFuture::join).toList();
-            });
+            // Leaf start - Faster sequencing of futures for chunk structure gen
+            return completableFuture.thenCompose((void_) ->
+                    CompletableFuture.supplyAsync(() ->
+                            futures.stream().map(CompletableFuture::join).toList()));
+            // Leaf end
         }
     }
 
