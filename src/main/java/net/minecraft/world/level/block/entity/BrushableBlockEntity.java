@@ -199,7 +199,7 @@ public class BrushableBlockEntity extends BlockEntity {
 
     private boolean tryLoadLootTable(CompoundTag nbt) {
         if (nbt.contains("LootTable", 8)) {
-            this.lootTable = new ResourceLocation(nbt.getString("LootTable"));
+            this.lootTable = ResourceLocation.tryParse(nbt.getString("LootTable")); // Paper - Validate ResourceLocation
             this.lootTableSeed = nbt.getLong("LootTableSeed");
             return true;
         } else {

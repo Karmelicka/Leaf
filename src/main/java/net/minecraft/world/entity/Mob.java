@@ -608,7 +608,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
 
         this.setLeftHanded(nbt.getBoolean("LeftHanded"));
         if (nbt.contains("DeathLootTable", 8)) {
-            this.lootTable = new ResourceLocation(nbt.getString("DeathLootTable"));
+            this.lootTable = ResourceLocation.tryParse(nbt.getString("DeathLootTable")); // Paper - Validate ResourceLocation
             this.lootTableSeed = nbt.getLong("DeathLootTableSeed");
         }
 

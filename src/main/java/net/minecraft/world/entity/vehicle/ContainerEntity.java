@@ -67,7 +67,7 @@ public interface ContainerEntity extends Container, MenuProvider {
     default void readChestVehicleSaveData(CompoundTag nbt) {
         this.clearItemStacks();
         if (nbt.contains("LootTable", 8)) {
-            this.setLootTable(new ResourceLocation(nbt.getString("LootTable")));
+            this.setLootTable(ResourceLocation.tryParse(nbt.getString("LootTable"))); // Paper - Validate ResourceLocation
             this.setLootTableSeed(nbt.getLong("LootTableSeed"));
         }
 

@@ -614,7 +614,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
     }
 
     public static Optional<EntityType<?>> by(CompoundTag nbt) {
-        return BuiltInRegistries.ENTITY_TYPE.getOptional(new ResourceLocation(nbt.getString("id")));
+        return BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(nbt.getString("id"))); // Paper - Validate ResourceLocation
     }
 
     @Nullable
