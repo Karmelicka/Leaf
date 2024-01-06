@@ -24,7 +24,10 @@ public class CraftAttribute {
     public static Attribute stringToBukkit(String bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        return Registry.ATTRIBUTE.get(NamespacedKey.fromString(bukkit));
+        // Paper start - Fixup NamespacedKey handling
+        final NamespacedKey key = NamespacedKey.fromString(bukkit);
+        return key != null ? Registry.ATTRIBUTE.get(key) : null;
+        // Paper end - Fixup NamespacedKey handling
     }
 
     public static net.minecraft.world.entity.ai.attributes.Attribute bukkitToMinecraft(Attribute bukkit) {

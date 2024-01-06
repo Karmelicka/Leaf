@@ -30,7 +30,10 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
 
         if (tag.contains(CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.NBT)) {
             String string = tag.getString(CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.NBT);
-            this.instrument = Registry.INSTRUMENT.get(NamespacedKey.fromString(string));
+            // Paper start - Fixup NamespacedKey handling
+            final NamespacedKey key = NamespacedKey.fromString(string);
+            this.instrument = key != null ? Registry.INSTRUMENT.get(key) : null;
+            // Paper end - Fixup NamespacedKey handling
         }
     }
 

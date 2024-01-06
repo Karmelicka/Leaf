@@ -43,7 +43,10 @@ public class CraftPotionType implements PotionType.InternalPotionData {
     public static PotionType stringToBukkit(String string) {
         Preconditions.checkArgument(string != null);
 
-        return Registry.POTION.get(NamespacedKey.fromString(string));
+        // Paper start - Fixup NamespacedKey handling
+        final NamespacedKey key = NamespacedKey.fromString(string);
+        return key != null ? Registry.POTION.get(key) : null;
+        // Paper end - Fixup NamespacedKey handling
     }
 
     private final NamespacedKey key;

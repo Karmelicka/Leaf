@@ -67,14 +67,22 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         if (tag.contains(CraftMetaArmor.TRIM.NBT)) {
             CompoundTag trimCompound = tag.getCompound(CraftMetaArmor.TRIM.NBT);
 
-            if (trimCompound.contains(CraftMetaArmor.TRIM_MATERIAL.NBT) && trimCompound.contains(CraftMetaArmor.TRIM_PATTERN.NBT)) {
-                TrimMaterial trimMaterial = Registry.TRIM_MATERIAL.get(NamespacedKey.fromString(trimCompound.getString(CraftMetaArmor.TRIM_MATERIAL.NBT)));
-                TrimPattern trimPattern = Registry.TRIM_PATTERN.get(NamespacedKey.fromString(trimCompound.getString(CraftMetaArmor.TRIM_PATTERN.NBT)));
+            // Paper start - Fixup NamedspacedKey handling
+            if (trimCompound.contains(CraftMetaArmor.TRIM_MATERIAL.NBT, net.minecraft.nbt.Tag.TAG_STRING) && trimCompound.contains(CraftMetaArmor.TRIM_PATTERN.NBT, net.minecraft.nbt.Tag.TAG_STRING)) { // TODO Can also be inlined in a compound tag
+                TrimMaterial trimMaterial = registryEntry(Registry.TRIM_MATERIAL, trimCompound.getString(TRIM_MATERIAL.NBT));
+                TrimPattern trimPattern = registryEntry(Registry.TRIM_PATTERN, trimCompound.getString(TRIM_PATTERN.NBT));
 
-                this.trim = new ArmorTrim(trimMaterial, trimPattern);
+                this.trim = trimMaterial != null && trimPattern != null ? new ArmorTrim(trimMaterial, trimPattern) : null;
+                // Paper end - Fixup NamedspacedKey handling
             }
         }
     }
+    // Paper start - Fixup NamedspacedKey handling
+    private <T extends org.bukkit.Keyed> T registryEntry(final Registry<T> registry, final String value) {
+        final NamespacedKey key = NamespacedKey.fromString(value);
+        return key != null ? registry.get(key) : null;
+    }
+    // Paper end - Fixup NamedspacedKey handling
 
     CraftMetaArmor(Map<String, Object> map) {
         super(map);
