@@ -257,6 +257,13 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         return this.blockEntityTag != null;
     }
 
+    // Paper start - add method to clear block state
+    @Override
+    public void clearBlockState() {
+        this.blockEntityTag = null;
+    }
+    // Paper end - add method to clear block state
+
     @Override
     public BlockState getBlockState() {
         Material stateMaterial = (this.material != Material.SHIELD) ? this.material : CraftMetaBlockState.shieldToBannerHack(this.blockEntityTag); // Only actually used for jigsaws
