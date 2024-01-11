@@ -660,6 +660,15 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
     // Paper end
 
+    // Paper start - spawn egg color visibility
+    @Override
+    public org.bukkit.Color getSpawnEggLayerColor(final EntityType entityType, final int layer) {
+        final net.minecraft.world.entity.EntityType<?> nmsType = org.bukkit.craftbukkit.entity.CraftEntityType.bukkitToMinecraft(entityType);
+        final net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
+        return eggItem == null ? null : org.bukkit.Color.fromRGB(eggItem.getColor(layer));
+    }
+    // Paper end - spawn egg color visibility
+
     /**
      * This helper class represents the different NBT Tags.
      * <p>
