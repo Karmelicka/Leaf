@@ -18,4 +18,7 @@ public class ServerBrand implements IConfigModule {
 
     @ConfigInfo(baseName = "server-mod-name")
     public static String serverModName = "Leaf";
+
+    @ConfigInfo(baseName = "server-gui-name")
+    public static String serverGUIName = "Leaf Console";
 }

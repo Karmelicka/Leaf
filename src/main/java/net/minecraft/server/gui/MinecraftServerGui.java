@@ -56,7 +56,7 @@ public class MinecraftServerGui extends JComponent {
             ;
         }
 
-        final JFrame jframe = new JFrame("Purpur Minecraft server"); // Purpur
+        final JFrame jframe = new JFrame(org.dreeam.leaf.config.modules.misc.ServerBrand.serverGUIName); // Purpur // Leaf - Configurable server GUI name
         final MinecraftServerGui servergui = new MinecraftServerGui(server);
 
         jframe.setDefaultCloseOperation(2);
@@ -64,7 +64,7 @@ public class MinecraftServerGui extends JComponent {
         jframe.pack();
         jframe.setLocationRelativeTo((Component) null);
         jframe.setVisible(true);
-        jframe.setName("Purpur Minecraft server"); // Paper - Improve ServerGUI // Purpur
+        jframe.setName(org.dreeam.leaf.config.modules.misc.ServerBrand.serverGUIName); // Paper - Improve ServerGUI // Purpur // Leaf - Configurable server GUI name
 
         // Paper start - Improve ServerGUI
         try {
@@ -76,7 +76,7 @@ public class MinecraftServerGui extends JComponent {
         jframe.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent windowevent) {
                 if (!servergui.isClosing.getAndSet(true)) {
-                    jframe.setTitle("Purpur Minecraft server - shutting down!"); // Purpur
+                    jframe.setTitle(org.dreeam.leaf.config.modules.misc.ServerBrand.serverGUIName + " - shutting down!"); // Purpur // Leaf - Configurable server GUI name
                     server.halt(true);
                     servergui.runFinalizers();
                 }
