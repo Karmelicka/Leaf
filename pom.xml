@@ -60,6 +60,12 @@
         </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.5</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
             <artifactId>asm-commons</artifactId>
             <version>9.5</version>
             <scope>compile</scope>
