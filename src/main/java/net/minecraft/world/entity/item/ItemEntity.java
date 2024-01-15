@@ -238,7 +238,9 @@ public class ItemEntity extends Entity implements TraceableEntity {
                 this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                 return; // Gale - EMC - reduce hopper item checks
             }
-            this.markNearbyHopperCartsAsImmune(); // Gale - EMC - reduce hopper item checks
+            if (level().galeConfig().smallOptimizations.reducedIntervals.checkNearbyItem.hopper.minecart.temporaryImmunity.checkForMinecartNearItemWhileActive) { // Leaf - Reduce items finding hopper nearby check
+                this.markNearbyHopperCartsAsImmune(); // Gale - EMC - reduce hopper item checks
+            }
 
         }
     }

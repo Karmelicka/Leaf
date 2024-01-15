@@ -76,10 +76,11 @@ public class GaleWorldConfiguration extends ConfigurationPart {
 
                         public TemporaryImmunity temporaryImmunity;
                         public class TemporaryImmunity extends ConfigurationPart {
+                            public boolean checkForMinecartNearItemWhileActive = false; // Leaf - Make it configurable and reorder code
+                            public boolean checkForMinecartNearItemWhileInactive = true;
                             public int duration = 100;
                             public int nearbyItemMaxAge = 1200;
                             public int checkForMinecartNearItemInterval = 20;
-                            public boolean checkForMinecartNearItemWhileInactive = true;
                             public double maxItemHorizontalDistance = 24.0;
                             public double maxItemVerticalDistance = 4.0;
                         }
