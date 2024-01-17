@@ -36,6 +36,10 @@ class PaperEventManager {
 
     // SimplePluginManager
     public void callEvent(@NotNull Event event) {
+        // Leaf start - Skip event if no listeners
+        RegisteredListener[] listeners = event.getHandlers().getRegisteredListeners();
+        if (listeners.length == 0) return;
+        // Leaf end
         // KTP start - Optimise spigot event bus
         if (event.asynchronous() != net.kyori.adventure.util.TriState.NOT_SET) {
         final boolean onPrimaryThread = this.server.isPrimaryThread();
@@ -54,9 +58,6 @@ class PaperEventManager {
         }
         // KTP stop - Optimise spigot event bus
         }
-
-        HandlerList handlers = event.getHandlers();
-        RegisteredListener[] listeners = handlers.getRegisteredListeners();
 
         for (RegisteredListener registration : listeners) {
             if (!registration.getPlugin().isEnabled()) {
