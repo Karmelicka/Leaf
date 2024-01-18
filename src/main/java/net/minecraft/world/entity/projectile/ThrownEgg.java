@@ -46,7 +46,14 @@ public class ThrownEgg extends ThrowableItemProjectile {
     @Override
     protected void onHitEntity(EntityHitResult entityHitResult) {
         super.onHitEntity(entityHitResult);
+        Entity entity = entityHitResult.getEntity(); // Polpot - make egg can knockback player
         entityHitResult.getEntity().hurt(this.damageSources().thrown(this, this.getOwner()), 0.0F);
+        // Leaf start - Polpot - Make egg can knockback player
+        if (org.dreeam.leaf.config.modules.gameplay.Knockback.eggCanKnockback && entity instanceof ServerPlayer) {
+            entity.hurt(this.damageSources().thrown(this, this.getOwner()), 0.0000001F);
+            ((ServerPlayer) entity).knockback(0.4000000059604645D, this.getX() - entity.getX(), this.getZ() - entity.getZ());
+        }
+        // Leaf end - Polpot
     }
 
     @Override

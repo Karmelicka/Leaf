@@ -3,6 +3,7 @@ package net.minecraft.world.entity.projectile;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -61,6 +62,12 @@ public class Snowball extends ThrowableItemProjectile {
         int i = entity.level().purpurConfig.snowballDamage >= 0 ? entity.level().purpurConfig.snowballDamage : entity instanceof Blaze ? 3 : 0; // Purpur
 
         entity.hurt(this.damageSources().thrown(this, this.getOwner()), (float) i);
+        // Leaf start - Polpot - Make snowball can knockback player
+        if (org.dreeam.leaf.config.modules.gameplay.Knockback.snowballCanKnockback && entity instanceof ServerPlayer) {
+            entity.hurt(this.damageSources().thrown(this, this.getOwner()), 0.0000001F);
+            ((ServerPlayer) entity).knockback(0.4000000059604645D, this.getX() - entity.getX(), this.getZ() - entity.getZ());
+        }
+        // Leaf end - Polpot
     }
 
     // Purpur start - borrowed and modified code from ThrownPotion#onHitBlock and ThrownPotion#dowseFire
