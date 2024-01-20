@@ -40,6 +40,39 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
         return new CraftInventoryDecoratedPot(this.getTileEntity());
     }
 
+    // Paper start - expose loot table
+    @Override
+    public void setLootTable(final org.bukkit.loot.LootTable table) {
+        this.setLootTable(table, this.getSeed());
+    }
+
+    @Override
+    public void setLootTable(org.bukkit.loot.LootTable table, long seed) {
+        net.minecraft.resources.ResourceLocation key = (table == null) ? null : org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(table.getKey());
+        this.getSnapshot().setLootTable(key, seed);
+    }
+
+    @Override
+    public org.bukkit.loot.LootTable getLootTable() {
+        if (this.getSnapshot().getLootTable() == null) {
+            return null;
+        }
+
+        net.minecraft.resources.ResourceLocation key = this.getSnapshot().getLootTable();
+        return org.bukkit.Bukkit.getLootTable(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(key));
+    }
+
+    @Override
+    public void setSeed(final long seed) {
+        this.getSnapshot().setLootTableSeed(seed);
+    }
+
+    @Override
+    public long getSeed() {
+        return this.getSnapshot().getLootTableSeed();
+    }
+    // Paper end - expose loot table
+
     @Override
     public void setSherd(Side face, Material sherd) {
         Preconditions.checkArgument(face != null, "face must not be null");
