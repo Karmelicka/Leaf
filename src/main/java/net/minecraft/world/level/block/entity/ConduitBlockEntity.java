@@ -187,7 +187,7 @@ public class ConduitBlockEntity extends BlockEntity {
 
     private static void applyEffects(Level world, BlockPos pos, List<BlockPos> activatingBlocks) {
         int i = activatingBlocks.size();
-        int j = i / 7 * 16;
+        int j = i / 7 * 16; // Paper - Conduit API; diff on change
         int k = pos.getX();
         int l = pos.getY();
         int i1 = pos.getZ();
