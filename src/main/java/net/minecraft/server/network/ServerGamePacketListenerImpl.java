@@ -251,6 +251,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
 
     static final Logger LOGGER = LogUtils.getLogger();
     public static final double DEFAULT_MAX_INTERACTION_DISTANCE_SQUARED = Mth.square(6.0D); // Gale - make max interaction distance configurable
+    public static double MAX_INTERACTION_DISTANCE = DEFAULT_MAX_INTERACTION_DISTANCE_SQUARED; // Leaf - Redirect to Gale's `getMaxInteractionDistanceSquared` method to fix plugin incompatibility
     private static final int NO_BLOCK_UPDATES_TO_ACK = -1;
     private static final int TRACKED_MESSAGE_DISCONNECT_THRESHOLD = 4096;
     private static final Component CHAT_VALIDATION_FAILED = Component.translatable("multiplayer.disconnect.chat_validation_failed");
@@ -332,7 +333,10 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
     // Gale start - make max interaction distance configurable
     public static double getMaxInteractionDistanceSquared(Level level) {
         var config = level.galeConfig().gameplayMechanics;
-        return config.playerMaxInteractionDistance < 0 ? ServerGamePacketListenerImpl.DEFAULT_MAX_INTERACTION_DISTANCE_SQUARED : config.playerMaxInteractionDistanceSquared;
+        // Leaf - Redirect
+        MAX_INTERACTION_DISTANCE = config.playerMaxInteractionDistance < 0 ? ServerGamePacketListenerImpl.DEFAULT_MAX_INTERACTION_DISTANCE_SQUARED : config.playerMaxInteractionDistanceSquared;
+        return MAX_INTERACTION_DISTANCE;
+        // Leaf end
     }
     // Gale end - make max interaction distance configurable
 
