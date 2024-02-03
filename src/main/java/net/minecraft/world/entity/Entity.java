@@ -568,13 +568,29 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
     }
 
     // Purpur start - copied from Mob
+    // Gale start - JettPack - optimize sun burn tick - cache eye blockpos
+    private BlockPos cached_eye_blockpos;
+    private int cached_position_hashcode;
+    // Gale end - JettPack - optimize sun burn tick - cache eye blockpos
+
     public boolean isSunBurnTick() {
         if (this.level().isDay() && !this.level().isClientSide) {
-            float f = this.getLightLevelDependentMagicValue();
-            BlockPos blockposition = BlockPos.containing(this.getX(), this.getEyeY(), this.getZ());
+            // Gale start - JettPack - optimize sun burn tick - optimizations and cache eye blockpos
+            int positionHashCode = this.position.hashCode();
+            if (this.cached_position_hashcode != positionHashCode) {
+                this.cached_eye_blockpos = BlockPos.containing(this.getX(), this.getEyeY(), this.getZ());
+                this.cached_position_hashcode = positionHashCode;
+            }
+
+            float f = this.getLightLevelDependentMagicValue(cached_eye_blockpos); // Pass BlockPos to getBrightness
+
+            // Check brightness first
+            if (f <= 0.5F) return false;
+            if (this.random.nextFloat() * 30.0F >= (f - 0.4F) * 2.0F) return false;
+            // Gale end - JettPack - optimize sun burn tick - optimizations and cache eye blockpos
             boolean flag = this.isInWaterRainOrBubble() || this.isInPowderSnow || this.wasInPowderSnow;
 
-            if (f > 0.5F && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && !flag && this.level().canSeeSky(blockposition)) {
+            if (!flag && this.level().canSeeSky(this.cached_eye_blockpos)) { // Gale - JettPack - optimize sun burn tick - optimizations and cache eye blockpos
                 return true;
             }
         }

@@ -1741,11 +1741,6 @@ public abstract class Mob extends LivingEntity implements Targeting {
 
     }
 
-    // Gale start - JettPack - optimize sun burn tick - cache eye blockpos
-    private BlockPos cached_eye_blockpos;
-    private int cached_position_hashcode;
-    // Gale end - JettPack - optimize sun burn tick - cache eye blockpos
-
     public boolean isSunBurnTick() {
         return super.isSunBurnTick();
     }
