@@ -197,6 +197,15 @@ public class TranslatableContents implements ComponentContents {
 
     @Override
     public <T> Optional<T> visit(FormattedText.ContentConsumer<T> visitor) {
+        // Paper start
+        try {
+            return this.visit(new TranslatableContentConsumer<>(visitor));
+        } catch (IllegalArgumentException var5) {
+            return Optional.empty();
+        }
+    }
+    private <T> Optional<T> visit(TranslatableContentConsumer<T> visitor) {
+        // Paper end
         this.decompose();
 
         for(FormattedText formattedText : this.decomposedParts) {
@@ -208,6 +217,24 @@ public class TranslatableContents implements ComponentContents {
 
         return Optional.empty();
     }
+    // Paper start
+    private static final class TranslatableContentConsumer<T> implements FormattedText.ContentConsumer<T> {
+        private final FormattedText.ContentConsumer<T> visitor;
+        private int visited;
+
+        private TranslatableContentConsumer(FormattedText.ContentConsumer<T> visitor) {
+            this.visitor = visitor;
+        }
+
+        @Override
+        public Optional<T> accept(final String asString) {
+            if (visited++ > 32) {
+                throw new IllegalArgumentException("Too long");
+            }
+            return this.visitor.accept(asString);
+        }
+    }
+    // Paper end
 
     @Override
     public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {

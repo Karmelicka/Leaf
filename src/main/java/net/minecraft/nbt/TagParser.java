@@ -48,6 +48,7 @@ public class TagParser {
         }
     }, CompoundTag::toString);
     private final StringReader reader;
+    private int depth; // Paper
 
     public static CompoundTag parseTag(String string) throws CommandSyntaxException {
         return (new TagParser(new StringReader(string))).readSingleStruct();
@@ -156,6 +157,7 @@ public class TagParser {
 
     public CompoundTag readStruct() throws CommandSyntaxException {
         this.expect('{');
+        this.increaseDepth(); // Paper
         CompoundTag compoundTag = new CompoundTag();
         this.reader.skipWhitespace();
 
@@ -179,6 +181,7 @@ public class TagParser {
         }
 
         this.expect('}');
+        this.depth--; // Paper
         return compoundTag;
     }
 
@@ -188,6 +191,7 @@ public class TagParser {
         if (!this.reader.canRead()) {
             throw ERROR_EXPECTED_VALUE.createWithContext(this.reader);
         } else {
+            this.increaseDepth(); // Paper
             ListTag listTag = new ListTag();
             TagType<?> tagType = null;
 
@@ -213,6 +217,7 @@ public class TagParser {
             }
 
             this.expect(']');
+            this.depth--; // Paper
             return listTag;
         }
     }
@@ -251,11 +256,11 @@ public class TagParser {
                 }
 
                 if (typeReader == ByteTag.TYPE) {
-                    list.add((T)((NumericTag)tag).getAsByte());
+                    list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
                 } else if (typeReader == LongTag.TYPE) {
-                    list.add((T)((NumericTag)tag).getAsLong());
+                    list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
                 } else {
-                    list.add((T)((NumericTag)tag).getAsInt());
+                    list.add((T)((NumericTag)tag).getAsNumber()); // Paper - decompile fix
                 }
 
                 if (this.hasElementSeparator()) {
@@ -285,5 +290,12 @@ public class TagParser {
     private void expect(char c) throws CommandSyntaxException {
         this.reader.skipWhitespace();
         this.reader.expect(c);
+    }
+
+    private void increaseDepth() throws CommandSyntaxException {
+        this.depth++;
+        if (this.depth > 512) {
+            throw new com.mojang.brigadier.exceptions.TagParseCommandSyntaxException("NBT tag is too complex, depth > 512");
+        }
     }
 }
