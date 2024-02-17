@@ -29,7 +29,7 @@ public class PoweredRailBlock extends BaseRailBlock {
         this.registerDefaultState((BlockState) ((BlockState) ((BlockState) ((BlockState) this.stateDefinition.any()).setValue(PoweredRailBlock.SHAPE, RailShape.NORTH_SOUTH)).setValue(PoweredRailBlock.POWERED, false)).setValue(PoweredRailBlock.WATERLOGGED, false));
     }
 
-    protected boolean findPoweredRailSignal(Level world, BlockPos pos, BlockState state, boolean flag, int distance) {
+    public boolean findPoweredRailSignal(Level world, BlockPos pos, BlockState state, boolean flag, int distance) { // Leaf - Rail Optimization - protected -> public
         if (distance >= world.purpurConfig.railActivationRange) { // Purpur
             return false;
         } else {
@@ -117,6 +117,12 @@ public class PoweredRailBlock extends BaseRailBlock {
 
     @Override
     protected void updateState(BlockState state, Level world, BlockPos pos, Block neighbor) {
+        // Leaf start - Rail Optimization
+        if (org.dreeam.leaf.config.modules.opt.OptimizedPoweredRails.enabled) {
+            org.dreeam.leaf.optimize.OptimizedPoweredRails.customUpdateState(this, state, world, pos);
+            return;
+        }
+        // Leaf end - Rail Optimization
         boolean flag = (Boolean) state.getValue(PoweredRailBlock.POWERED);
         boolean flag1 = world.hasNeighborSignal(pos) || this.findPoweredRailSignal(world, pos, state, true, 0) || this.findPoweredRailSignal(world, pos, state, false, 0);
 
