@@ -107,7 +107,7 @@ public class GaleWorldConfiguration extends ConfigurationPart {
 
         public Fixes fixes;
         public class Fixes extends ConfigurationPart {
-            public boolean tripwireDuping = true; // Gale - Leaf - make tripwire duping fix configurable
+            //public boolean tripwireDuping = true; // Gale - Leaf - make tripwire duping fix configurable // Leaf - Move to leaf config
             public boolean broadcastCritAnimationsAsTheEntityBeingCritted = false; // Gale - MultiPaper - broadcast crit animations as the entity being critted
             public boolean keepMooshroomRotationAfterShearing = true; // Gale - Purpur - fix cow rotation when shearing mooshroom
             public boolean checkCanChangeDimensionsBeforeUseEndGateway = false; // Gale - Purpur - end gateway should check if entity can use portal

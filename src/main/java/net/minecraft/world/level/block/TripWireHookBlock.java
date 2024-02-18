@@ -162,7 +162,7 @@ public class TripWireHookBlock extends Block {
                     boolean flag7 = (Boolean) iblockdata2.getValue(TripWireBlock.POWERED);
 
                     flag5 |= flag6 && flag7;
-                    if (k != i || !tripWireBeingRemoved || !flag6) // Paper - fix tripwire state inconsistency; don't update the tripwire again if being removed and not disarmed
+                    if (!org.dreeam.leaf.config.modules.fixes.TripwireDupe.enabled || k != i || !tripWireBeingRemoved || !flag6) // Paper - fix tripwire state inconsistency; don't update the tripwire again if being removed and not disarmed // Leaf - Configurable fix tripwire dupe
                     aiblockdata[k] = iblockdata2;
                     if (k == i) {
                         world.scheduleTick(pos, block, 10);
@@ -195,7 +195,7 @@ public class TripWireHookBlock extends Block {
 
             TripWireHookBlock.emitState(world, pos, flag4, flag5, flag2, flag3);
             if (!beingRemoved) { // Paper - fix tripwire state inconsistency
-                if (world.getBlockState(pos).getBlock() == Blocks.TRIPWIRE_HOOK) // Paper - Validate tripwire hook placement before update
+                if (!org.dreeam.leaf.config.modules.fixes.TripwireDupe.enabled || world.getBlockState(pos).getBlock() == Blocks.TRIPWIRE_HOOK) // Paper - Validate tripwire hook placement before update // Leaf - Configurable fix tripwire dupe
                 world.setBlock(pos, (BlockState) iblockdata3.setValue(TripWireHookBlock.FACING, enumdirection), 3);
                 if (flag1) {
                     TripWireHookBlock.notifyNeighbors(block, world, pos, enumdirection);

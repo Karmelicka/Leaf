@@ -91,7 +91,7 @@ public class TripWireBlock extends Block {
     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
         if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent adjacent tripwires from updating
         if (!moved && !state.is(newState.getBlock())) {
-            this.updateSource(world, pos, (BlockState) state.setValue(TripWireBlock.POWERED, true), world.galeConfig().gameplayMechanics.fixes.tripwireDuping); // Paper - fix tripwire state inconsistency // Gale - Leaf - make tripwire duping fix configurable
+            this.updateSource(world, pos, (BlockState) state.setValue(TripWireBlock.POWERED, true), true); // Paper - fix tripwire state inconsistency // Gale - Leaf - make tripwire duping fix configurable // Leaf - Configurable fix tripwire dupe
         }
     }
 
