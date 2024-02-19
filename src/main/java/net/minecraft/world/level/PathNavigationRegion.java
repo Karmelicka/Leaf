@@ -153,4 +153,10 @@ public class PathNavigationRegion implements BlockGetter, CollisionGetter {
     public int getHeight() {
         return this.level.getHeight();
     }
+
+    // Leaf start - Redirect to fix plugin incompatibility
+    public net.minecraft.util.profiling.ProfilerFiller getProfiler() {
+        return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Gale - Purpur - remove vanilla profiler
+    }
+    // Leaf end
 }
