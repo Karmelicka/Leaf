@@ -32,6 +32,7 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.storage.ChunkScanAccess;
 import net.minecraft.world.level.chunk.storage.ChunkStorage;
 import net.minecraft.world.level.levelgen.RandomState;
+import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import org.slf4j.Logger;
 
@@ -161,7 +162,7 @@ public class StructureCheck {
         this.structureConfigs = registryManager.registryOrThrow(Registries.STRUCTURE);
     }
 
-    public StructureCheckResult checkStart(ChunkPos pos, Structure type, boolean skipReferencedStructures) {
+    public StructureCheckResult checkStart(ChunkPos pos, Structure type, StructurePlacement placement, boolean skipReferencedStructures) { // Leaf - Fix MC-249136
         long l = pos.toLong();
         Object2IntMap<Structure> object2IntMap = this.loadedChunksSafe.get(l); // Paper - rewrite chunk system - synchronise this class
         if (object2IntMap != null) {
@@ -171,6 +172,11 @@ public class StructureCheck {
             if (structureCheckResult != null) {
                 return structureCheckResult;
             } else {
+                // Leaf start - Fix MC-249136
+                if (!placement.applyAdditionalChunkRestrictions(pos.x, pos.z, this.seed, null)) {
+                    return StructureCheckResult.START_NOT_PRESENT;
+                }
+                // Leaf end
                 boolean bl = this.featureChecksSafe.computeIfAbsent(type, (structure2) -> { // Paper - rewrite chunk system - synchronise this class
                     return new SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT); // Paper - rewrite chunk system - synchronise this class
                 }).getOrCompute(l, (chunkPos) -> { // Paper - rewrite chunk system - synchronise this class

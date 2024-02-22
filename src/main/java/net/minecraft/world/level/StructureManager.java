@@ -23,6 +23,7 @@ import net.minecraft.world.level.levelgen.structure.StructureCheck;
 import net.minecraft.world.level.levelgen.structure.StructureCheckResult;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 public class StructureManager {
     public final LevelAccessor level;
@@ -163,9 +164,11 @@ public class StructureManager {
         return this.level.getChunk(sectionPos.x(), sectionPos.z(), ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
     }
 
-    public StructureCheckResult checkStructurePresence(ChunkPos chunkPos, Structure structure, boolean skipExistingChunk) {
-        return this.structureCheck.checkStart(chunkPos, structure, skipExistingChunk);
+    // Leaf start - Fix MC-249136
+    public StructureCheckResult checkStructurePresence(ChunkPos chunkPos, Structure structure, StructurePlacement placement, boolean skipExistingChunk) {
+        return this.structureCheck.checkStart(chunkPos, structure, placement, skipExistingChunk);
     }
+    // Leaf end
 
     public void addReference(StructureStart structureStart) {
         structureStart.addReference();

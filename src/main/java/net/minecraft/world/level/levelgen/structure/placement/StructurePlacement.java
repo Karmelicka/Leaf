@@ -74,14 +74,18 @@ public abstract class StructurePlacement {
             }
         }
         // Paper end - Add missing structure set seed configs
-        if (!this.isPlacementChunk(calculator, chunkX, chunkZ)) {
-            return false;
-        } else if (this.frequency < 1.0F && !this.frequencyReductionMethod.shouldGenerate(calculator.getLevelSeed(), this.salt, chunkX, chunkZ, this.frequency, saltOverride)) { // Paper - Add missing structure set seed configs
-            return false;
-        } else {
-            return !this.exclusionZone.isPresent() || !this.exclusionZone.get().isPlacementForbidden(calculator, chunkX, chunkZ);
-        }
+        // Leaf start - Fix MC-249136
+        return this.isPlacementChunk(calculator, chunkX, chunkZ) && this.applyAdditionalChunkRestrictions(chunkX, chunkZ, calculator.getLevelSeed(), saltOverride) && this.applyInteractionsWithOtherStructures(calculator, chunkX, chunkZ);
     }
+
+    public boolean applyAdditionalChunkRestrictions(int chunkX, int chunkZ, long levelSeed, Integer saltOverride) {
+        return !(this.frequency < 1.0f) || this.frequencyReductionMethod.shouldGenerate(levelSeed, this.salt, chunkX, chunkZ, this.frequency, saltOverride); // Paper - Add missing structure set seed configs
+    }
+
+    public boolean applyInteractionsWithOtherStructures(ChunkGeneratorStructureState calculator, int chunkX, int chunkZ) {
+        return this.exclusionZone.isEmpty() || !this.exclusionZone.get().isPlacementForbidden(calculator, chunkX, chunkZ);
+    }
+    // Leaf end
 
     protected abstract boolean isPlacementChunk(ChunkGeneratorStructureState calculator, int chunkX, int chunkZ);
 

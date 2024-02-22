@@ -302,7 +302,7 @@ public abstract class ChunkGenerator {
                         }
 
                         holder = (Holder) iterator.next();
-                        structurecheckresult = structureAccessor.checkStructurePresence(pos, (Structure) holder.value(), skipReferencedStructures);
+                        structurecheckresult = structureAccessor.checkStructurePresence(pos, (Structure) holder.value(), placement, skipReferencedStructures); // Leaf - Fix MC-249136
                     } while (structurecheckresult == StructureCheckResult.START_NOT_PRESENT);
 
                     if (!skipReferencedStructures && structurecheckresult == StructureCheckResult.START_PRESENT) {
