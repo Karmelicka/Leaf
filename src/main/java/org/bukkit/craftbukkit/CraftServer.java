@@ -3152,6 +3152,8 @@ public final class CraftServer implements Server {
 
     @Override
     public double[] getTPS() {
+        if (org.dreeam.leaf.config.modules.misc.Including5sIngetTPS.enabled) return getTPSIncluding5SecondAverage(); // Leaf - Including 5s in getTPS()
+
         return new double[] {
             net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
             net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
