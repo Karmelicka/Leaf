@@ -114,7 +114,7 @@ public class Inventory implements Container, Nameable {
     }
 
     private boolean hasRemainingSpaceForItem(ItemStack existingStack, ItemStack stack) {
-        return !existingStack.isEmpty() && ItemStack.isSameItemSameTags(existingStack, stack) && existingStack.isStackable() && existingStack.getCount() < existingStack.getMaxStackSize() && existingStack.getCount() < this.getMaxStackSize();
+        return !existingStack.isEmpty() && existingStack.isStackable() && existingStack.getCount() < existingStack.getMaxStackSize() && existingStack.getCount() < this.getMaxStackSize() && ItemStack.isSameItemSameTags(existingStack, stack); // Paper - check if itemstack is stackable first
     }
 
     // CraftBukkit start - Watch method above! :D
