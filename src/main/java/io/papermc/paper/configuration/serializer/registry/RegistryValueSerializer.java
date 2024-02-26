@@ -4,7 +4,6 @@ import io.leangen.geantyref.TypeToken;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
-import org.spongepowered.configurate.serialize.SerializationException;
 
 /**
  * Use {@link RegistryHolderSerializer} for datapack-configurable things.
@@ -20,10 +19,14 @@ public final class RegistryValueSerializer<T> extends RegistryEntrySerializer<T,
     }
 
     @Override
-    protected T convertFromResourceKey(ResourceKey<T> key) throws SerializationException {
+    protected T convertFromResourceKey(ResourceKey<T> key) {
         final T value = this.registry().get(key);
         if (value == null) {
-            throw new SerializationException("Missing value in " + this.registry() + " with key " + key.location());
+            // Leaf start - Don't throw exception on missing ResourceKey value
+            //throw new SerializationException("Missing value in " + this.registry() + " with key " + key.location());
+            com.mojang.logging.LogUtils.getClassLogger().error("Missing value in {} with key {}", this.registry(), key.location());
+            return null;
+            // Leaf end
         }
         return value;
     }
