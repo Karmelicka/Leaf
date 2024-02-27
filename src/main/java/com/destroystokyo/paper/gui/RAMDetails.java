@@ -59,7 +59,14 @@ public class RAMDetails extends JList<String> {
         GraphData data = RAMGraph.DATA.peekLast();
         Vector<String> vector = new Vector<>();
 
-        double[] tps = org.bukkit.Bukkit.getTPSIncluding5SecondAverage(); // Gale - Purpur - 5 second TPS average
+        // Leaf - Revert to fix potential NPE during creating GUI graph
+        double[] tps = new double[] {
+                server.tps5s.getAverage(),
+                server.tps1.getAverage(),
+                server.tps5.getAverage(),
+                server.tps15.getAverage()
+        }; // Gale - Purpur - 5 second TPS average
+        // Leaf end
         String[] tpsAvg = new String[tps.length];
 
         for ( int g = 0; g < tps.length; g++) {
