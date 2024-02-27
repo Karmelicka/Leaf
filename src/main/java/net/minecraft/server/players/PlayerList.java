@@ -1580,6 +1580,8 @@ public abstract class PlayerList {
             File file = this.server.getWorldPath(LevelResource.PLAYER_STATS_DIR).toFile();
             File file1 = new File(file, uuid + ".json");
 
+            // Leaf start - Remove useless creating stats json bases on player name logic
+            /*
             if (!file1.exists()) {
                 File file2 = new File(file, displayName + ".json"); // CraftBukkit
                 Path path = file2.toPath();
@@ -1588,6 +1590,8 @@ public abstract class PlayerList {
                     file2.renameTo(file1);
                 }
             }
+             */
+            // Leaf end
 
             serverstatisticmanager = new ServerStatsCounter(this.server, file1);
             // this.stats.put(uuid, serverstatisticmanager); // CraftBukkit
