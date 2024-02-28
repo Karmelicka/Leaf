@@ -24,6 +24,13 @@ dependencies {
 
     implementation("com.electronwill.night-config:toml:3.6.7") // Leaf - Night config
 
+    // Leaf start - Legacy config
+    implementation("org.yaml:snakeyaml:2.2")
+    implementation("com.github.Carleslc.Simple-YAML:Simple-Yaml:1.8.4") {
+        exclude(group = "org.yaml", module = "snakeyaml")
+    }
+    // Leaf end
+
     // Paper start
     implementation("org.jline:jline-terminal-jansi:3.21.0")
     implementation("net.minecrell:terminalconsoleappender:1.3.0")

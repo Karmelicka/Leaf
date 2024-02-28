@@ -21,7 +21,9 @@ import org.apache.logging.log4j.Logger;
 
 public class LeafConfig {
     public static final Logger logger = LogManager.getLogger("LeafConfig");
-    private static final File baseConfigFolder = new File("leaf_config");
+    public static long beginTime;
+    private static final File legacyConfig = new File("leaf.yml");
+    public static final File baseConfigFolder = new File("leaf_config");
     private static final File baseConfigFile = new File(baseConfigFolder, "leaf_global_config.toml");
     private static final Set<IConfigModule> allInstanced = new HashSet<>();
     private static CommentedFileConfig configFileInstance;
@@ -49,6 +51,21 @@ public class LeafConfig {
         }
 
         configFileInstance.save();
+
+        if (legacyConfig.exists()) {
+            beginTime = System.nanoTime();
+            logger.info("Detected legacy config file!");
+
+            try {
+                Class<?> clazz = Class.forName("org.dreeam.leaf.config.legacy.upgrader.V1ToV2");
+                if (IConfigModule.class.isAssignableFrom(clazz)) {
+                    loadForSingle((IConfigModule) clazz.getConstructor().newInstance());
+                }
+            } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException |
+                     InstantiationException | IllegalAccessException e) {
+                logger.error("Error in v1.x to v2 config upgrading process, this should not happen!", e);
+            }
+        }
     }
 
     private static void loadAllModules() throws IllegalAccessException {
