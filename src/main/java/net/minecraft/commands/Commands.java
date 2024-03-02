@@ -248,6 +248,7 @@ public class Commands {
             SetPlayerIdleTimeoutCommand.register(this.dispatcher);
             StopCommand.register(this.dispatcher);
             WhitelistCommand.register(this.dispatcher);
+            org.purpurmc.purpur.command.AFKCommand.register(this.dispatcher); // Purpur
             org.purpurmc.purpur.command.CreditsCommand.register(this.dispatcher); // Purpur
             org.purpurmc.purpur.command.DemoCommand.register(this.dispatcher); // Purpur
             org.purpurmc.purpur.command.PingCommand.register(this.dispatcher); // Purpur

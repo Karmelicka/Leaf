@@ -2264,8 +2264,33 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         }
     }
 
+    private final Map<UUID, Long> cooldown = new java.util.concurrent.ConcurrentHashMap<>(); // Purpur
+
     @Override
     public void handleChatCommand(ServerboundChatCommandPacket packet) {
+        // Purpur start
+        if (this.server.getPlayerIdleTimeout() > 0 && packet.command().equals("afk")) {
+            player.commandAfkStatus = player.isAfk();
+            player.isCommandAfk = true;
+            if (org.purpurmc.purpur.PurpurConfig.afkCommandCooldown > 0) {
+                UUID uuid = player.getUUID();
+                long currentTime = System.nanoTime();
+                if (cooldown.containsKey(uuid) && (currentTime - cooldown.get(uuid)) / 1000000000 <= org.purpurmc.purpur.PurpurConfig.afkCommandCooldown) {
+                    String msg = org.purpurmc.purpur.PurpurConfig.afkCooldown;
+                    if (msg != null && !msg.isEmpty()) player.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(msg.replace("%time%", String.valueOf(org.purpurmc.purpur.PurpurConfig.afkCommandCooldown - (currentTime - cooldown.get(uuid)) / 1000000000))));
+                    return;
+                } else {
+                    cooldown.put(uuid, currentTime);
+                }
+                // Dreeam - is this necessary?
+                /*
+                if (cooldown.size() > 200) {
+                    cooldown = new java.util.concurrent.ConcurrentHashMap<>();
+                }
+                 */
+            }
+        }
+        // Purpur end
         if (ServerGamePacketListenerImpl.isChatMessageIllegal(packet.command())) {
             this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper
         } else {

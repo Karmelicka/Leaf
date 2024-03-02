@@ -2277,6 +2277,8 @@ public class ServerPlayer extends Player {
 
     // Purpur Start
     private boolean isAfk = false;
+    public boolean isCommandAfk = false;
+    public boolean commandAfkStatus = false;
 
     @Override
     public void setAfk(boolean afk) {
@@ -2314,6 +2316,9 @@ public class ServerPlayer extends Player {
             String prefix = (split.length > 0 ? split[0] : "").replace(org.purpurmc.purpur.PurpurConfig.afkTabListPrefix, "");
             String suffix = (split.length > 1 ? split[1] : "").replace(org.purpurmc.purpur.PurpurConfig.afkTabListSuffix, "");
             if (afk) {
+                net.kyori.adventure.title.Title tile = net.kyori.adventure.title.Title.title(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.afkTitleAway), net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.afkSubTitleAway), net.kyori.adventure.title.Title.Times.times(net.kyori.adventure.util.Ticks.duration(10), net.kyori.adventure.util.Ticks.duration(70), net.kyori.adventure.util.Ticks.duration(20)));
+                getBukkitEntity().showTitle(tile);
+
                 getBukkitEntity().setPlayerListName(org.purpurmc.purpur.PurpurConfig.afkTabListPrefix + prefix + scoreboardName + suffix + org.purpurmc.purpur.PurpurConfig.afkTabListSuffix, true);
             } else {
                 getBukkitEntity().setPlayerListName(prefix + scoreboardName + suffix);

@@ -176,9 +176,13 @@ public class PurpurConfig {
     public static String cannotRideMob = "<red>You cannot mount that mob";
     public static String afkBroadcastAway = "<yellow><italic>%s is now AFK";
     public static String afkBroadcastBack = "<yellow><italic>%s is no longer AFK";
+    public static String afkTitleAway = "<gold><bold>AFK";
+    public static String afkSubTitleAway = "<red>You are now AFK...";
     public static boolean afkBroadcastUseDisplayName = false;
     public static String afkTabListPrefix = "[AFK] ";
     public static String afkTabListSuffix = "";
+    public static int afkCommandCooldown = 0;
+    public static String afkCooldown = "<gray>You need to wait %time%s to use /afk.";
     public static String creditsCommandOutput = "<green>%s has been shown the end credits";
     public static String demoCommandOutput = "<green>%s has been shown the demo screen";
     public static String pingCommandOutput = "<green>%s's ping is %sms";
@@ -195,9 +199,13 @@ public class PurpurConfig {
         cannotRideMob = getString("settings.messages.cannot-ride-mob", cannotRideMob);
         afkBroadcastAway = getString("settings.messages.afk-broadcast-away", afkBroadcastAway);
         afkBroadcastBack = getString("settings.messages.afk-broadcast-back", afkBroadcastBack);
+        afkTitleAway = getString("settings.messages.afk-title-away", afkTitleAway);
+        afkSubTitleAway = getString("settings.messages.afk-sub-title-away", afkSubTitleAway);
         afkBroadcastUseDisplayName = getBoolean("settings.messages.afk-broadcast-use-display-name", afkBroadcastUseDisplayName);
         afkTabListPrefix = MiniMessage.miniMessage().serialize(MiniMessage.miniMessage().deserialize(getString("settings.messages.afk-tab-list-prefix", afkTabListPrefix)));
         afkTabListSuffix = MiniMessage.miniMessage().serialize(MiniMessage.miniMessage().deserialize(getString("settings.messages.afk-tab-list-suffix", afkTabListSuffix)));
+        afkCommandCooldown = getInt("settings.messages.afk-command-cooldown", afkCommandCooldown);
+        afkCooldown = MiniMessage.miniMessage().serialize(MiniMessage.miniMessage().deserialize(getString("settings.messages.afk-command-cooldown-msg", afkCooldown)));
         creditsCommandOutput = getString("settings.messages.credits-command-output", creditsCommandOutput);
         demoCommandOutput = getString("settings.messages.demo-command-output", demoCommandOutput);
         pingCommandOutput = getString("settings.messages.ping-command-output", pingCommandOutput);
