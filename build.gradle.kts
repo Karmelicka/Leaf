@@ -3,7 +3,7 @@ import io.papermc.paperweight.util.*
 plugins {
     java
     `maven-publish`
-    id("com.github.johnrengelman.shadow")
+    id("io.github.goooler.shadow") // Leaf - use a shadow fork that supports Java 21
 }
 
 val log4jPlugins = sourceSets.create("log4jPlugins")
