@@ -385,7 +385,6 @@ public class Main {
             tryPreloadClass("org.bukkit.craftbukkit.scheduler.CraftScheduler$1");
             tryPreloadClass("org.bukkit.craftbukkit.scheduler.CraftScheduler$2");
             tryPreloadClass("org.bukkit.craftbukkit.scheduler.CraftScheduler$3");
-            tryPreloadClass("org.bukkit.craftbukkit.scheduler.CraftScheduler$4");
             tryPreloadClass("org.slf4j.helpers.MessageFormatter");
             tryPreloadClass("org.slf4j.helpers.FormattingTuple");
             tryPreloadClass("org.slf4j.helpers.BasicMarker");

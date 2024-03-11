@@ -25,30 +25,50 @@ package org.bukkit.craftbukkit.scheduler;
 
 import com.destroystokyo.paper.ServerSchedulerReportingWrapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.galemc.gale.virtualthread.VirtualThreadService;
 import org.bukkit.plugin.Plugin;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class CraftAsyncScheduler extends CraftScheduler {
 
-    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
-            4, Integer.MAX_VALUE,30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
-            new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
+    private Executor executor; // Leaf - use super class
     private final Executor management = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
             .setNameFormat("Craft Async Scheduler Management Thread").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
     private final List<CraftTask> temp = new ArrayList<>();
 
     CraftAsyncScheduler() {
         super(true);
-        executor.allowCoreThreadTimeOut(true);
-        executor.prestartAllCoreThreads();
+
+        // Leaf start - Ability to use Virtual Thread for async scheduler
+        if (VirtualThreadService.getJavaMajorVersion() >= VirtualThreadService.minimumJavaMajorVersionWithoutFeaturePreview && org.dreeam.leaf.config.modules.opt.VT4BukkitScheduler.enabled) {
+            try {
+                Method newThreadPerTaskExecutor = Executors.class.getMethod("newThreadPerTaskExecutor", ThreadFactory.class);
+                executor = (Executor) newThreadPerTaskExecutor.invoke(null, VirtualThreadService.get().createFactory());
+                //executor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("Craft Scheduler Thread - ", 0).factory()); // Leaf - When Minecraft using Java21
+                return;
+            } catch (Exception ignored) {
+            }
+        }
+
+        executor = new ThreadPoolExecutor(
+                4, Integer.MAX_VALUE, 30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+                new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build());
+
+        var threadPoolExecutor = (ThreadPoolExecutor) executor;
+
+        threadPoolExecutor.allowCoreThreadTimeOut(true);
+        threadPoolExecutor.prestartAllCoreThreads();
+        // Leaf end
     }
 
     @Override
