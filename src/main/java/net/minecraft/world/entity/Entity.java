@@ -2566,6 +2566,16 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
             }
             // Paper end
             nbttagcompound.put("Leaves.Data", leavesData); // Leaves - leaves ex data
+
+            // Leaf start - Fix MC-2025
+            AABB boundingBox = getBoundingBox();
+            ListTag boundingBoxList = new ListTag();
+            for (double coord : new double[]{boundingBox.minX, boundingBox.minY, boundingBox.minZ, boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ}) {
+                boundingBoxList.add(DoubleTag.valueOf(coord));
+            }
+            nbttagcompound.put("Leaf.BoundingBox", boundingBoxList);
+            // Leaf end
+
             return nbttagcompound;
         } catch (Throwable throwable) {
             CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
@@ -2642,6 +2652,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
                     if (this.repositionEntityAfterLoad()) {
                         this.reapplyPosition();
                     }
+
+                    // Leaf start - Fix MC-2025
+                    if (nbt.contains("Leaf.BoundingBox", net.minecraft.nbt.Tag.TAG_LIST)) {
+                        ListTag boundingBoxList = nbt.getList("Leaf.BoundingBox", net.minecraft.nbt.Tag.TAG_DOUBLE);
+                        setBoundingBox(new AABB(boundingBoxList.getDouble(0), boundingBoxList.getDouble(1), boundingBoxList.getDouble(2), boundingBoxList.getDouble(3), boundingBoxList.getDouble(4), boundingBoxList.getDouble(5)));
+                    }
+                    // Leaf end
 
                 } else {
                     throw new IllegalStateException("Entity has invalid rotation");
