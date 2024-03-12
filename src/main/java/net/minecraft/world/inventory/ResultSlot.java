@@ -45,7 +45,7 @@ public class ResultSlot extends Slot {
     @Override
     protected void checkTakeAchievements(ItemStack stack) {
         if (this.removeCount > 0) {
-            stack.onCraftedBy(this.player.level(), this.player, this.removeCount);
+            stack.onCraftedBy(this.player.level(), this.player, stack.getCount()); // Leaf - Fix MC-65198
         }
 
         Container var3 = this.container;

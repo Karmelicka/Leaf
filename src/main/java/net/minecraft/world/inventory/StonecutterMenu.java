@@ -259,6 +259,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
             Item item = itemstack1.getItem();
 
             itemstack = itemstack1.copy();
+            ItemStack itemStack2 = itemstack.copy(); // Leaf - Fix MC-65198
             if (slot == 1) {
                 item.onCraftedBy(itemstack1, player.level(), player);
                 if (!this.moveItemStackTo(itemstack1, 2, 38, true)) {
@@ -291,7 +292,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
 
-            slot1.onTake(player, itemstack1);
+            slot1.onTake(player, itemStack2); // Leaf - Fix MC-65198
             this.broadcastChanges();
         }
 

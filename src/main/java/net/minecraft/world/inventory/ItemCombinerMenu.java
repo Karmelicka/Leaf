@@ -141,6 +141,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
             ItemStack itemstack1 = slot1.getItem();
 
             itemstack = itemstack1.copy();
+            ItemStack itemStack2 = itemstack.copy(); // Leaf - Fix MC-65198
             int j = this.getInventorySlotStart();
             int k = this.getUseRowEnd();
 
@@ -179,7 +180,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
             }
 
             this.activeQuickItem = itemstack; // Purpur
-            slot1.onTake(player, itemstack1);
+            slot1.onTake(player, itemStack2); // Leaf - Fix MC-65198
             this.activeQuickItem = null; // Purpur
         }
 
