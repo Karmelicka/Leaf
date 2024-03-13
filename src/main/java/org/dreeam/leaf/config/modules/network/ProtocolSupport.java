@@ -25,6 +25,9 @@ public class ProtocolSupport implements IConfigModule {
     @ConfigInfo(baseName = "appleskin-protocol")
     public static boolean appleskinProtocol = false;
 
+    @ConfigInfo(baseName = "chatImage-protocol")
+    public static boolean chatImageProtocol = false;
+
     @ConfigInfo(baseName = "xaero-map-protocol")
     public static boolean xaeroMapProtocol = false;
     @ConfigInfo(baseName = "xaero-map-server-id")
