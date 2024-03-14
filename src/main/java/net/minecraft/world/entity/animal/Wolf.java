@@ -58,6 +58,7 @@ import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.animal.horse.Llama;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.monster.AbstractSkeleton;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Ghast;
@@ -672,17 +673,29 @@ public class Wolf extends TamableAnimal implements NeutralMob {
 
     @Override
     public boolean wantsToAttack(LivingEntity target, LivingEntity owner) {
-        if (!(target instanceof Creeper) && !(target instanceof Ghast)) {
-            if (target instanceof Wolf) {
-                Wolf entitywolf = (Wolf) target;
-
-                return !entitywolf.isTame() || entitywolf.getOwner() != owner;
-            } else {
-                return target instanceof Player && owner instanceof Player && !((Player) owner).canHarmPlayer((Player) target) ? false : (target instanceof AbstractHorse && ((AbstractHorse) target).isTamed() ? false : !(target instanceof TamableAnimal) || !((TamableAnimal) target).isTame());
-            }
-        } else {
+        // Leaf start - Improve readability
+        if (target instanceof Creeper || target instanceof Ghast || target instanceof ArmorStand) { // Leaf - Fix MC-172047
             return false;
         }
+
+        if (target instanceof Wolf entityWolf) {
+            return !entityWolf.isTame() || entityWolf.getOwner() != owner;
+        }
+
+        if (target instanceof Player targetPlayer && owner instanceof Player ownerPlayer) {
+            return ownerPlayer.canHarmPlayer(targetPlayer);
+        }
+
+        if (target instanceof AbstractHorse targetHorse) {
+            return !targetHorse.isTamed();
+        }
+
+        if (target instanceof TamableAnimal tamableAnimalTarget) {
+            return !tamableAnimalTarget.isTame();
+        }
+
+        return true;
+        // Leaf end
     }
 
     @Override
