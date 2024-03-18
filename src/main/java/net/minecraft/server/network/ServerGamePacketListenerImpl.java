@@ -2400,10 +2400,10 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
         synchronized (this.lastSeenMessages) {
             Optional<LastSeenMessages> optional = this.lastSeenMessages.applyUpdate(acknowledgment);
 
-            if (optional.isEmpty()) {
-                ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
-                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
-            }
+//            if (optional.isEmpty()) {
+//                ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
+//                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
+//            }
 
             return optional;
         }
@@ -2595,8 +2595,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
 
         synchronized (this.lastSeenMessages) {
             if (!this.lastSeenMessages.applyOffset(packet.offset())) {
-                ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
-                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
+//                ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
+//                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
             }
 
         }
