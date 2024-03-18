@@ -3,14 +3,13 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.commands.arguments.item.ArgumentParserItemStack;
+import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemMonsterEgg;
-import net.minecraft.world.item.enchantment.EnchantmentManager;
+import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -43,7 +42,7 @@ public final class CraftItemFactory implements ItemFactory {
         if (itemstack == null) {
             return false;
         }
-        return isApplicable(meta, itemstack.getType());
+        return this.isApplicable(meta, itemstack.getType());
     }
 
     @Override
@@ -61,7 +60,7 @@ public final class CraftItemFactory implements ItemFactory {
     @Override
     public ItemMeta getItemMeta(Material material) {
         Preconditions.checkArgument(material != null, "Material cannot be null");
-        return getItemMeta(material, null);
+        return this.getItemMeta(material, null);
     }
 
     private ItemMeta getItemMeta(Material material, CraftMetaItem meta) {
@@ -390,7 +389,7 @@ public final class CraftItemFactory implements ItemFactory {
             return ((CraftMetaItem) meta1).isEmpty();
         }
 
-        return equals((CraftMetaItem) meta1, (CraftMetaItem) meta2);
+        return this.equals((CraftMetaItem) meta1, (CraftMetaItem) meta2);
     }
 
     boolean equals(CraftMetaItem meta1, CraftMetaItem meta2) {
@@ -407,36 +406,36 @@ public final class CraftItemFactory implements ItemFactory {
     }
 
     public static CraftItemFactory instance() {
-        return instance;
+        return CraftItemFactory.instance;
     }
 
     @Override
     public ItemMeta asMetaFor(ItemMeta meta, ItemStack stack) {
         Preconditions.checkArgument(stack != null, "ItemStack stack cannot be null");
-        return asMetaFor(meta, stack.getType());
+        return this.asMetaFor(meta, stack.getType());
     }
 
     @Override
     public ItemMeta asMetaFor(ItemMeta meta, Material material) {
         Preconditions.checkArgument(material != null, "Material cannot be null");
         Preconditions.checkArgument(meta instanceof CraftMetaItem, "ItemMeta of %s not created by %s", (meta != null ? meta.getClass().toString() : "null"), CraftItemFactory.class.getName());
-        return getItemMeta(material, (CraftMetaItem) meta);
+        return this.getItemMeta(material, (CraftMetaItem) meta);
     }
 
     @Override
     public Color getDefaultLeatherColor() {
-        return DEFAULT_LEATHER_COLOR;
+        return CraftItemFactory.DEFAULT_LEATHER_COLOR;
     }
 
     @Override
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
-            ArgumentParserItemStack.a arg = ArgumentParserItemStack.parseForItem(BuiltInRegistries.ITEM.asLookup(), new StringReader(input));
+            ItemParser.ItemResult arg = ItemParser.parseForItem(BuiltInRegistries.ITEM.asLookup(), new StringReader(input));
 
             Item item = arg.item().value();
             net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(item);
 
-            NBTTagCompound nbt = arg.nbt();
+            CompoundTag nbt = arg.nbt();
             if (nbt != null) {
                 nmsItemStack.setTag(nbt);
             }
@@ -457,8 +456,8 @@ public final class CraftItemFactory implements ItemFactory {
         if (type == EntityType.UNKNOWN) {
             return null;
         }
-        EntityTypes<?> nmsType = CraftEntityType.bukkitToMinecraft(type);
-        Item nmsItem = ItemMonsterEgg.byId(nmsType);
+        net.minecraft.world.entity.EntityType<?> nmsType = CraftEntityType.bukkitToMinecraft(type);
+        Item nmsItem = SpawnEggItem.byId(nmsType);
 
         if (nmsItem == null) {
             return null;
@@ -471,19 +470,19 @@ public final class CraftItemFactory implements ItemFactory {
     public ItemStack enchantItem(Entity entity, ItemStack itemStack, int level, boolean allowTreasures) {
         Preconditions.checkArgument(entity != null, "The entity must not be null");
 
-        return enchantItem(((CraftEntity) entity).getHandle().random, itemStack, level, allowTreasures);
+        return CraftItemFactory.enchantItem(((CraftEntity) entity).getHandle().random, itemStack, level, allowTreasures);
     }
 
     @Override
     public ItemStack enchantItem(final World world, final ItemStack itemStack, final int level, final boolean allowTreasures) {
         Preconditions.checkArgument(world != null, "The world must not be null");
 
-        return enchantItem(((CraftWorld) world).getHandle().random, itemStack, level, allowTreasures);
+        return CraftItemFactory.enchantItem(((CraftWorld) world).getHandle().random, itemStack, level, allowTreasures);
     }
 
     @Override
     public ItemStack enchantItem(final ItemStack itemStack, final int level, final boolean allowTreasures) {
-        return enchantItem(randomSource, itemStack, level, allowTreasures);
+        return CraftItemFactory.enchantItem(CraftItemFactory.randomSource, itemStack, level, allowTreasures);
     }
 
     private static ItemStack enchantItem(RandomSource source, ItemStack itemStack, int level, boolean allowTreasures) {
@@ -491,6 +490,6 @@ public final class CraftItemFactory implements ItemFactory {
         Preconditions.checkArgument(!itemStack.getType().isAir(), "ItemStack must not be air");
         itemStack = CraftItemStack.asCraftCopy(itemStack);
         CraftItemStack craft = (CraftItemStack) itemStack;
-        return CraftItemStack.asCraftMirror(EnchantmentManager.enchantItem(source, craft.handle, level, allowTreasures));
+        return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, allowTreasures));
     }
 }

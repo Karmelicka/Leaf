@@ -3,7 +3,7 @@ package org.bukkit.enchantments;
 import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.enchantment.EnchantmentSlotType;
+import net.minecraft.world.item.enchantment.EnchantmentCategory;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.support.AbstractTestingBase;
@@ -13,7 +13,7 @@ public class EnchantmentTargetTest extends AbstractTestingBase {
 
     @Test
     public void test() {
-        for (EnchantmentSlotType nmsSlot : EnchantmentSlotType.values()) {
+        for (EnchantmentCategory nmsSlot : EnchantmentCategory.values()) {
             EnchantmentTarget bukkitTarget;
             switch (nmsSlot) {
                 case ARMOR_CHEST:

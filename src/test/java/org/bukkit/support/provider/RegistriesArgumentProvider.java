@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.stream.Stream;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.effect.MobEffectList;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.item.Instrument;
 import org.bukkit.GameEvent;
 import org.bukkit.MusicInstrument;
@@ -37,7 +37,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         DATA.add(Arguments.of(Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class));
         DATA.add(Arguments.of(GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class));
         DATA.add(Arguments.of(MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class));
-        DATA.add(Arguments.of(PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffectList.class));
+        DATA.add(Arguments.of(PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class));
         DATA.add(Arguments.of(Structure.class, Registries.STRUCTURE, CraftStructure.class, net.minecraft.world.level.levelgen.structure.Structure.class));
         DATA.add(Arguments.of(StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class));
         DATA.add(Arguments.of(TrimMaterial.class, Registries.TRIM_MATERIAL, CraftTrimMaterial.class, net.minecraft.world.item.armortrim.TrimMaterial.class));
@@ -47,10 +47,10 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-        return getData();
+        return RegistriesArgumentProvider.getData();
     }
 
     public static Stream<? extends Arguments> getData() {
-        return DATA.stream();
+        return RegistriesArgumentProvider.DATA.stream();
     }
 }

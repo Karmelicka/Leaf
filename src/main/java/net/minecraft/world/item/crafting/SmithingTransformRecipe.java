@@ -3,13 +3,12 @@ package net.minecraft.world.item.crafting;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.stream.Stream;
-import net.minecraft.core.IRegistryCustom;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.PacketDataSerializer;
-import net.minecraft.world.IInventory;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.World;
-
+import net.minecraft.world.level.Level;
 // CraftBukkit start
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -20,27 +19,27 @@ import org.bukkit.inventory.Recipe;
 
 public class SmithingTransformRecipe implements SmithingRecipe {
 
-    final RecipeItemStack template;
-    final RecipeItemStack base;
-    final RecipeItemStack addition;
+    final Ingredient template;
+    final Ingredient base;
+    final Ingredient addition;
     final ItemStack result;
 
-    public SmithingTransformRecipe(RecipeItemStack recipeitemstack, RecipeItemStack recipeitemstack1, RecipeItemStack recipeitemstack2, ItemStack itemstack) {
-        this.template = recipeitemstack;
-        this.base = recipeitemstack1;
-        this.addition = recipeitemstack2;
-        this.result = itemstack;
+    public SmithingTransformRecipe(Ingredient template, Ingredient base, Ingredient addition, ItemStack result) {
+        this.template = template;
+        this.base = base;
+        this.addition = addition;
+        this.result = result;
     }
 
     @Override
-    public boolean matches(IInventory iinventory, World world) {
-        return this.template.test(iinventory.getItem(0)) && this.base.test(iinventory.getItem(1)) && this.addition.test(iinventory.getItem(2));
+    public boolean matches(Container inventory, Level world) {
+        return this.template.test(inventory.getItem(0)) && this.base.test(inventory.getItem(1)) && this.addition.test(inventory.getItem(2));
     }
 
     @Override
-    public ItemStack assemble(IInventory iinventory, IRegistryCustom iregistrycustom) {
+    public ItemStack assemble(Container inventory, RegistryAccess registryManager) {
         ItemStack itemstack = this.result.copy();
-        NBTTagCompound nbttagcompound = iinventory.getItem(1).getTag();
+        CompoundTag nbttagcompound = inventory.getItem(1).getTag();
 
         if (nbttagcompound != null) {
             itemstack.setTag(nbttagcompound.copy());
@@ -50,23 +49,23 @@ public class SmithingTransformRecipe implements SmithingRecipe {
     }
 
     @Override
-    public ItemStack getResultItem(IRegistryCustom iregistrycustom) {
+    public ItemStack getResultItem(RegistryAccess registryManager) {
         return this.result;
     }
 
     @Override
-    public boolean isTemplateIngredient(ItemStack itemstack) {
-        return this.template.test(itemstack);
+    public boolean isTemplateIngredient(ItemStack stack) {
+        return this.template.test(stack);
     }
 
     @Override
-    public boolean isBaseIngredient(ItemStack itemstack) {
-        return this.base.test(itemstack);
+    public boolean isBaseIngredient(ItemStack stack) {
+        return this.base.test(stack);
     }
 
     @Override
-    public boolean isAdditionIngredient(ItemStack itemstack) {
-        return this.addition.test(itemstack);
+    public boolean isAdditionIngredient(ItemStack stack) {
+        return this.addition.test(stack);
     }
 
     @Override
@@ -76,7 +75,7 @@ public class SmithingTransformRecipe implements SmithingRecipe {
 
     @Override
     public boolean isIncomplete() {
-        return Stream.of(this.template, this.base, this.addition).anyMatch(RecipeItemStack::isEmpty);
+        return Stream.of(this.template, this.base, this.addition).anyMatch(Ingredient::isEmpty);
     }
 
     // CraftBukkit start
@@ -90,42 +89,42 @@ public class SmithingTransformRecipe implements SmithingRecipe {
     }
     // CraftBukkit end
 
-    public static class a implements RecipeSerializer<SmithingTransformRecipe> {
+    public static class Serializer implements RecipeSerializer<SmithingTransformRecipe> {
 
         private static final Codec<SmithingTransformRecipe> CODEC = RecordCodecBuilder.create((instance) -> {
-            return instance.group(RecipeItemStack.CODEC.fieldOf("template").forGetter((smithingtransformrecipe) -> {
+            return instance.group(Ingredient.CODEC.fieldOf("template").forGetter((smithingtransformrecipe) -> {
                 return smithingtransformrecipe.template;
-            }), RecipeItemStack.CODEC.fieldOf("base").forGetter((smithingtransformrecipe) -> {
+            }), Ingredient.CODEC.fieldOf("base").forGetter((smithingtransformrecipe) -> {
                 return smithingtransformrecipe.base;
-            }), RecipeItemStack.CODEC.fieldOf("addition").forGetter((smithingtransformrecipe) -> {
+            }), Ingredient.CODEC.fieldOf("addition").forGetter((smithingtransformrecipe) -> {
                 return smithingtransformrecipe.addition;
             }), ItemStack.ITEM_WITH_COUNT_CODEC.fieldOf("result").forGetter((smithingtransformrecipe) -> {
                 return smithingtransformrecipe.result;
             })).apply(instance, SmithingTransformRecipe::new);
         });
 
-        public a() {}
+        public Serializer() {}
 
         @Override
         public Codec<SmithingTransformRecipe> codec() {
-            return SmithingTransformRecipe.a.CODEC;
+            return SmithingTransformRecipe.Serializer.CODEC;
         }
 
         @Override
-        public SmithingTransformRecipe fromNetwork(PacketDataSerializer packetdataserializer) {
-            RecipeItemStack recipeitemstack = RecipeItemStack.fromNetwork(packetdataserializer);
-            RecipeItemStack recipeitemstack1 = RecipeItemStack.fromNetwork(packetdataserializer);
-            RecipeItemStack recipeitemstack2 = RecipeItemStack.fromNetwork(packetdataserializer);
-            ItemStack itemstack = packetdataserializer.readItem();
+        public SmithingTransformRecipe fromNetwork(FriendlyByteBuf buf) {
+            Ingredient recipeitemstack = Ingredient.fromNetwork(buf);
+            Ingredient recipeitemstack1 = Ingredient.fromNetwork(buf);
+            Ingredient recipeitemstack2 = Ingredient.fromNetwork(buf);
+            ItemStack itemstack = buf.readItem();
 
             return new SmithingTransformRecipe(recipeitemstack, recipeitemstack1, recipeitemstack2, itemstack);
         }
 
-        public void toNetwork(PacketDataSerializer packetdataserializer, SmithingTransformRecipe smithingtransformrecipe) {
-            smithingtransformrecipe.template.toNetwork(packetdataserializer);
-            smithingtransformrecipe.base.toNetwork(packetdataserializer);
-            smithingtransformrecipe.addition.toNetwork(packetdataserializer);
-            packetdataserializer.writeItem(smithingtransformrecipe.result);
+        public void toNetwork(FriendlyByteBuf buf, SmithingTransformRecipe recipe) {
+            recipe.template.toNetwork(buf);
+            recipe.base.toNetwork(buf);
+            recipe.addition.toNetwork(buf);
+            buf.writeItem(recipe.result);
         }
     }
 }

@@ -28,12 +28,12 @@ public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft
 
     @Override
     public net.minecraft.world.item.armortrim.TrimMaterial getHandle() {
-        return handle;
+        return this.handle;
     }
 
     @Override
     @NotNull
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 }

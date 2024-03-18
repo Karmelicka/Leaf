@@ -4,28 +4,28 @@ import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.Objects;
 import javax.annotation.Nullable;
-import net.minecraft.advancements.CriterionTriggers;
-import net.minecraft.core.BlockPosition;
-import net.minecraft.core.EnumDirection;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.protocol.game.PacketPlayOutTileEntityData;
-import net.minecraft.resources.MinecraftKey;
-import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.server.level.WorldServer;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.item.EntityItem;
-import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BrushableBlock;
-import net.minecraft.world.level.block.state.IBlockData;
-import net.minecraft.world.level.block.state.properties.BlockProperties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParameterSets;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
-import net.minecraft.world.phys.Vec3D;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 
 // CraftBukkit start
@@ -34,7 +34,7 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 // CraftBukkit end
 
-public class BrushableBlockEntity extends TileEntity {
+public class BrushableBlockEntity extends BlockEntity {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String LOOT_TABLE_TAG = "LootTable";
@@ -49,37 +49,37 @@ public class BrushableBlockEntity extends TileEntity {
     private long coolDownEndsAtTick;
     public ItemStack item;
     @Nullable
-    private EnumDirection hitDirection;
+    private Direction hitDirection;
     @Nullable
-    public MinecraftKey lootTable;
+    public ResourceLocation lootTable;
     public long lootTableSeed;
 
-    public BrushableBlockEntity(BlockPosition blockposition, IBlockData iblockdata) {
-        super(TileEntityTypes.BRUSHABLE_BLOCK, blockposition, iblockdata);
+    public BrushableBlockEntity(BlockPos pos, BlockState state) {
+        super(BlockEntityType.BRUSHABLE_BLOCK, pos, state);
         this.item = ItemStack.EMPTY;
     }
 
-    public boolean brush(long i, EntityHuman entityhuman, EnumDirection enumdirection) {
+    public boolean brush(long worldTime, Player player, Direction hitDirection) {
         if (this.hitDirection == null) {
-            this.hitDirection = enumdirection;
+            this.hitDirection = hitDirection;
         }
 
-        this.brushCountResetsAtTick = i + 40L;
-        if (i >= this.coolDownEndsAtTick && this.level instanceof WorldServer) {
-            this.coolDownEndsAtTick = i + 10L;
-            this.unpackLootTable(entityhuman);
+        this.brushCountResetsAtTick = worldTime + 40L;
+        if (worldTime >= this.coolDownEndsAtTick && this.level instanceof ServerLevel) {
+            this.coolDownEndsAtTick = worldTime + 10L;
+            this.unpackLootTable(player);
             int j = this.getCompletionState();
 
             if (++this.brushCount >= 10) {
-                this.brushingCompleted(entityhuman);
+                this.brushingCompleted(player);
                 return true;
             } else {
                 this.level.scheduleTick(this.getBlockPos(), this.getBlockState().getBlock(), 2);
                 int k = this.getCompletionState();
 
                 if (j != k) {
-                    IBlockData iblockdata = this.getBlockState();
-                    IBlockData iblockdata1 = (IBlockData) iblockdata.setValue(BlockProperties.DUSTED, k);
+                    BlockState iblockdata = this.getBlockState();
+                    BlockState iblockdata1 = (BlockState) iblockdata.setValue(BlockStateProperties.DUSTED, k);
 
                     this.level.setBlock(this.getBlockPos(), iblockdata1, 3);
                 }
@@ -91,17 +91,17 @@ public class BrushableBlockEntity extends TileEntity {
         }
     }
 
-    public void unpackLootTable(EntityHuman entityhuman) {
+    public void unpackLootTable(Player player) {
         if (this.lootTable != null && this.level != null && !this.level.isClientSide() && this.level.getServer() != null) {
             LootTable loottable = this.level.getServer().getLootData().getLootTable(this.lootTable);
 
-            if (entityhuman instanceof EntityPlayer) {
-                EntityPlayer entityplayer = (EntityPlayer) entityhuman;
+            if (player instanceof ServerPlayer) {
+                ServerPlayer entityplayer = (ServerPlayer) player;
 
-                CriterionTriggers.GENERATE_LOOT.trigger(entityplayer, this.lootTable);
+                CriteriaTriggers.GENERATE_LOOT.trigger(entityplayer, this.lootTable);
             }
 
-            LootParams lootparams = (new LootParams.a((WorldServer) this.level)).withParameter(LootContextParameters.ORIGIN, Vec3D.atCenterOf(this.worldPosition)).withLuck(entityhuman.getLuck()).withParameter(LootContextParameters.THIS_ENTITY, entityhuman).create(LootContextParameterSets.CHEST);
+            LootParams lootparams = (new LootParams.Builder((ServerLevel) this.level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(this.worldPosition)).withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player).create(LootContextParamSets.CHEST);
             ObjectArrayList<ItemStack> objectarraylist = loottable.getRandomItems(lootparams, this.lootTableSeed);
             ItemStack itemstack;
 
@@ -123,10 +123,10 @@ public class BrushableBlockEntity extends TileEntity {
         }
     }
 
-    private void brushingCompleted(EntityHuman entityhuman) {
+    private void brushingCompleted(Player player) {
         if (this.level != null && this.level.getServer() != null) {
-            this.dropContent(entityhuman);
-            IBlockData iblockdata = this.getBlockState();
+            this.dropContent(player);
+            BlockState iblockdata = this.getBlockState();
 
             this.level.levelEvent(3008, this.getBlockPos(), Block.getId(iblockdata));
             Block block = this.getBlockState().getBlock();
@@ -144,24 +144,24 @@ public class BrushableBlockEntity extends TileEntity {
         }
     }
 
-    private void dropContent(EntityHuman entityhuman) {
+    private void dropContent(Player player) {
         if (this.level != null && this.level.getServer() != null) {
-            this.unpackLootTable(entityhuman);
+            this.unpackLootTable(player);
             if (!this.item.isEmpty()) {
-                double d0 = (double) EntityTypes.ITEM.getWidth();
+                double d0 = (double) EntityType.ITEM.getWidth();
                 double d1 = 1.0D - d0;
                 double d2 = d0 / 2.0D;
-                EnumDirection enumdirection = (EnumDirection) Objects.requireNonNullElse(this.hitDirection, EnumDirection.UP);
-                BlockPosition blockposition = this.worldPosition.relative(enumdirection, 1);
+                Direction enumdirection = (Direction) Objects.requireNonNullElse(this.hitDirection, Direction.UP);
+                BlockPos blockposition = this.worldPosition.relative(enumdirection, 1);
                 double d3 = (double) blockposition.getX() + 0.5D * d1 + d2;
-                double d4 = (double) blockposition.getY() + 0.5D + (double) (EntityTypes.ITEM.getHeight() / 2.0F);
+                double d4 = (double) blockposition.getY() + 0.5D + (double) (EntityType.ITEM.getHeight() / 2.0F);
                 double d5 = (double) blockposition.getZ() + 0.5D * d1 + d2;
-                EntityItem entityitem = new EntityItem(this.level, d3, d4, d5, this.item.split(this.level.random.nextInt(21) + 10));
+                ItemEntity entityitem = new ItemEntity(this.level, d3, d4, d5, this.item.split(this.level.random.nextInt(21) + 10));
 
-                entityitem.setDeltaMovement(Vec3D.ZERO);
+                entityitem.setDeltaMovement(Vec3.ZERO);
                 // CraftBukkit start
                 org.bukkit.block.Block bblock = CraftBlock.at(this.level, this.worldPosition);
-                CraftEventFactory.handleBlockDropItemEvent(bblock, bblock.getState(), (EntityPlayer) entityhuman, Arrays.asList(entityitem));
+                CraftEventFactory.handleBlockDropItemEvent(bblock, bblock.getState(), (ServerPlayer) player, Arrays.asList(entityitem));
                 // CraftBukkit end
                 this.item = ItemStack.EMPTY;
             }
@@ -178,7 +178,7 @@ public class BrushableBlockEntity extends TileEntity {
                 int j = this.getCompletionState();
 
                 if (i != j) {
-                    this.level.setBlock(this.getBlockPos(), (IBlockData) this.getBlockState().setValue(BlockProperties.DUSTED, j), 3);
+                    this.level.setBlock(this.getBlockPos(), (BlockState) this.getBlockState().setValue(BlockStateProperties.DUSTED, j), 3);
                 }
 
                 boolean flag = true;
@@ -197,23 +197,23 @@ public class BrushableBlockEntity extends TileEntity {
         }
     }
 
-    private boolean tryLoadLootTable(NBTTagCompound nbttagcompound) {
-        if (nbttagcompound.contains("LootTable", 8)) {
-            this.lootTable = new MinecraftKey(nbttagcompound.getString("LootTable"));
-            this.lootTableSeed = nbttagcompound.getLong("LootTableSeed");
+    private boolean tryLoadLootTable(CompoundTag nbt) {
+        if (nbt.contains("LootTable", 8)) {
+            this.lootTable = new ResourceLocation(nbt.getString("LootTable"));
+            this.lootTableSeed = nbt.getLong("LootTableSeed");
             return true;
         } else {
             return false;
         }
     }
 
-    private boolean trySaveLootTable(NBTTagCompound nbttagcompound) {
+    private boolean trySaveLootTable(CompoundTag nbt) {
         if (this.lootTable == null) {
             return false;
         } else {
-            nbttagcompound.putString("LootTable", this.lootTable.toString());
+            nbt.putString("LootTable", this.lootTable.toString());
             if (this.lootTableSeed != 0L) {
-                nbttagcompound.putLong("LootTableSeed", this.lootTableSeed);
+                nbt.putLong("LootTableSeed", this.lootTableSeed);
             }
 
             return true;
@@ -221,46 +221,46 @@ public class BrushableBlockEntity extends TileEntity {
     }
 
     @Override
-    public NBTTagCompound getUpdateTag() {
-        NBTTagCompound nbttagcompound = super.getUpdateTag();
+    public CompoundTag getUpdateTag() {
+        CompoundTag nbttagcompound = super.getUpdateTag();
 
         if (this.hitDirection != null) {
             nbttagcompound.putInt("hit_direction", this.hitDirection.ordinal());
         }
 
-        nbttagcompound.put("item", this.item.save(new NBTTagCompound()));
+        nbttagcompound.put("item", this.item.save(new CompoundTag()));
         return nbttagcompound;
     }
 
     @Override
-    public PacketPlayOutTileEntityData getUpdatePacket() {
-        return PacketPlayOutTileEntityData.create(this);
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
-    public void load(NBTTagCompound nbttagcompound) {
-        super.load(nbttagcompound); // CraftBukkit - SPIGOT-7393: Load super Bukkit data
-        if (!this.tryLoadLootTable(nbttagcompound) && nbttagcompound.contains("item")) {
-            this.item = ItemStack.of(nbttagcompound.getCompound("item"));
+    public void load(CompoundTag nbt) {
+        super.load(nbt); // CraftBukkit - SPIGOT-7393: Load super Bukkit data
+        if (!this.tryLoadLootTable(nbt) && nbt.contains("item")) {
+            this.item = ItemStack.of(nbt.getCompound("item"));
         }
 
-        if (nbttagcompound.contains("hit_direction")) {
-            this.hitDirection = EnumDirection.values()[nbttagcompound.getInt("hit_direction")];
+        if (nbt.contains("hit_direction")) {
+            this.hitDirection = Direction.values()[nbt.getInt("hit_direction")];
         }
 
     }
 
     @Override
-    protected void saveAdditional(NBTTagCompound nbttagcompound) {
-        if (!this.trySaveLootTable(nbttagcompound)) {
-            nbttagcompound.put("item", this.item.save(new NBTTagCompound()));
+    protected void saveAdditional(CompoundTag nbt) {
+        if (!this.trySaveLootTable(nbt)) {
+            nbt.put("item", this.item.save(new CompoundTag()));
         }
 
     }
 
-    public void setLootTable(MinecraftKey minecraftkey, long i) {
-        this.lootTable = minecraftkey;
-        this.lootTableSeed = i;
+    public void setLootTable(ResourceLocation lootTable, long seed) {
+        this.lootTable = lootTable;
+        this.lootTableSeed = seed;
     }
 
     private int getCompletionState() {
@@ -268,7 +268,7 @@ public class BrushableBlockEntity extends TileEntity {
     }
 
     @Nullable
-    public EnumDirection getHitDirection() {
+    public Direction getHitDirection() {
         return this.hitDirection;
     }
 

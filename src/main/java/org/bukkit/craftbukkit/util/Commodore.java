@@ -69,11 +69,11 @@ public class Commodore {
 
             for (File in : input.listFiles()) {
                 if (in.getName().endsWith(".jar")) {
-                    convert(in, new File(output, in.getName()));
+                    Commodore.convert(in, new File(output, in.getName()));
                 }
             }
         } else {
-            convert(input, output);
+            Commodore.convert(input, output);
         }
     }
 
@@ -95,7 +95,7 @@ public class Commodore {
                             byte[] b = ByteStreams.toByteArray(is);
 
                             if (entry.getName().endsWith(".class")) {
-                                b = convert(b, false);
+                                b = Commodore.convert(b, false);
                                 entry = new JarEntry(entry.getName());
                             }
 
@@ -120,7 +120,7 @@ public class Commodore {
         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-                return new MethodVisitor(api, super.visitMethod(access, name, desc, signature, exceptions)) {
+                return new MethodVisitor(this.api, super.visitMethod(access, name, desc, signature, exceptions)) {
 
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
@@ -300,7 +300,7 @@ public class Commodore {
 
                         Type retType = Type.getReturnType(desc);
 
-                        if (EVIL.contains(owner + " " + desc + " " + name)
+                        if (Commodore.EVIL.contains(owner + " " + desc + " " + name)
                                 || (owner.startsWith("org/bukkit/block/") && (desc + " " + name).equals("()I getTypeId"))
                                 || (owner.startsWith("org/bukkit/block/") && (desc + " " + name).equals("(I)Z setTypeId"))
                                 || (owner.startsWith("org/bukkit/block/") && (desc + " " + name).equals("()Lorg/bukkit/Material; getType"))) {
@@ -360,7 +360,7 @@ public class Commodore {
 
                     @Override
                     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
-                        handleMethod((newOpcode, newOwner, newName, newDescription, newItf, newSam, newInstantiated) -> {
+                        this.handleMethod((newOpcode, newOwner, newName, newDescription, newItf, newSam, newInstantiated) -> {
                             super.visitMethodInsn(newOpcode, newOwner, newName, newDescription, newItf);
                         }, opcode, owner, name, desc, itf, null, null);
                     }
@@ -383,7 +383,7 @@ public class Commodore {
                             Handle implMethod = (Handle) bootstrapMethodArguments[1];
                             Type instantiatedMethodType = (Type) bootstrapMethodArguments[2];
 
-                            handleMethod((newOpcode, newOwner, newName, newDescription, newItf, newSam, newInstantiated) -> {
+                            this.handleMethod((newOpcode, newOwner, newName, newDescription, newItf, newSam, newInstantiated) -> {
                                 if (newOpcode == Opcodes.INVOKESTATIC) {
                                     newOpcode = Opcodes.H_INVOKESTATIC;
                                 }
@@ -406,7 +406,7 @@ public class Commodore {
                     }
                 };
             }
-        }, new SimpleRemapper(RENAMES)), 0);
+        }, new SimpleRemapper(Commodore.RENAMES)), 0);
 
         return cw.toByteArray();
     }

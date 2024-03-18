@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.FrogVariant;
 import net.minecraft.world.entity.animal.frog.Frog;
@@ -19,7 +18,7 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
 
     @Override
     public Frog getHandle() {
-        return (Frog) entity;
+        return (Frog) this.entity;
     }
 
     @Override
@@ -29,28 +28,28 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
 
     @Override
     public Entity getTongueTarget() {
-        return getHandle().getTongueTarget().map(net.minecraft.world.entity.Entity::getBukkitEntity).orElse(null);
+        return this.getHandle().getTongueTarget().map(net.minecraft.world.entity.Entity::getBukkitEntity).orElse(null);
     }
 
     @Override
     public void setTongueTarget(Entity target) {
         if (target == null) {
-            getHandle().eraseTongueTarget();
+            this.getHandle().eraseTongueTarget();
         } else {
-            getHandle().setTongueTarget(((CraftEntity) target).getHandle());
+            this.getHandle().setTongueTarget(((CraftEntity) target).getHandle());
         }
     }
 
     @Override
     public Variant getVariant() {
-        return CraftVariant.minecraftToBukkit(getHandle().getVariant());
+        return CraftVariant.minecraftToBukkit(this.getHandle().getVariant());
     }
 
     @Override
     public void setVariant(Variant variant) {
         Preconditions.checkArgument(variant != null, "variant");
 
-        getHandle().setVariant(CraftVariant.bukkitToMinecraft(variant));
+        this.getHandle().setVariant(CraftVariant.bukkitToMinecraft(variant));
     }
 
     public static class CraftVariant {
@@ -58,7 +57,7 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
         public static Variant minecraftToBukkit(FrogVariant minecraft) {
             Preconditions.checkArgument(minecraft != null);
 
-            IRegistry<FrogVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT);
+            net.minecraft.core.Registry<FrogVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT);
             Variant bukkit = Registry.FROG_VARIANT.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
 
             Preconditions.checkArgument(bukkit != null);

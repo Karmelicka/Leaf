@@ -1,11 +1,11 @@
 package net.minecraft.world.inventory;
 
-import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.world.IInventory;
-import net.minecraft.world.entity.player.EntityHuman;
-import net.minecraft.world.entity.player.PlayerInventory;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.World;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.CrafterBlock;
 
 // CraftBukkit start
@@ -13,20 +13,20 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryCrafter;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 // CraftBukkit end
 
-public class CrafterMenu extends Container implements ICrafting {
+public class CrafterMenu extends AbstractContainerMenu implements ContainerListener {
 
     // CraftBukkit start
     private CraftInventoryView bukkitEntity = null;
 
     @Override
     public CraftInventoryView getBukkitView() {
-        if (bukkitEntity != null) {
-            return bukkitEntity;
+        if (this.bukkitEntity != null) {
+            return this.bukkitEntity;
         }
 
         CraftInventoryCrafter inventory = new CraftInventoryCrafter(this.container, this.resultContainer);
-        bukkitEntity = new CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
-        return bukkitEntity;
+        this.bukkitEntity = new CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
+        return this.bukkitEntity;
     }
     // CraftBukkit end
     protected static final int SLOT_COUNT = 9;
@@ -34,31 +34,31 @@ public class CrafterMenu extends Container implements ICrafting {
     private static final int INV_SLOT_END = 36;
     private static final int USE_ROW_SLOT_START = 36;
     private static final int USE_ROW_SLOT_END = 45;
-    private final InventoryCraftResult resultContainer = new InventoryCraftResult();
-    private final IContainerProperties containerData;
-    private final EntityHuman player;
-    private final InventoryCrafting container;
+    private final ResultContainer resultContainer = new ResultContainer();
+    private final ContainerData containerData;
+    private final Player player;
+    private final CraftingContainer container;
 
-    public CrafterMenu(int i, PlayerInventory playerinventory) {
-        super(Containers.CRAFTER_3x3, i);
-        this.player = playerinventory.player;
-        this.containerData = new ContainerProperties(10);
+    public CrafterMenu(int syncId, Inventory playerInventory) {
+        super(MenuType.CRAFTER_3x3, syncId);
+        this.player = playerInventory.player;
+        this.containerData = new SimpleContainerData(10);
         this.container = new TransientCraftingContainer(this, 3, 3);
-        this.addSlots(playerinventory);
+        this.addSlots(playerInventory);
     }
 
-    public CrafterMenu(int i, PlayerInventory playerinventory, InventoryCrafting inventorycrafting, IContainerProperties icontainerproperties) {
-        super(Containers.CRAFTER_3x3, i);
-        this.player = playerinventory.player;
-        this.containerData = icontainerproperties;
-        this.container = inventorycrafting;
-        checkContainerSize(inventorycrafting, 9);
-        inventorycrafting.startOpen(playerinventory.player);
-        this.addSlots(playerinventory);
+    public CrafterMenu(int syncId, Inventory playerInventory, CraftingContainer inputInventory, ContainerData propertyDelegate) {
+        super(MenuType.CRAFTER_3x3, syncId);
+        this.player = playerInventory.player;
+        this.containerData = propertyDelegate;
+        this.container = inputInventory;
+        checkContainerSize(inputInventory, 9);
+        inputInventory.startOpen(playerInventory.player);
+        this.addSlots(playerInventory);
         this.addSlotListener(this);
     }
 
-    private void addSlots(PlayerInventory playerinventory) {
+    private void addSlots(Inventory playerInventory) {
         int i;
         int j;
 
@@ -72,12 +72,12 @@ public class CrafterMenu extends Container implements ICrafting {
 
         for (j = 0; j < 3; ++j) {
             for (i = 0; i < 9; ++i) {
-                this.addSlot(new Slot(playerinventory, i + j * 9 + 9, 8 + i * 18, 84 + j * 18));
+                this.addSlot(new Slot(playerInventory, i + j * 9 + 9, 8 + i * 18, 84 + j * 18));
             }
         }
 
         for (j = 0; j < 9; ++j) {
-            this.addSlot(new Slot(playerinventory, j, 8 + j * 18, 142));
+            this.addSlot(new Slot(playerInventory, j, 8 + j * 18, 142));
         }
 
         this.addSlot(new NonInteractiveResultSlot(this.resultContainer, 0, 134, 35));
@@ -85,15 +85,15 @@ public class CrafterMenu extends Container implements ICrafting {
         this.refreshRecipeResult();
     }
 
-    public void setSlotState(int i, boolean flag) {
-        CrafterSlot crafterslot = (CrafterSlot) this.getSlot(i);
+    public void setSlotState(int slot, boolean enabled) {
+        CrafterSlot crafterslot = (CrafterSlot) this.getSlot(slot);
 
-        this.containerData.set(crafterslot.index, flag ? 0 : 1);
+        this.containerData.set(crafterslot.index, enabled ? 0 : 1);
         this.broadcastChanges();
     }
 
-    public boolean isSlotDisabled(int i) {
-        return i > -1 && i < 9 ? this.containerData.get(i) == 1 : false;
+    public boolean isSlotDisabled(int slot) {
+        return slot > -1 && slot < 9 ? this.containerData.get(slot) == 1 : false;
     }
 
     public boolean isPowered() {
@@ -101,15 +101,15 @@ public class CrafterMenu extends Container implements ICrafting {
     }
 
     @Override
-    public ItemStack quickMoveStack(EntityHuman entityhuman, int i) {
+    public ItemStack quickMoveStack(Player player, int slot) {
         ItemStack itemstack = ItemStack.EMPTY;
-        Slot slot = (Slot) this.slots.get(i);
+        Slot slot1 = (Slot) this.slots.get(slot);
 
-        if (slot != null && slot.hasItem()) {
-            ItemStack itemstack1 = slot.getItem();
+        if (slot1 != null && slot1.hasItem()) {
+            ItemStack itemstack1 = slot1.getItem();
 
             itemstack = itemstack1.copy();
-            if (i < 9) {
+            if (slot < 9) {
                 if (!this.moveItemStackTo(itemstack1, 9, 45, true)) {
                     return ItemStack.EMPTY;
                 }
@@ -118,33 +118,33 @@ public class CrafterMenu extends Container implements ICrafting {
             }
 
             if (itemstack1.isEmpty()) {
-                slot.set(ItemStack.EMPTY);
+                slot1.set(ItemStack.EMPTY);
             } else {
-                slot.setChanged();
+                slot1.setChanged();
             }
 
             if (itemstack1.getCount() == itemstack.getCount()) {
                 return ItemStack.EMPTY;
             }
 
-            slot.onTake(entityhuman, itemstack1);
+            slot1.onTake(player, itemstack1);
         }
 
         return itemstack;
     }
 
     @Override
-    public boolean stillValid(EntityHuman entityhuman) {
+    public boolean stillValid(Player player) {
         if (!this.checkReachable) return true; // CraftBukkit
-        return this.container.stillValid(entityhuman);
+        return this.container.stillValid(player);
     }
 
     private void refreshRecipeResult() {
-        EntityHuman entityhuman = this.player;
+        Player entityhuman = this.player;
 
-        if (entityhuman instanceof EntityPlayer) {
-            EntityPlayer entityplayer = (EntityPlayer) entityhuman;
-            World world = entityplayer.level();
+        if (entityhuman instanceof ServerPlayer) {
+            ServerPlayer entityplayer = (ServerPlayer) entityhuman;
+            Level world = entityplayer.level();
             ItemStack itemstack = (ItemStack) CrafterBlock.getPotentialResults(world, this.container).map((recipecrafting) -> {
                 return recipecrafting.assemble(this.container, world.registryAccess());
             }).orElse(ItemStack.EMPTY);
@@ -154,15 +154,15 @@ public class CrafterMenu extends Container implements ICrafting {
 
     }
 
-    public IInventory getContainer() {
+    public Container getContainer() {
         return this.container;
     }
 
     @Override
-    public void slotChanged(Container container, int i, ItemStack itemstack) {
+    public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack stack) {
         this.refreshRecipeResult();
     }
 
     @Override
-    public void dataChanged(Container container, int i, int j) {}
+    public void dataChanged(AbstractContainerMenu handler, int property, int value) {}
 }

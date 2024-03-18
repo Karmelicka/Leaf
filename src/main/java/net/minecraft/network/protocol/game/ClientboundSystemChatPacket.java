@@ -1,30 +1,30 @@
 // mc-dev import
 package net.minecraft.network.protocol.game;
 
-import net.minecraft.network.PacketDataSerializer;
-import net.minecraft.network.chat.IChatBaseComponent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 
-public record ClientboundSystemChatPacket(IChatBaseComponent content, boolean overlay) implements Packet<PacketListenerPlayOut> {
+public record ClientboundSystemChatPacket(Component content, boolean overlay) implements Packet<ClientGamePacketListener> {
 
     // Spigot start
     public ClientboundSystemChatPacket(net.md_5.bungee.api.chat.BaseComponent[] content, boolean overlay) {
-        this(IChatBaseComponent.ChatSerializer.fromJson(net.md_5.bungee.chat.ComponentSerializer.toString(content)), overlay);
+        this(Component.Serializer.fromJson(net.md_5.bungee.chat.ComponentSerializer.toString(content)), overlay);
     }
     // Spigot end
 
-    public ClientboundSystemChatPacket(PacketDataSerializer packetdataserializer) {
-        this(packetdataserializer.readComponentTrusted(), packetdataserializer.readBoolean());
+    public ClientboundSystemChatPacket(FriendlyByteBuf buf) {
+        this(buf.readComponentTrusted(), buf.readBoolean());
     }
 
     @Override
-    public void write(PacketDataSerializer packetdataserializer) {
-        packetdataserializer.writeComponent(this.content);
-        packetdataserializer.writeBoolean(this.overlay);
+    public void write(FriendlyByteBuf buf) {
+        buf.writeComponent(this.content);
+        buf.writeBoolean(this.overlay);
     }
 
-    public void handle(PacketListenerPlayOut packetlistenerplayout) {
-        packetlistenerplayout.handleSystemChat(this);
+    public void handle(ClientGamePacketListener listener) {
+        listener.handleSystemChat(this);
     }
 
     @Override

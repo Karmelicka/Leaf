@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -61,15 +61,15 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         }
     }
 
-    CraftMetaArmor(NBTTagCompound tag) {
+    CraftMetaArmor(CompoundTag tag) {
         super(tag);
 
-        if (tag.contains(TRIM.NBT)) {
-            NBTTagCompound trimCompound = tag.getCompound(TRIM.NBT);
+        if (tag.contains(CraftMetaArmor.TRIM.NBT)) {
+            CompoundTag trimCompound = tag.getCompound(CraftMetaArmor.TRIM.NBT);
 
-            if (trimCompound.contains(TRIM_MATERIAL.NBT) && trimCompound.contains(TRIM_PATTERN.NBT)) {
-                TrimMaterial trimMaterial = Registry.TRIM_MATERIAL.get(NamespacedKey.fromString(trimCompound.getString(TRIM_MATERIAL.NBT)));
-                TrimPattern trimPattern = Registry.TRIM_PATTERN.get(NamespacedKey.fromString(trimCompound.getString(TRIM_PATTERN.NBT)));
+            if (trimCompound.contains(CraftMetaArmor.TRIM_MATERIAL.NBT) && trimCompound.contains(CraftMetaArmor.TRIM_PATTERN.NBT)) {
+                TrimMaterial trimMaterial = Registry.TRIM_MATERIAL.get(NamespacedKey.fromString(trimCompound.getString(CraftMetaArmor.TRIM_MATERIAL.NBT)));
+                TrimPattern trimPattern = Registry.TRIM_PATTERN.get(NamespacedKey.fromString(trimCompound.getString(CraftMetaArmor.TRIM_PATTERN.NBT)));
 
                 this.trim = new ArmorTrim(trimMaterial, trimPattern);
             }
@@ -79,10 +79,10 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
     CraftMetaArmor(Map<String, Object> map) {
         super(map);
 
-        Map<?, ?> trimData = SerializableMeta.getObject(Map.class, map, TRIM.BUKKIT, true);
+        Map<?, ?> trimData = SerializableMeta.getObject(Map.class, map, CraftMetaArmor.TRIM.BUKKIT, true);
         if (trimData != null) {
-            String materialKeyString = SerializableMeta.getString(trimData, TRIM_MATERIAL.BUKKIT, true);
-            String patternKeyString = SerializableMeta.getString(trimData, TRIM_PATTERN.BUKKIT, true);
+            String materialKeyString = SerializableMeta.getString(trimData, CraftMetaArmor.TRIM_MATERIAL.BUKKIT, true);
+            String patternKeyString = SerializableMeta.getString(trimData, CraftMetaArmor.TRIM_PATTERN.BUKKIT, true);
 
             if (materialKeyString != null && patternKeyString != null) {
                 NamespacedKey materialKey = NamespacedKey.fromString(materialKeyString);
@@ -101,20 +101,20 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
     }
 
     @Override
-    void applyToItem(NBTTagCompound itemTag) {
+    void applyToItem(CompoundTag itemTag) {
         super.applyToItem(itemTag);
 
-        if (hasTrim()) {
-            NBTTagCompound trimCompound = new NBTTagCompound();
-            trimCompound.putString(TRIM_MATERIAL.NBT, trim.getMaterial().getKey().toString());
-            trimCompound.putString(TRIM_PATTERN.NBT, trim.getPattern().getKey().toString());
-            itemTag.put(TRIM.NBT, trimCompound);
+        if (this.hasTrim()) {
+            CompoundTag trimCompound = new CompoundTag();
+            trimCompound.putString(CraftMetaArmor.TRIM_MATERIAL.NBT, this.trim.getMaterial().getKey().toString());
+            trimCompound.putString(CraftMetaArmor.TRIM_PATTERN.NBT, this.trim.getPattern().getKey().toString());
+            itemTag.put(CraftMetaArmor.TRIM.NBT, trimCompound);
         }
     }
 
     @Override
     boolean applicableTo(Material type) {
-        return ARMOR_MATERIALS.contains(type);
+        return CraftMetaArmor.ARMOR_MATERIALS.contains(type);
     }
 
     @Override
@@ -124,7 +124,7 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         }
 
         if (that instanceof CraftMetaArmor armorMeta) {
-            return Objects.equals(trim, armorMeta.trim);
+            return Objects.equals(this.trim, armorMeta.trim);
         }
 
         return true;
@@ -132,16 +132,16 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
 
     @Override
     boolean notUncommon(CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaArmor || isArmorEmpty());
+        return super.notUncommon(meta) && (meta instanceof CraftMetaArmor || this.isArmorEmpty());
     }
 
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && isArmorEmpty();
+        return super.isEmpty() && this.isArmorEmpty();
     }
 
     private boolean isArmorEmpty() {
-        return !hasTrim();
+        return !this.hasTrim();
     }
 
     @Override
@@ -149,8 +149,8 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         final int original;
         int hash = original = super.applyHash();
 
-        if (hasTrim()) {
-            hash = 61 * hash + trim.hashCode();
+        if (this.hasTrim()) {
+            hash = 61 * hash + this.trim.hashCode();
         }
 
         return original != hash ? CraftMetaArmor.class.hashCode() ^ hash : hash;
@@ -167,11 +167,11 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (hasTrim()) {
+        if (this.hasTrim()) {
             Map<String, String> trimData = new HashMap<>();
-            trimData.put(TRIM_MATERIAL.BUKKIT, trim.getMaterial().getKey().toString());
-            trimData.put(TRIM_PATTERN.BUKKIT, trim.getPattern().getKey().toString());
-            builder.put(TRIM.BUKKIT, trimData);
+            trimData.put(CraftMetaArmor.TRIM_MATERIAL.BUKKIT, this.trim.getMaterial().getKey().toString());
+            trimData.put(CraftMetaArmor.TRIM_PATTERN.BUKKIT, this.trim.getPattern().getKey().toString());
+            builder.put(CraftMetaArmor.TRIM.BUKKIT, trimData);
         }
 
         return builder;
@@ -179,7 +179,7 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
 
     @Override
     public boolean hasTrim() {
-        return trim != null;
+        return this.trim != null;
     }
 
     @Override
@@ -189,6 +189,6 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
 
     @Override
     public ArmorTrim getTrim() {
-        return trim;
+        return this.trim;
     }
 }

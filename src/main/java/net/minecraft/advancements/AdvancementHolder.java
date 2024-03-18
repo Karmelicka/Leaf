@@ -1,22 +1,21 @@
 package net.minecraft.advancements;
 
-import net.minecraft.network.PacketDataSerializer;
-import net.minecraft.resources.MinecraftKey;
-
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 // CraftBukkit start
 import org.bukkit.craftbukkit.advancement.CraftAdvancement;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 // CraftBukkit end
 
-public record AdvancementHolder(MinecraftKey id, Advancement value) {
+public record AdvancementHolder(ResourceLocation id, Advancement value) {
 
-    public void write(PacketDataSerializer packetdataserializer) {
-        packetdataserializer.writeResourceLocation(this.id);
-        this.value.write(packetdataserializer);
+    public void write(FriendlyByteBuf buf) {
+        buf.writeResourceLocation(this.id);
+        this.value.write(buf);
     }
 
-    public static AdvancementHolder read(PacketDataSerializer packetdataserializer) {
-        return new AdvancementHolder(packetdataserializer.readResourceLocation(), Advancement.read(packetdataserializer));
+    public static AdvancementHolder read(FriendlyByteBuf buf) {
+        return new AdvancementHolder(buf.readResourceLocation(), Advancement.read(buf));
     }
 
     public boolean equals(Object object) {

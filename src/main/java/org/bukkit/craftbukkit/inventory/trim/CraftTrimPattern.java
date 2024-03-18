@@ -28,12 +28,12 @@ public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.w
 
     @Override
     public net.minecraft.world.item.armortrim.TrimPattern getHandle() {
-        return handle;
+        return this.handle;
     }
 
     @Override
     @NotNull
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 }

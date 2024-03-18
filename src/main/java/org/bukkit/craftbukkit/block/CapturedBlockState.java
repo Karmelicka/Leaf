@@ -1,13 +1,13 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.core.BlockPosition;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.animal.EntityBee;
-import net.minecraft.world.level.GeneratorAccessSeed;
-import net.minecraft.world.level.World;
-import net.minecraft.world.level.block.entity.TileEntity;
-import net.minecraft.world.level.block.entity.TileEntityBeehive;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.Bee;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -35,7 +35,7 @@ public final class CapturedBlockState extends CraftBlockState {
 
         // Probably no longer needed with the extra #updatedTree method,
         // but leave if here for now in case a plugin for whatever reason relies on this.
-        addBees();
+        this.addBees();
 
         return result;
     }
@@ -43,27 +43,27 @@ public final class CapturedBlockState extends CraftBlockState {
     private void updatedTree() {
         // SPIGOT-7248 - Manual update to avoid physics where appropriate
         // SPIGOT-7572 - Move SPIGOT-7248 fix from nms ItemStack to here, to allow bee generation in nests
-        world.getHandle().setBlock(CraftLocation.toBlockPosition(getLocation()), getHandle(), getFlag());
+        this.world.getHandle().setBlock(CraftLocation.toBlockPosition(this.getLocation()), this.getHandle(), this.getFlag());
 
-        addBees();
+        this.addBees();
     }
 
     private void addBees() {
         // SPIGOT-5537: Horrible hack to manually add bees given World.captureTreeGeneration does not support tiles
-        if (this.treeBlock && getType() == Material.BEE_NEST) {
-            GeneratorAccessSeed generatoraccessseed = this.world.getHandle();
-            BlockPosition blockposition1 = this.getPosition();
+        if (this.treeBlock && this.getType() == Material.BEE_NEST) {
+            WorldGenLevel generatoraccessseed = this.world.getHandle();
+            BlockPos blockposition1 = this.getPosition();
             RandomSource random = generatoraccessseed.getRandom();
 
             // Begin copied block from WorldGenFeatureTreeBeehive
-            TileEntity tileentity = generatoraccessseed.getBlockEntity(blockposition1);
+            BlockEntity tileentity = generatoraccessseed.getBlockEntity(blockposition1);
 
-            if (tileentity instanceof TileEntityBeehive) {
-                TileEntityBeehive tileentitybeehive = (TileEntityBeehive) tileentity;
+            if (tileentity instanceof BeehiveBlockEntity) {
+                BeehiveBlockEntity tileentitybeehive = (BeehiveBlockEntity) tileentity;
                 int j = 2 + random.nextInt(2);
 
                 for (int k = 0; k < j; ++k) {
-                    EntityBee entitybee = new EntityBee(EntityTypes.BEE, generatoraccessseed.getMinecraftWorld());
+                    Bee entitybee = new Bee(EntityType.BEE, generatoraccessseed.getMinecraftWorld());
 
                     tileentitybeehive.addOccupantWithPresetTicks(entitybee, false, random.nextInt(599));
                 }
@@ -77,11 +77,11 @@ public final class CapturedBlockState extends CraftBlockState {
         return new CapturedBlockState(this);
     }
 
-    public static CapturedBlockState getBlockState(World world, BlockPosition pos, int flag) {
+    public static CapturedBlockState getBlockState(Level world, BlockPos pos, int flag) {
         return new CapturedBlockState(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), flag, false);
     }
 
-    public static CapturedBlockState getTreeBlockState(World world, BlockPosition pos, int flag) {
+    public static CapturedBlockState getTreeBlockState(Level world, BlockPos pos, int flag) {
         return new CapturedBlockState(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), flag, true);
     }
 

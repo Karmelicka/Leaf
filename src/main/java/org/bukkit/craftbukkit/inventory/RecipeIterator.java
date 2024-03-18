@@ -4,14 +4,14 @@ import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import java.util.Iterator;
 import java.util.Map;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.Recipes;
+import net.minecraft.world.item.crafting.RecipeType;
 import org.bukkit.inventory.Recipe;
 
 public class RecipeIterator implements Iterator<Recipe> {
-    private final Iterator<Map.Entry<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, RecipeHolder<?>>>> recipes;
+    private final Iterator<Map.Entry<RecipeType<?>, Object2ObjectLinkedOpenHashMap<ResourceLocation, RecipeHolder<?>>>> recipes;
     private Iterator<RecipeHolder<?>> current;
 
     public RecipeIterator() {
@@ -20,13 +20,13 @@ public class RecipeIterator implements Iterator<Recipe> {
 
     @Override
     public boolean hasNext() {
-        if (current != null && current.hasNext()) {
+        if (this.current != null && this.current.hasNext()) {
             return true;
         }
 
-        if (recipes.hasNext()) {
-            current = recipes.next().getValue().values().iterator();
-            return hasNext();
+        if (this.recipes.hasNext()) {
+            this.current = this.recipes.next().getValue().values().iterator();
+            return this.hasNext();
         }
 
         return false;
@@ -34,17 +34,17 @@ public class RecipeIterator implements Iterator<Recipe> {
 
     @Override
     public Recipe next() {
-        if (current == null || !current.hasNext()) {
-            current = recipes.next().getValue().values().iterator();
-            return next();
+        if (this.current == null || !this.current.hasNext()) {
+            this.current = this.recipes.next().getValue().values().iterator();
+            return this.next();
         }
 
-        return current.next().toBukkitRecipe();
+        return this.current.next().toBukkitRecipe();
     }
 
     @Override
     public void remove() {
-        Preconditions.checkState(current != null, "next() not yet called");
-        current.remove();
+        Preconditions.checkState(this.current != null, "next() not yet called");
+        this.current.remove();
     }
 }

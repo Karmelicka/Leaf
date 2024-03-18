@@ -28,13 +28,13 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
 
     @Override
     public Instrument getHandle() {
-        return handle;
+        return this.handle;
     }
 
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @Override
@@ -47,16 +47,16 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
             return false;
         }
 
-        return getKey().equals(((MusicInstrument) other).getKey());
+        return this.getKey().equals(((MusicInstrument) other).getKey());
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode();
+        return this.getKey().hashCode();
     }
 
     @Override
     public String toString() {
-        return "CraftMusicInstrument{key=" + key + "}";
+        return "CraftMusicInstrument{key=" + this.key + "}";
     }
 }

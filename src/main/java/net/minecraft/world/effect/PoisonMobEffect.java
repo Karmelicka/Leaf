@@ -1,26 +1,26 @@
 package net.minecraft.world.effect;
 
-import net.minecraft.world.entity.EntityLiving;
+import net.minecraft.world.entity.LivingEntity;
 
-class PoisonMobEffect extends MobEffectList {
+class PoisonMobEffect extends MobEffect {
 
-    protected PoisonMobEffect(MobEffectInfo mobeffectinfo, int i) {
-        super(mobeffectinfo, i);
+    protected PoisonMobEffect(MobEffectCategory category, int color) {
+        super(category, color);
     }
 
     @Override
-    public void applyEffectTick(EntityLiving entityliving, int i) {
-        super.applyEffectTick(entityliving, i);
-        if (entityliving.getHealth() > 1.0F) {
-            entityliving.hurt(entityliving.damageSources().poison(), 1.0F);  // CraftBukkit - DamageSource.MAGIC -> CraftEventFactory.POISON
+    public void applyEffectTick(LivingEntity entity, int amplifier) {
+        super.applyEffectTick(entity, amplifier);
+        if (entity.getHealth() > 1.0F) {
+            entity.hurt(entity.damageSources().poison(), 1.0F);  // CraftBukkit - DamageSource.MAGIC -> CraftEventFactory.POISON
         }
 
     }
 
     @Override
-    public boolean shouldApplyEffectTickThisTick(int i, int j) {
-        int k = 25 >> j;
+    public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
+        int k = 25 >> amplifier;
 
-        return k > 0 ? i % k == 0 : true;
+        return k > 0 ? duration % k == 0 : true;
     }
 }

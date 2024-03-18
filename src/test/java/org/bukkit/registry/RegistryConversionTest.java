@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.core.IRegistry;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
@@ -55,23 +54,23 @@ public class RegistryConversionTest extends AbstractTestingBase {
                 The following implementation do not implement Handleable:
                 %s""", clazz.getName(), Joiner.on('\n').join(notImplemented)));
 
-        IMPLEMENT_HANDLE_ABLE.add(clazz);
+        RegistryConversionTest.IMPLEMENT_HANDLE_ABLE.add(clazz);
     }
 
     @Order(2)
     @RegistriesTest
-    public void testMinecraftToBukkitPresent(Class<? extends Keyed> clazz, ResourceKey<IRegistry<?>> registryKey,
+    public void testMinecraftToBukkitPresent(Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey,
                                              Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) {
         Method method = null;
         try {
-            method = craftClazz.getDeclaredMethod(MINECRAFT_TO_BUKKIT, minecraftClazz);
+            method = craftClazz.getDeclaredMethod(RegistryConversionTest.MINECRAFT_TO_BUKKIT, minecraftClazz);
         } catch (NoSuchMethodException e) {
             fail(String.format("""
                     The class %s does not have a public static method to convert a minecraft value to a bukkit value.
 
                     Following method should be add which, returns the bukkit value based on the minecraft value.
                     %s
-                    """, craftClazz, buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
+                    """, craftClazz, this.buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
         }
 
         assertTrue(Modifier.isPublic(method.getModifiers()), String.format("""
@@ -79,23 +78,23 @@ public class RegistryConversionTest extends AbstractTestingBase {
 
                 The method should be made public, method structure:
                 %s
-                """, MINECRAFT_TO_BUKKIT, craftClazz, buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
+                """, RegistryConversionTest.MINECRAFT_TO_BUKKIT, craftClazz, this.buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
 
         assertTrue(Modifier.isStatic(method.getModifiers()), String.format("""
                 The method %s in class %s is not static.
 
                 The method should be made static, method structure:
                 %s
-                """, MINECRAFT_TO_BUKKIT, craftClazz, buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
+                """, RegistryConversionTest.MINECRAFT_TO_BUKKIT, craftClazz, this.buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
 
         assertSame(clazz, method.getReturnType(), String.format("""
                 The method %s in class %s has the wrong return value.
 
                 The method should have the correct return value, method structure:
                 %s
-                """, MINECRAFT_TO_BUKKIT, craftClazz, buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
+                """, RegistryConversionTest.MINECRAFT_TO_BUKKIT, craftClazz, this.buildMinecraftToBukkitMethod(clazz, minecraftClazz)));
 
-        MINECRAFT_TO_BUKKIT_METHODS.put(clazz, method);
+        RegistryConversionTest.MINECRAFT_TO_BUKKIT_METHODS.put(clazz, method);
     }
 
     private String buildMinecraftToBukkitMethod(Class<? extends Keyed> clazz, Class<?> minecraftClazz) {
@@ -108,18 +107,18 @@ public class RegistryConversionTest extends AbstractTestingBase {
 
     @Order(2)
     @RegistriesTest
-    public void testBukkitToMinecraftPresent(Class<? extends Keyed> clazz, ResourceKey<IRegistry<?>> registryKey,
+    public void testBukkitToMinecraftPresent(Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey,
                                              Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) {
         Method method = null;
         try {
-            method = craftClazz.getDeclaredMethod(BUKKIT_TO_MINECRAFT, clazz);
+            method = craftClazz.getDeclaredMethod(RegistryConversionTest.BUKKIT_TO_MINECRAFT, clazz);
         } catch (NoSuchMethodException e) {
             fail(String.format("""
                     The class %s does not have a public static method to convert a bukkit value to a minecraft value.
 
                     Following method should be add which, returns the minecraft value based on the bukkit value.
                     %s
-                    """, craftClazz, buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
+                    """, craftClazz, this.buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
         }
 
         assertTrue(Modifier.isPublic(method.getModifiers()), String.format("""
@@ -127,23 +126,23 @@ public class RegistryConversionTest extends AbstractTestingBase {
 
                 The method should be made public, method structure:
                 %s
-                """, BUKKIT_TO_MINECRAFT, craftClazz, buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
+                """, RegistryConversionTest.BUKKIT_TO_MINECRAFT, craftClazz, this.buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
 
         assertTrue(Modifier.isStatic(method.getModifiers()), String.format("""
                 The method %s in class %s is not static.
 
                 The method should be made static, method structure:
                 %s
-                """, BUKKIT_TO_MINECRAFT, craftClazz, buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
+                """, RegistryConversionTest.BUKKIT_TO_MINECRAFT, craftClazz, this.buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
 
         assertSame(minecraftClazz, method.getReturnType(), String.format("""
                 The method %s in class %s has the wrong return value.
 
                 The method should have the correct return value, method structure:
                 %s
-                """, BUKKIT_TO_MINECRAFT, craftClazz, buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
+                """, RegistryConversionTest.BUKKIT_TO_MINECRAFT, craftClazz, this.buildBukkitToMinecraftMethod(clazz, minecraftClazz)));
 
-        BUKKIT_TO_MINECRAFT_METHODS.put(clazz, method);
+        RegistryConversionTest.BUKKIT_TO_MINECRAFT_METHODS.put(clazz, method);
     }
 
     private String buildBukkitToMinecraftMethod(Class<? extends Keyed> clazz, Class<?> minecraftClazz) {
@@ -157,49 +156,49 @@ public class RegistryConversionTest extends AbstractTestingBase {
     @Order(2)
     @RegistriesTest
     public void testMinecraftToBukkitNullValue(Class<? extends Keyed> clazz) throws IllegalAccessException {
-        checkValidMinecraftToBukkit(clazz);
+        this.checkValidMinecraftToBukkit(clazz);
 
         try {
-            Object result = MINECRAFT_TO_BUKKIT_METHODS.get(clazz).invoke(null, (Object) null);
+            Object result = RegistryConversionTest.MINECRAFT_TO_BUKKIT_METHODS.get(clazz).invoke(null, (Object) null);
             fail(String.format("""
                     Method %s in class %s should not accept null values and should throw a IllegalArgumentException.
                     Got '%s' as return object.
-                    """, MINECRAFT_TO_BUKKIT, clazz.getName(), result));
+                    """, RegistryConversionTest.MINECRAFT_TO_BUKKIT, clazz.getName(), result));
         } catch (InvocationTargetException e) {
             // #invoke wraps the error in a InvocationTargetException, so we need to check it this way
             assertSame(IllegalArgumentException.class, e.getCause().getClass(), String.format("""
                     Method %s in class %s should not accept null values and should throw a IllegalArgumentException.
-                    """, MINECRAFT_TO_BUKKIT, clazz.getName()));
+                    """, RegistryConversionTest.MINECRAFT_TO_BUKKIT, clazz.getName()));
         }
     }
 
     @Order(3)
     @RegistriesTest
     public void testBukkitToMinecraftNullValue(Class<? extends Keyed> clazz) throws IllegalAccessException {
-        checkValidBukkitToMinecraft(clazz);
+        this.checkValidBukkitToMinecraft(clazz);
 
         try {
-            Object result = BUKKIT_TO_MINECRAFT_METHODS.get(clazz).invoke(null, (Object) null);
+            Object result = RegistryConversionTest.BUKKIT_TO_MINECRAFT_METHODS.get(clazz).invoke(null, (Object) null);
             fail(String.format("""
                     Method %s in class %s should not accept null values and should throw a IllegalArgumentException.
                     Got '%s' as return object.
-                    """, BUKKIT_TO_MINECRAFT, clazz.getName(), result));
+                    """, RegistryConversionTest.BUKKIT_TO_MINECRAFT, clazz.getName(), result));
         } catch (InvocationTargetException e) {
             // #invoke wraps the error in a InvocationTargetException, so we need to check it this way
             assertSame(IllegalArgumentException.class, e.getCause().getClass(), String.format("""
                     Method %s in class %s should not accept null values and should throw a IllegalArgumentException.
-                    """, BUKKIT_TO_MINECRAFT, clazz.getName()));
+                    """, RegistryConversionTest.BUKKIT_TO_MINECRAFT, clazz.getName()));
         }
     }
 
     @Order(3)
     @RegistriesTest
     public void testMinecraftToBukkit(Class<? extends Keyed> clazz) {
-        checkValidMinecraftToBukkit(clazz);
-        checkValidHandle(clazz);
+        this.checkValidMinecraftToBukkit(clazz);
+        this.checkValidHandle(clazz);
 
         Map<Object, Object> notMatching = new HashMap<>();
-        Method method = MINECRAFT_TO_BUKKIT_METHODS.get(clazz);
+        Method method = RegistryConversionTest.MINECRAFT_TO_BUKKIT_METHODS.get(clazz);
 
         RegistryArgumentProvider.getValues(clazz).map(Arguments::get).forEach(arguments -> {
             Keyed bukkit = (Keyed) arguments[0];
@@ -219,18 +218,18 @@ public class RegistryConversionTest extends AbstractTestingBase {
                         The method %s in class %s does not match all registry items correctly.
 
                         Following registry items where match not correctly:
-                        %s""", MINECRAFT_TO_BUKKIT, clazz.getName(),
+                        %s""", RegistryConversionTest.MINECRAFT_TO_BUKKIT, clazz.getName(),
                 Joiner.on('\n').withKeyValueSeparator(" got: ").join(notMatching)));
     }
 
     @Order(3)
     @RegistriesTest
     public void testBukkitToMinecraft(Class<? extends Keyed> clazz) {
-        checkValidBukkitToMinecraft(clazz);
-        checkValidHandle(clazz);
+        this.checkValidBukkitToMinecraft(clazz);
+        this.checkValidHandle(clazz);
 
         Map<Object, Object> notMatching = new HashMap<>();
-        Method method = BUKKIT_TO_MINECRAFT_METHODS.get(clazz);
+        Method method = RegistryConversionTest.BUKKIT_TO_MINECRAFT_METHODS.get(clazz);
 
         RegistryArgumentProvider.getValues(clazz).map(Arguments::get).forEach(arguments -> {
             Keyed bukkit = (Keyed) arguments[0];
@@ -250,7 +249,7 @@ public class RegistryConversionTest extends AbstractTestingBase {
                         The method %s in class %s does not match all registry items correctly.
 
                         Following registry items where match not correctly:
-                        %s""", BUKKIT_TO_MINECRAFT, clazz.getName(),
+                        %s""", RegistryConversionTest.BUKKIT_TO_MINECRAFT, clazz.getName(),
                 Joiner.on('\n').withKeyValueSeparator(" got: ").join(notMatching)));
     }
 
@@ -260,44 +259,44 @@ public class RegistryConversionTest extends AbstractTestingBase {
      */
     @Order(3)
     @RegistriesTest
-    public void testMinecraftToBukkitNoValidMinecraft(Class<? extends Keyed> clazz, ResourceKey<IRegistry<?>> registryKey,
+    public void testMinecraftToBukkitNoValidMinecraft(Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey,
                                                       Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) throws IllegalAccessException {
-        checkValidMinecraftToBukkit(clazz);
+        this.checkValidMinecraftToBukkit(clazz);
 
         try {
 
             Object minecraft = mock(minecraftClazz);
-            Object result = MINECRAFT_TO_BUKKIT_METHODS.get(clazz).invoke(null, minecraft);
+            Object result = RegistryConversionTest.MINECRAFT_TO_BUKKIT_METHODS.get(clazz).invoke(null, minecraft);
             fail(String.format("""
                     Method %s in class %s should not accept a none registered value and should throw a IllegalStateException.
                     Got '%s' as return object.
-                    """, MINECRAFT_TO_BUKKIT, clazz.getName(), result));
+                    """, RegistryConversionTest.MINECRAFT_TO_BUKKIT, clazz.getName(), result));
         } catch (InvocationTargetException e) {
             // #invoke wraps the error in a InvocationTargetException, so we need to check it this way
             assertSame(IllegalStateException.class, e.getCause().getClass(), String.format("""
                     Method %s in class %s should not accept a none registered value and should throw a IllegalStateException.
-                    """, MINECRAFT_TO_BUKKIT, clazz.getName()));
+                    """, RegistryConversionTest.MINECRAFT_TO_BUKKIT, clazz.getName()));
         }
     }
 
     private void checkValidBukkitToMinecraft(Class<? extends Keyed> clazz) {
-        assumeTrue(BUKKIT_TO_MINECRAFT_METHODS.containsKey(clazz), String.format("""
+        assumeTrue(RegistryConversionTest.BUKKIT_TO_MINECRAFT_METHODS.containsKey(clazz), String.format("""
                 Cannot test class %s, because it does not have a valid %s method.
 
                 Check test results of testBukkitToMinecraftPresent for more information.
-                """, clazz.getName(), BUKKIT_TO_MINECRAFT));
+                """, clazz.getName(), RegistryConversionTest.BUKKIT_TO_MINECRAFT));
     }
 
     private void checkValidMinecraftToBukkit(Class<? extends Keyed> clazz) {
-        assumeTrue(MINECRAFT_TO_BUKKIT_METHODS.containsKey(clazz), String.format("""
+        assumeTrue(RegistryConversionTest.MINECRAFT_TO_BUKKIT_METHODS.containsKey(clazz), String.format("""
                 Cannot test class %s, because it does not have a valid %s method.
 
                 Check test results of testMinecraftToBukkitPresent for more information.
-                """, clazz.getName(), MINECRAFT_TO_BUKKIT));
+                """, clazz.getName(), RegistryConversionTest.MINECRAFT_TO_BUKKIT));
     }
 
     private void checkValidHandle(Class<? extends Keyed> clazz) {
-        assumeTrue(IMPLEMENT_HANDLE_ABLE.contains(clazz), String.format("""
+        assumeTrue(RegistryConversionTest.IMPLEMENT_HANDLE_ABLE.contains(clazz), String.format("""
                 Cannot test class %s, because it does not implement Handleable.
 
                 Check test results of testHandleableImplementation for more information.

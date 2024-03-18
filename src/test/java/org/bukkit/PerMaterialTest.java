@@ -4,21 +4,21 @@ import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.Map;
-import net.minecraft.core.BlockPosition;
-import net.minecraft.world.EnumHand;
-import net.minecraft.world.entity.EntityInsentient;
-import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemRecord;
-import net.minecraft.world.level.BlockAccessAir;
+import net.minecraft.world.item.RecordItem;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.BlockFalling;
-import net.minecraft.world.level.block.BlockFire;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.TileEntityFurnace;
-import net.minecraft.world.level.block.state.BlockBase;
-import net.minecraft.world.level.block.state.IBlockData;
-import net.minecraft.world.phys.MovingObjectPositionBlock;
+import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.level.block.FireBlock;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -37,7 +37,7 @@ public class PerMaterialTest extends AbstractTestingBase {
 
     @BeforeAll
     public static void getFireValues() {
-        fireValues = ((BlockFire) Blocks.FIRE).igniteOdds;
+        PerMaterialTest.fireValues = ((FireBlock) Blocks.FIRE).igniteOdds;
     }
 
     @ParameterizedTest
@@ -73,7 +73,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @ParameterizedTest
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void isRecord(Material material) {
-        assertThat(material.isRecord(), is(CraftMagicNumbers.getItem(material) instanceof ItemRecord));
+        assertThat(material.isRecord(), is(CraftMagicNumbers.getItem(material) instanceof RecordItem));
     }
 
     @ParameterizedTest
@@ -135,7 +135,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     public void isBurnable(Material material) {
         if (material.isBlock()) {
             Block block = CraftMagicNumbers.getBlock(material);
-            assertThat(material.isBurnable(), is(fireValues.containsKey(block) && fireValues.get(block) > 0));
+            assertThat(material.isBurnable(), is(PerMaterialTest.fireValues.containsKey(block) && PerMaterialTest.fireValues.get(block) > 0));
         } else {
             assertFalse(material.isBurnable());
         }
@@ -145,7 +145,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void isFuel(Material material) {
         if (material.isItem()) {
-            assertThat(material.isFuel(), is(TileEntityFurnace.isFuel(new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(material)))));
+            assertThat(material.isFuel(), is(AbstractFurnaceBlockEntity.isFuel(new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(material)))));
         } else {
             assertFalse(material.isFuel());
         }
@@ -155,7 +155,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void isOccluding(Material material) {
         if (material.isBlock()) {
-            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).defaultBlockState().isRedstoneConductor(BlockAccessAir.INSTANCE, BlockPosition.ZERO)));
+            assertThat(material.isOccluding(), is(CraftMagicNumbers.getBlock(material).defaultBlockState().isRedstoneConductor(EmptyBlockGetter.INSTANCE, BlockPos.ZERO)));
         } else {
             assertFalse(material.isOccluding());
         }
@@ -165,7 +165,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void hasGravity(Material material) {
         if (material.isBlock()) {
-            assertThat(material.hasGravity(), is(CraftMagicNumbers.getBlock(material) instanceof BlockFalling));
+            assertThat(material.hasGravity(), is(CraftMagicNumbers.getBlock(material) instanceof FallingBlock));
         } else {
             assertFalse(material.hasGravity());
         }
@@ -227,8 +227,8 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material.isBlock()) {
             assertThat(material.isInteractable(),
                     is(!CraftMagicNumbers.getBlock(material).getClass()
-                            .getMethod("use", IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class)
-                            .getDeclaringClass().equals(BlockBase.class)));
+                            .getMethod("use", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class)
+                            .getDeclaringClass().equals(BlockBehaviour.class)));
         } else {
             assertFalse(material.isInteractable());
         }
@@ -281,7 +281,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void testEquipmentSlot(Material material) {
         if (material.isItem()) {
-            EquipmentSlot expected = CraftEquipmentSlot.getSlot(EntityInsentient.getEquipmentSlotForItem(CraftItemStack.asNMSCopy(new ItemStack(material))));
+            EquipmentSlot expected = CraftEquipmentSlot.getSlot(Mob.getEquipmentSlotForItem(CraftItemStack.asNMSCopy(new ItemStack(material))));
             assertThat(material.getEquipmentSlot(), is(expected));
         }
     }

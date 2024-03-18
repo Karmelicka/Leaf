@@ -1,26 +1,26 @@
 package net.minecraft.world.effect;
 
-import net.minecraft.world.entity.EntityLiving;
+import net.minecraft.world.entity.LivingEntity;
 
-class RegenerationMobEffect extends MobEffectList {
+class RegenerationMobEffect extends MobEffect {
 
-    protected RegenerationMobEffect(MobEffectInfo mobeffectinfo, int i) {
-        super(mobeffectinfo, i);
+    protected RegenerationMobEffect(MobEffectCategory category, int color) {
+        super(category, color);
     }
 
     @Override
-    public void applyEffectTick(EntityLiving entityliving, int i) {
-        super.applyEffectTick(entityliving, i);
-        if (entityliving.getHealth() < entityliving.getMaxHealth()) {
-            entityliving.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.MAGIC_REGEN); // CraftBukkit
+    public void applyEffectTick(LivingEntity entity, int amplifier) {
+        super.applyEffectTick(entity, amplifier);
+        if (entity.getHealth() < entity.getMaxHealth()) {
+            entity.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.MAGIC_REGEN); // CraftBukkit
         }
 
     }
 
     @Override
-    public boolean shouldApplyEffectTickThisTick(int i, int j) {
-        int k = 50 >> j;
+    public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
+        int k = 50 >> amplifier;
 
-        return k > 0 ? i % k == 0 : true;
+        return k > 0 ? duration % k == 0 : true;
     }
 }

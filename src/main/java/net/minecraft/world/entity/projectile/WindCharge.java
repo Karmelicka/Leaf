@@ -1,79 +1,78 @@
 package net.minecraft.world.entity.projectile;
 
 import javax.annotation.Nullable;
-import net.minecraft.core.particles.ParticleParam;
-import net.minecraft.core.particles.Particles;
-import net.minecraft.sounds.SoundEffects;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityLiving;
-import net.minecraft.world.entity.EntityPose;
-import net.minecraft.world.entity.EntitySize;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.monster.breeze.Breeze;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.RayTrace;
-import net.minecraft.world.level.World;
-import net.minecraft.world.phys.AxisAlignedBB;
-import net.minecraft.world.phys.MovingObjectPosition;
-import net.minecraft.world.phys.MovingObjectPositionBlock;
-import net.minecraft.world.phys.MovingObjectPositionEntity;
-
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 // CraftBukkit start
 import org.bukkit.event.entity.EntityRemoveEvent;
 // CraftBukkit end
 
-public class WindCharge extends EntityFireball implements ItemSupplier {
+public class WindCharge extends AbstractHurtingProjectile implements ItemSupplier {
 
-    public static final WindCharge.a EXPLOSION_DAMAGE_CALCULATOR = new WindCharge.a();
+    public static final WindCharge.WindChargeExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new WindCharge.WindChargeExplosionDamageCalculator();
 
-    public WindCharge(EntityTypes<? extends WindCharge> entitytypes, World world) {
-        super(entitytypes, world);
+    public WindCharge(EntityType<? extends WindCharge> type, Level world) {
+        super(type, world);
     }
 
-    public WindCharge(EntityTypes<? extends WindCharge> entitytypes, Breeze breeze, World world) {
-        super(entitytypes, breeze.getX(), breeze.getSnoutYPosition(), breeze.getZ(), world);
+    public WindCharge(EntityType<? extends WindCharge> type, Breeze breeze, Level world) {
+        super(type, breeze.getX(), breeze.getSnoutYPosition(), breeze.getZ(), world);
         this.setOwner(breeze);
     }
 
     @Override
-    protected AxisAlignedBB makeBoundingBox() {
+    protected AABB makeBoundingBox() {
         float f = this.getType().getDimensions().width / 2.0F;
         float f1 = this.getType().getDimensions().height;
         float f2 = 0.15F;
 
-        return new AxisAlignedBB(this.position().x - (double) f, this.position().y - 0.15000000596046448D, this.position().z - (double) f, this.position().x + (double) f, this.position().y - 0.15000000596046448D + (double) f1, this.position().z + (double) f);
+        return new AABB(this.position().x - (double) f, this.position().y - 0.15000000596046448D, this.position().z - (double) f, this.position().x + (double) f, this.position().y - 0.15000000596046448D + (double) f1, this.position().z + (double) f);
     }
 
     @Override
-    protected float getEyeHeight(EntityPose entitypose, EntitySize entitysize) {
+    protected float getEyeHeight(Pose pose, EntityDimensions dimensions) {
         return 0.0F;
     }
 
     @Override
-    public boolean canCollideWith(Entity entity) {
-        return entity instanceof WindCharge ? false : super.canCollideWith(entity);
+    public boolean canCollideWith(Entity other) {
+        return other instanceof WindCharge ? false : super.canCollideWith(other);
     }
 
     @Override
-    protected boolean canHitEntity(Entity entity) {
+    public boolean canHitEntity(Entity entity) {
         return entity instanceof WindCharge ? false : super.canHitEntity(entity);
     }
 
     @Override
-    protected void onHitEntity(MovingObjectPositionEntity movingobjectpositionentity) {
-        super.onHitEntity(movingobjectpositionentity);
+    protected void onHitEntity(EntityHitResult entityHitResult) {
+        super.onHitEntity(entityHitResult);
         if (!this.level().isClientSide) {
-            Entity entity = movingobjectpositionentity.getEntity();
+            Entity entity = entityHitResult.getEntity();
             DamageSources damagesources = this.damageSources();
             Entity entity1 = this.getOwner();
-            EntityLiving entityliving;
+            LivingEntity entityliving;
 
-            if (entity1 instanceof EntityLiving) {
-                EntityLiving entityliving1 = (EntityLiving) entity1;
+            if (entity1 instanceof LivingEntity) {
+                LivingEntity entityliving1 = (LivingEntity) entity1;
 
                 entityliving = entityliving1;
             } else {
@@ -86,19 +85,19 @@ public class WindCharge extends EntityFireball implements ItemSupplier {
     }
 
     public void explode() { // PAIL private -> public
-        this.level().explode(this, (DamageSource) null, WindCharge.EXPLOSION_DAMAGE_CALCULATOR, this.getX(), this.getY(), this.getZ(), (float) (3.0D + this.random.nextDouble()), false, World.a.BLOW, Particles.GUST, Particles.GUST_EMITTER, SoundEffects.WIND_BURST);
+        this.level().explode(this, (DamageSource) null, WindCharge.EXPLOSION_DAMAGE_CALCULATOR, this.getX(), this.getY(), this.getZ(), (float) (3.0D + this.random.nextDouble()), false, Level.ExplosionInteraction.BLOW, ParticleTypes.GUST, ParticleTypes.GUST_EMITTER, SoundEvents.WIND_BURST);
     }
 
     @Override
-    protected void onHitBlock(MovingObjectPositionBlock movingobjectpositionblock) {
-        super.onHitBlock(movingobjectpositionblock);
+    protected void onHitBlock(BlockHitResult blockHitResult) {
+        super.onHitBlock(blockHitResult);
         this.explode();
         this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
     }
 
     @Override
-    protected void onHit(MovingObjectPosition movingobjectposition) {
-        super.onHit(movingobjectposition);
+    protected void onHit(HitResult hitResult) {
+        super.onHit(hitResult);
         if (!this.level().isClientSide) {
             this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
         }
@@ -127,18 +126,18 @@ public class WindCharge extends EntityFireball implements ItemSupplier {
 
     @Nullable
     @Override
-    protected ParticleParam getTrailParticle() {
+    protected ParticleOptions getTrailParticle() {
         return null;
     }
 
     @Override
-    protected RayTrace.BlockCollisionOption getClipType() {
-        return RayTrace.BlockCollisionOption.OUTLINE;
+    protected ClipContext.Block getClipType() {
+        return ClipContext.Block.OUTLINE;
     }
 
-    public static final class a extends ExplosionDamageCalculator {
+    public static final class WindChargeExplosionDamageCalculator extends ExplosionDamageCalculator {
 
-        public a() {}
+        public WindChargeExplosionDamageCalculator() {}
 
         @Override
         public boolean shouldDamageEntity(Explosion explosion, Entity entity) {

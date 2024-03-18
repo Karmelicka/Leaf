@@ -5,13 +5,13 @@ import com.mojang.logging.LogUtils;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.annotation.Nullable;
-import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.LayeredRegistryAccess;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.RegistrySynchronization;
-import net.minecraft.network.NetworkManager;
+import net.minecraft.network.Connection;
 import net.minecraft.network.TickablePacketListener;
-import net.minecraft.network.chat.IChatBaseComponent;
-import net.minecraft.network.protocol.PlayerConnectionUtils;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.PacketUtils;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundDisconnectPacket;
 import net.minecraft.network.protocol.common.ClientboundUpdateTagsPacket;
@@ -25,26 +25,26 @@ import net.minecraft.network.protocol.configuration.ServerboundFinishConfigurati
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.level.ClientInformation;
-import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.config.JoinWorldTask;
 import net.minecraft.server.network.config.ServerResourcePackConfigurationTask;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.tags.TagNetworkSerialization;
-import net.minecraft.util.thread.IAsyncTaskHandler;
+import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.flag.FeatureFlags;
 import org.slf4j.Logger;
 
 public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketListenerImpl implements TickablePacketListener, ServerConfigurationPacketListener {
 
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final IChatBaseComponent DISCONNECT_REASON_INVALID_DATA = IChatBaseComponent.translatable("multiplayer.disconnect.invalid_player_data");
+    private static final Component DISCONNECT_REASON_INVALID_DATA = Component.translatable("multiplayer.disconnect.invalid_player_data");
     private final GameProfile gameProfile;
     private final Queue<ConfigurationTask> configurationTasks = new ConcurrentLinkedQueue();
     @Nullable
     private ConfigurationTask currentTask;
     private ClientInformation clientInformation;
 
-    public ServerConfigurationPacketListenerImpl(MinecraftServer minecraftserver, NetworkManager networkmanager, CommonListenerCookie commonlistenercookie, EntityPlayer player) { // CraftBukkit
+    public ServerConfigurationPacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, CommonListenerCookie commonlistenercookie, ServerPlayer player) { // CraftBukkit
         super(minecraftserver, networkmanager, commonlistenercookie, player); // CraftBukkit
         this.gameProfile = commonlistenercookie.gameProfile();
         this.clientInformation = commonlistenercookie.clientInformation();
@@ -56,9 +56,9 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
     }
 
     @Override
-    public void onDisconnect(IChatBaseComponent ichatbasecomponent) {
-        ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}", this.gameProfile, ichatbasecomponent.getString());
-        super.onDisconnect(ichatbasecomponent);
+    public void onDisconnect(Component reason) {
+        ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}", this.gameProfile, reason.getString());
+        super.onDisconnect(reason);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
         LayeredRegistryAccess<RegistryLayer> layeredregistryaccess = this.server.registries();
 
         this.send(new ClientboundUpdateEnabledFeaturesPacket(FeatureFlags.REGISTRY.toNames(this.server.getWorldData().enabledFeatures())));
-        this.send(new ClientboundRegistryDataPacket((new IRegistryCustom.c(RegistrySynchronization.networkedRegistries(layeredregistryaccess))).freeze()));
+        this.send(new ClientboundRegistryDataPacket((new RegistryAccess.ImmutableRegistryAccess(RegistrySynchronization.networkedRegistries(layeredregistryaccess))).freeze()));
         this.send(new ClientboundUpdateTagsPacket(TagNetworkSerialization.serializeTagsToNetwork(layeredregistryaccess)));
         this.addOptionalTasks();
         this.configurationTasks.add(new JoinWorldTask());
@@ -90,23 +90,23 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
     }
 
     @Override
-    public void handleClientInformation(ServerboundClientInformationPacket serverboundclientinformationpacket) {
-        this.clientInformation = serverboundclientinformationpacket.information();
+    public void handleClientInformation(ServerboundClientInformationPacket packet) {
+        this.clientInformation = packet.information();
     }
 
     @Override
-    public void handleResourcePackResponse(ServerboundResourcePackPacket serverboundresourcepackpacket) {
-        super.handleResourcePackResponse(serverboundresourcepackpacket);
-        if (serverboundresourcepackpacket.action().isTerminal()) {
+    public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
+        super.handleResourcePackResponse(packet);
+        if (packet.action().isTerminal()) {
             this.finishCurrentTask(ServerResourcePackConfigurationTask.TYPE);
         }
 
     }
 
     @Override
-    public void handleConfigurationFinished(ServerboundFinishConfigurationPacket serverboundfinishconfigurationpacket) {
+    public void handleConfigurationFinished(ServerboundFinishConfigurationPacket packet) {
         this.connection.suspendInboundAfterProtocolChange();
-        PlayerConnectionUtils.ensureRunningOnSameThread(serverboundfinishconfigurationpacket, this, (IAsyncTaskHandler) this.server);
+        PacketUtils.ensureRunningOnSameThread(packet, this, (BlockableEventLoop) this.server);
         this.finishCurrentTask(JoinWorldTask.TYPE);
 
         try {
@@ -117,14 +117,14 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
                 return;
             }
 
-            IChatBaseComponent ichatbasecomponent = null; // CraftBukkit - login checks already completed
+            Component ichatbasecomponent = null; // CraftBukkit - login checks already completed
 
             if (ichatbasecomponent != null) {
                 this.disconnect(ichatbasecomponent);
                 return;
             }
 
-            EntityPlayer entityplayer = playerlist.getPlayerForLogin(this.gameProfile, this.clientInformation, this.player); // CraftBukkit
+            ServerPlayer entityplayer = playerlist.getPlayerForLogin(this.gameProfile, this.clientInformation, this.player); // CraftBukkit
 
             playerlist.placeNewPlayer(this.connection, entityplayer, this.createCookie(this.clientInformation));
             this.connection.resumeInboundAfterProtocolChange();
@@ -155,11 +155,11 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
         }
     }
 
-    private void finishCurrentTask(ConfigurationTask.a configurationtask_a) {
-        ConfigurationTask.a configurationtask_a1 = this.currentTask != null ? this.currentTask.type() : null;
+    private void finishCurrentTask(ConfigurationTask.Type key) {
+        ConfigurationTask.Type configurationtask_a1 = this.currentTask != null ? this.currentTask.type() : null;
 
-        if (!configurationtask_a.equals(configurationtask_a1)) {
-            throw new IllegalStateException("Unexpected request for task finish, current task: " + configurationtask_a1 + ", requested: " + configurationtask_a);
+        if (!key.equals(configurationtask_a1)) {
+            throw new IllegalStateException("Unexpected request for task finish, current task: " + configurationtask_a1 + ", requested: " + key);
         } else {
             this.currentTask = null;
             this.startNextTask();

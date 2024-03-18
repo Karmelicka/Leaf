@@ -1,12 +1,11 @@
 package net.minecraft.world.item.crafting;
 
-import net.minecraft.resources.MinecraftKey;
-
+import net.minecraft.resources.ResourceLocation;
 // CraftBukkit start
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.Recipe;
 
-public record RecipeHolder<T extends IRecipe<?>>(MinecraftKey id, T value) {
+public record RecipeHolder<T extends net.minecraft.world.item.crafting.Recipe<?>>(ResourceLocation id, T value) {
 
     public final Recipe toBukkitRecipe() {
         return this.value.toBukkitRecipe(CraftNamespacedKey.fromMinecraft(this.id));
