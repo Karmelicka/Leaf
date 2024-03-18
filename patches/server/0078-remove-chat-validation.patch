@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Karmelicka <76181040+Karmelicka@users.noreply.github.com>
+Date: Mon, 18 Mar 2024 18:29:05 +0100
+Subject: [PATCH] remove chat validation
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index a02aa96200eba1012a26d6f4370a6eb9ad738a03..3e52d2f8ea157212e7c021855464ace87128fdd4 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2400,10 +2400,10 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         synchronized (this.lastSeenMessages) {
+             Optional<LastSeenMessages> optional = this.lastSeenMessages.applyUpdate(acknowledgment);
+ 
+-            if (optional.isEmpty()) {
+-                ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
+-                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
+-            }
++//            if (optional.isEmpty()) {
++//                ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
++//                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
++//            }
+ 
+             return optional;
+         }
+@@ -2595,8 +2595,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+         synchronized (this.lastSeenMessages) {
+             if (!this.lastSeenMessages.applyOffset(packet.offset())) {
+-                ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
+-                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
++//                ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
++//                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
+             }
+ 
+         }
