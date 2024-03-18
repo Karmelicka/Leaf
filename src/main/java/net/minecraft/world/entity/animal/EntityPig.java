@@ -51,6 +51,11 @@ import net.minecraft.world.phys.AxisAlignedBB;
 import net.minecraft.world.phys.Vec3D;
 import org.joml.Vector3f;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityRemoveEvent;
+// CraftBukkit end
+
 public class EntityPig extends EntityAnimal implements ISteerable, ISaddleable {
 
     private static final DataWatcherObject<Boolean> DATA_SADDLE_ID = DataWatcher.defineId(EntityPig.class, DataWatcherRegistry.BOOLEAN);
@@ -252,8 +257,14 @@ public class EntityPig extends EntityAnimal implements ISteerable, ISaddleable {
                 }
 
                 entitypigzombie.setPersistenceRequired();
-                worldserver.addFreshEntity(entitypigzombie);
-                this.discard();
+                // CraftBukkit start
+                if (CraftEventFactory.callPigZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
+                    return;
+                }
+                // CraftBukkit - added a reason for spawning this creature
+                worldserver.addFreshEntity(entitypigzombie, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
+                // CraftBukkit end
+                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
             } else {
                 super.thunderHit(worldserver, entitylightning);
             }

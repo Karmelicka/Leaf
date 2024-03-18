@@ -102,7 +102,7 @@ public class ChunkRegionLoader {
         ChunkProviderServer chunkproviderserver = worldserver.getChunkSource();
         LevelLightEngine levellightengine = chunkproviderserver.getLightEngine();
         IRegistry<BiomeBase> iregistry = worldserver.registryAccess().registryOrThrow(Registries.BIOME);
-        Codec<PalettedContainerRO<Holder<BiomeBase>>> codec = makeBiomeCodec(iregistry);
+        Codec<DataPaletteBlock<Holder<BiomeBase>>> codec = makeBiomeCodecRW(iregistry); // CraftBukkit - read/write
         boolean flag2 = false;
 
         DataResult dataresult;
@@ -122,12 +122,12 @@ public class ChunkRegionLoader {
                     });
                     logger = ChunkRegionLoader.LOGGER;
                     Objects.requireNonNull(logger);
-                    datapaletteblock = (DataPaletteBlock) dataresult.getOrThrow(false, logger::error);
+                    datapaletteblock = (DataPaletteBlock) ((DataResult<DataPaletteBlock<IBlockData>>) dataresult).getOrThrow(false, logger::error); // CraftBukkit - decompile error
                 } else {
                     datapaletteblock = new DataPaletteBlock<>(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), DataPaletteBlock.d.SECTION_STATES);
                 }
 
-                Object object;
+                DataPaletteBlock object; // CraftBukkit - read/write
 
                 if (nbttagcompound1.contains("biomes", 10)) {
                     dataresult = codec.parse(DynamicOpsNBT.INSTANCE, nbttagcompound1.getCompound("biomes")).promotePartial((s) -> {
@@ -135,12 +135,12 @@ public class ChunkRegionLoader {
                     });
                     logger = ChunkRegionLoader.LOGGER;
                     Objects.requireNonNull(logger);
-                    object = (PalettedContainerRO) dataresult.getOrThrow(false, logger::error);
+                    object = ((DataResult<DataPaletteBlock<Holder<BiomeBase>>>) dataresult).getOrThrow(false, logger::error); // CraftBukkit - decompile error
                 } else {
                     object = new DataPaletteBlock<>(iregistry.asHolderIdMap(), iregistry.getHolderOrThrow(Biomes.PLAINS), DataPaletteBlock.d.SECTION_BIOMES);
                 }
 
-                ChunkSection chunksection = new ChunkSection(datapaletteblock, (PalettedContainerRO) object);
+                ChunkSection chunksection = new ChunkSection(datapaletteblock, (DataPaletteBlock) object); // CraftBukkit - read/write
 
                 achunksection[k] = chunksection;
                 SectionPosition sectionposition = SectionPosition.of(chunkcoordintpair, b0);
@@ -176,7 +176,7 @@ public class ChunkRegionLoader {
             dataresult = BlendingData.CODEC.parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("blending_data")));
             logger1 = ChunkRegionLoader.LOGGER;
             Objects.requireNonNull(logger1);
-            blendingdata = (BlendingData) dataresult.resultOrPartial(logger1::error).orElse((Object) null);
+            blendingdata = (BlendingData) ((DataResult<BlendingData>) dataresult).resultOrPartial(logger1::error).orElse(null); // CraftBukkit - decompile error
         } else {
             blendingdata = null;
         }
@@ -207,7 +207,7 @@ public class ChunkRegionLoader {
                 dataresult = BelowZeroRetrogen.CODEC.parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("below_zero_retrogen")));
                 logger1 = ChunkRegionLoader.LOGGER;
                 Objects.requireNonNull(logger1);
-                Optional optional = dataresult.resultOrPartial(logger1::error);
+                Optional<BelowZeroRetrogen> optional = ((DataResult<BelowZeroRetrogen>) dataresult).resultOrPartial(logger1::error); // CraftBukkit - decompile error
 
                 Objects.requireNonNull(protochunk);
                 optional.ifPresent(protochunk::setBelowZeroRetrogen);
@@ -220,6 +220,13 @@ public class ChunkRegionLoader {
                 protochunk.setLightEngine(levellightengine);
             }
         }
+
+        // CraftBukkit start - load chunk persistent data from nbt - SPIGOT-6814: Already load PDC here to account for 1.17 to 1.18 chunk upgrading.
+        net.minecraft.nbt.NBTBase persistentBase = nbttagcompound.get("ChunkBukkitValues");
+        if (persistentBase instanceof NBTTagCompound) {
+            ((IChunkAccess) object1).persistentDataContainer.putAll((NBTTagCompound) persistentBase);
+        }
+        // CraftBukkit end
 
         ((IChunkAccess) object1).setLightCorrect(flag);
         NBTTagCompound nbttagcompound2 = nbttagcompound.getCompound("Heightmaps");
@@ -300,6 +307,12 @@ public class ChunkRegionLoader {
         return DataPaletteBlock.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), DataPaletteBlock.d.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS));
     }
 
+    // CraftBukkit start - read/write
+    private static Codec<DataPaletteBlock<Holder<BiomeBase>>> makeBiomeCodecRW(IRegistry<BiomeBase> iregistry) {
+        return DataPaletteBlock.codecRW(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), DataPaletteBlock.d.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS));
+    }
+    // CraftBukkit end
+
     public static NBTTagCompound write(WorldServer worldserver, IChunkAccess ichunkaccess) {
         ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
         NBTTagCompound nbttagcompound = GameProfileSerializer.addCurrentDataVersion(new NBTTagCompound());
@@ -311,7 +324,7 @@ public class ChunkRegionLoader {
         nbttagcompound.putLong("InhabitedTime", ichunkaccess.getInhabitedTime());
         nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(ichunkaccess.getStatus()).toString());
         BlendingData blendingdata = ichunkaccess.getBlendingData();
-        DataResult dataresult;
+        DataResult<NBTBase> dataresult; // CraftBukkit - decompile error
         Logger logger;
 
         if (blendingdata != null) {
@@ -358,7 +371,7 @@ public class ChunkRegionLoader {
 
                 if (flag1) {
                     ChunkSection chunksection = achunksection[j];
-                    DataResult dataresult1 = ChunkRegionLoader.BLOCK_STATE_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, chunksection.getStates());
+                    DataResult<NBTBase> dataresult1 = ChunkRegionLoader.BLOCK_STATE_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, chunksection.getStates()); // CraftBukkit - decompile error
                     Logger logger1 = ChunkRegionLoader.LOGGER;
 
                     Objects.requireNonNull(logger1);
@@ -441,6 +454,11 @@ public class ChunkRegionLoader {
 
         nbttagcompound.put("Heightmaps", nbttagcompound3);
         nbttagcompound.put("structures", packStructureData(StructurePieceSerializationContext.fromLevel(worldserver), chunkcoordintpair, ichunkaccess.getAllStarts(), ichunkaccess.getAllReferences()));
+        // CraftBukkit start - store chunk persistent data in nbt
+        if (!ichunkaccess.persistentDataContainer.isEmpty()) { // SPIGOT-6814: Always save PDC to account for 1.17 to 1.18 chunk upgrading.
+            nbttagcompound.put("ChunkBukkitValues", ichunkaccess.persistentDataContainer.toTagCompound());
+        }
+        // CraftBukkit end
         return nbttagcompound;
     }
 
@@ -545,6 +563,12 @@ public class ChunkRegionLoader {
                 StructureStart structurestart = StructureStart.loadStaticStart(structurepieceserializationcontext, nbttagcompound1.getCompound(s), i);
 
                 if (structurestart != null) {
+                    // CraftBukkit start - load persistent data for structure start
+                    net.minecraft.nbt.NBTBase persistentBase = nbttagcompound1.getCompound(s).get("StructureBukkitValues");
+                    if (persistentBase instanceof NBTTagCompound) {
+                        structurestart.persistentDataContainer.putAll((NBTTagCompound) persistentBase);
+                    }
+                    // CraftBukkit end
                     map.put(structure, structurestart);
                 }
             }

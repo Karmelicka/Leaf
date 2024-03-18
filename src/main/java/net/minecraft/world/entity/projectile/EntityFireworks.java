@@ -28,6 +28,10 @@ import net.minecraft.world.phys.MovingObjectPositionBlock;
 import net.minecraft.world.phys.MovingObjectPositionEntity;
 import net.minecraft.world.phys.Vec3D;
 
+// CraftBukkit start
+import org.bukkit.event.entity.EntityRemoveEvent;
+// CraftBukkit end
+
 public class EntityFireworks extends IProjectile implements ItemSupplier {
 
     public static final DataWatcherObject<ItemStack> DATA_ID_FIREWORKS_ITEM = DataWatcher.defineId(EntityFireworks.class, DataWatcherRegistry.ITEM_STACK);
@@ -143,7 +147,7 @@ public class EntityFireworks extends IProjectile implements ItemSupplier {
         MovingObjectPosition movingobjectposition = ProjectileHelper.getHitResultOnMoveVector(this, this::canHitEntity);
 
         if (!this.noPhysics) {
-            this.onHit(movingobjectposition);
+            this.preOnHit(movingobjectposition); // CraftBukkit - projectile hit event
             this.hasImpulse = true;
         }
 
@@ -158,7 +162,11 @@ public class EntityFireworks extends IProjectile implements ItemSupplier {
         }
 
         if (!this.level().isClientSide && this.life > this.lifetime) {
-            this.explode();
+            // CraftBukkit start
+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
+                this.explode();
+            }
+            // CraftBukkit end
         }
 
     }
@@ -167,14 +175,18 @@ public class EntityFireworks extends IProjectile implements ItemSupplier {
         this.level().broadcastEntityEvent(this, (byte) 17);
         this.gameEvent(GameEvent.EXPLODE, this.getOwner());
         this.dealExplosionDamage();
-        this.discard();
+        this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
     }
 
     @Override
     protected void onHitEntity(MovingObjectPositionEntity movingobjectpositionentity) {
         super.onHitEntity(movingobjectpositionentity);
         if (!this.level().isClientSide) {
-            this.explode();
+            // CraftBukkit start
+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
+                this.explode();
+            }
+            // CraftBukkit end
         }
     }
 
@@ -184,7 +196,11 @@ public class EntityFireworks extends IProjectile implements ItemSupplier {
 
         this.level().getBlockState(blockposition).entityInside(this.level(), blockposition, this);
         if (!this.level().isClientSide() && this.hasExplosion()) {
-            this.explode();
+            // CraftBukkit start
+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
+                this.explode();
+            }
+            // CraftBukkit end
         }
 
         super.onHitBlock(movingobjectpositionblock);

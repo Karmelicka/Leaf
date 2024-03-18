@@ -15,6 +15,10 @@ import net.minecraft.world.level.World;
 import net.minecraft.world.phys.MovingObjectPosition;
 import net.minecraft.world.phys.MovingObjectPositionEntity;
 
+// CraftBukkit start
+import org.bukkit.event.entity.EntityRemoveEvent;
+// CraftBukkit end
+
 public class EntityDragonFireball extends EntityFireball {
 
     public static final float SPLASH_RANGE = 4.0F;
@@ -61,7 +65,7 @@ public class EntityDragonFireball extends EntityFireball {
 
                 this.level().levelEvent(2006, this.blockPosition(), this.isSilent() ? -1 : 1);
                 this.level().addFreshEntity(entityareaeffectcloud);
-                this.discard();
+                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
             }
 
         }

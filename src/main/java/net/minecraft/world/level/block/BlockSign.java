@@ -118,7 +118,7 @@ public abstract class BlockSign extends BlockTileEntity implements IBlockWaterlo
                 } else if (flag2) {
                     return EnumInteractionResult.SUCCESS;
                 } else if (!this.otherPlayerIsEditingSign(entityhuman, tileentitysign) && entityhuman.mayBuild() && this.hasEditableText(entityhuman, tileentitysign, flag1)) {
-                    this.openTextEdit(entityhuman, tileentitysign, flag1);
+                    this.openTextEdit(entityhuman, tileentitysign, flag1, org.bukkit.event.player.PlayerSignOpenEvent.Cause.INTERACT); // CraftBukkit
                     return this.getInteractionResult(flag);
                 } else {
                     return EnumInteractionResult.PASS;
@@ -171,6 +171,15 @@ public abstract class BlockSign extends BlockTileEntity implements IBlockWaterlo
     }
 
     public void openTextEdit(EntityHuman entityhuman, TileEntitySign tileentitysign, boolean flag) {
+        // Craftbukkit start
+        openTextEdit(entityhuman, tileentitysign, flag, org.bukkit.event.player.PlayerSignOpenEvent.Cause.UNKNOWN);
+    }
+
+    public void openTextEdit(EntityHuman entityhuman, TileEntitySign tileentitysign, boolean flag, org.bukkit.event.player.PlayerSignOpenEvent.Cause cause) {
+        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerSignOpenEvent(entityhuman, tileentitysign, flag, cause)) {
+            return;
+        }
+        // Craftbukkit end
         tileentitysign.setAllowedPlayerEditor(entityhuman.getUUID());
         entityhuman.openTextEdit(tileentitysign, flag);
     }
@@ -184,6 +193,6 @@ public abstract class BlockSign extends BlockTileEntity implements IBlockWaterlo
     @Nullable
     @Override
     public <T extends TileEntity> BlockEntityTicker<T> getTicker(World world, IBlockData iblockdata, TileEntityTypes<T> tileentitytypes) {
-        return createTickerHelper(tileentitytypes, TileEntityTypes.SIGN, TileEntitySign::tick);
+        return null; // Craftbukkit - remove unnecessary sign ticking
     }
 }

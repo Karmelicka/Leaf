@@ -35,6 +35,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.World;
 
+// CraftBukkit start
+import org.bukkit.event.entity.EntityRemoveEvent;
+// CraftBukkit end
+
 public class Tadpole extends EntityFish {
 
     @VisibleForTesting
@@ -68,7 +72,7 @@ public class Tadpole extends EntityFish {
 
     @Override
     public BehaviorController<Tadpole> getBrain() {
-        return super.getBrain();
+        return (BehaviorController<Tadpole>) super.getBrain(); // CraftBukkit - decompile error
     }
 
     @Override
@@ -233,9 +237,15 @@ public class Tadpole extends EntityFish {
                 }
 
                 frog.setPersistenceRequired();
+                // CraftBukkit start
+                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTransformEvent(this, frog, org.bukkit.event.entity.EntityTransformEvent.TransformReason.METAMORPHOSIS).isCancelled()) {
+                    this.setAge(0); // Sets the age to 0 for avoid a loop if the event is canceled
+                    return;
+                }
+                // CraftBukkit end
                 this.playSound(SoundEffects.TADPOLE_GROW_UP, 0.15F, 1.0F);
-                worldserver.addFreshEntityWithPassengers(frog);
-                this.discard();
+                worldserver.addFreshEntityWithPassengers(frog, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.METAMORPHOSIS); // CraftBukkit - add SpawnReason
+                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
             }
         }
 

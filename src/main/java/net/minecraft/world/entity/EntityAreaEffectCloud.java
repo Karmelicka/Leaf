@@ -31,6 +31,13 @@ import net.minecraft.world.level.World;
 import net.minecraft.world.level.material.EnumPistonReaction;
 import org.slf4j.Logger;
 
+// CraftBukkit start
+import net.minecraft.resources.MinecraftKey;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.entity.EntityRemoveEvent;
+// CraftBukkit end
+
 public class EntityAreaEffectCloud extends Entity implements TraceableEntity {
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -216,7 +223,7 @@ public class EntityAreaEffectCloud extends Entity implements TraceableEntity {
             }
         } else {
             if (this.tickCount >= this.waitTime + this.duration) {
-                this.discard();
+                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                 return;
             }
 
@@ -233,7 +240,7 @@ public class EntityAreaEffectCloud extends Entity implements TraceableEntity {
             if (this.radiusPerTick != 0.0F) {
                 f += this.radiusPerTick;
                 if (f < 0.5F) {
-                    this.discard();
+                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                     return;
                 }
 
@@ -264,6 +271,7 @@ public class EntityAreaEffectCloud extends Entity implements TraceableEntity {
                     if (!list1.isEmpty()) {
                         Iterator iterator1 = list1.iterator();
 
+                        List<LivingEntity> entities = new java.util.ArrayList<LivingEntity>(); // CraftBukkit
                         while (iterator1.hasNext()) {
                             EntityLiving entityliving = (EntityLiving) iterator1.next();
 
@@ -273,6 +281,17 @@ public class EntityAreaEffectCloud extends Entity implements TraceableEntity {
                                 double d8 = d6 * d6 + d7 * d7;
 
                                 if (d8 <= (double) (f * f)) {
+                                    // CraftBukkit start
+                                    entities.add((LivingEntity) entityliving.getBukkitEntity());
+                                }
+                            }
+                        }
+                        org.bukkit.event.entity.AreaEffectCloudApplyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callAreaEffectCloudApplyEvent(this, entities);
+                        if (!event.isCancelled()) {
+                            for (LivingEntity entity : event.getAffectedEntities()) {
+                                if (entity instanceof CraftLivingEntity) {
+                                    EntityLiving entityliving = ((CraftLivingEntity) entity).getHandle();
+                                    // CraftBukkit end
                                     this.victims.put(entityliving, this.tickCount + this.reapplicationDelay);
                                     Iterator iterator2 = list.iterator();
 
@@ -282,14 +301,14 @@ public class EntityAreaEffectCloud extends Entity implements TraceableEntity {
                                         if (mobeffect1.getEffect().isInstantenous()) {
                                             mobeffect1.getEffect().applyInstantenousEffect(this, this.getOwner(), entityliving, mobeffect1.getAmplifier(), 0.5D);
                                         } else {
-                                            entityliving.addEffect(new MobEffect(mobeffect1), this);
+                                            entityliving.addEffect(new MobEffect(mobeffect1), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD); // CraftBukkit
                                         }
                                     }
 
                                     if (this.radiusOnUse != 0.0F) {
                                         f += this.radiusOnUse;
                                         if (f < 0.5F) {
-                                            this.discard();
+                                            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                                             return;
                                         }
 
@@ -299,7 +318,7 @@ public class EntityAreaEffectCloud extends Entity implements TraceableEntity {
                                     if (this.durationOnUse != 0) {
                                         this.duration += this.durationOnUse;
                                         if (this.duration <= 0) {
-                                            this.discard();
+                                            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                                             return;
                                         }
                                     }

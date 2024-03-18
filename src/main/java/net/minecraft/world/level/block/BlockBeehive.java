@@ -119,7 +119,7 @@ public class BlockBeehive extends BlockTileEntity {
                 if (entitybee.getTarget() == null) {
                     EntityHuman entityhuman = (EntityHuman) SystemUtils.getRandom(list1, world.random);
 
-                    entitybee.setTarget(entityhuman);
+                    entitybee.setTarget(entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit
                 }
             }
         }

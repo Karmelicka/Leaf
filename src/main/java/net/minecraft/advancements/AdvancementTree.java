@@ -68,7 +68,7 @@ public class AdvancementTree {
     }
 
     public void addAll(Collection<AdvancementHolder> collection) {
-        ArrayList arraylist = new ArrayList(collection);
+        ArrayList<AdvancementHolder> arraylist = new ArrayList(collection); // CraftBukkit - decompile error
 
         while (!arraylist.isEmpty()) {
             if (!arraylist.removeIf(this::tryInsert)) {
@@ -77,7 +77,7 @@ public class AdvancementTree {
             }
         }
 
-        AdvancementTree.LOGGER.info("Loaded {} advancements", this.nodes.size());
+        // AdvancementTree.LOGGER.info("Loaded {} advancements", this.nodes.size()); // CraftBukkit - moved to AdvancementDataWorld#reload
     }
 
     private boolean tryInsert(AdvancementHolder advancementholder) {

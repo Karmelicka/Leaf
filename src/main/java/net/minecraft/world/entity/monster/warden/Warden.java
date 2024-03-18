@@ -373,7 +373,7 @@ public class Warden extends EntityMonster implements VibrationSystem {
 
     @Override
     public BehaviorController<Warden> getBrain() {
-        return super.getBrain();
+        return (BehaviorController<Warden>) super.getBrain(); // CraftBukkit - decompile error
     }
 
     @Override
@@ -414,13 +414,13 @@ public class Warden extends EntityMonster implements VibrationSystem {
     public static void applyDarknessAround(WorldServer worldserver, Vec3D vec3d, @Nullable Entity entity, int i) {
         MobEffect mobeffect = new MobEffect(MobEffects.DARKNESS, 260, 0, false, false);
 
-        MobEffectUtil.addEffectToPlayersAround(worldserver, entity, vec3d, (double) i, mobeffect, 200);
+        MobEffectUtil.addEffectToPlayersAround(worldserver, entity, vec3d, i, mobeffect, 200, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.WARDEN); // CraftBukkit - Add EntityPotionEffectEvent.Cause
     }
 
     @Override
     public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
         super.addAdditionalSaveData(nbttagcompound);
-        DataResult dataresult = AngerManagement.codec(this::canTargetEntity).encodeStart(DynamicOpsNBT.INSTANCE, this.angerManagement);
+        DataResult<net.minecraft.nbt.NBTBase> dataresult = AngerManagement.codec(this::canTargetEntity).encodeStart(DynamicOpsNBT.INSTANCE, this.angerManagement); // CraftBukkit - decompile error
         Logger logger = Warden.LOGGER;
 
         Objects.requireNonNull(logger);
@@ -445,7 +445,7 @@ public class Warden extends EntityMonster implements VibrationSystem {
             dataresult = AngerManagement.codec(this::canTargetEntity).parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.get("anger")));
             logger = Warden.LOGGER;
             Objects.requireNonNull(logger);
-            dataresult.resultOrPartial(logger::error).ifPresent((angermanagement) -> {
+            ((DataResult<AngerManagement>) dataresult).resultOrPartial(logger::error).ifPresent((angermanagement) -> { // CraftBukkit - decompile error
                 this.angerManagement = angermanagement;
             });
             this.syncClientAngerLevel();
@@ -455,7 +455,7 @@ public class Warden extends EntityMonster implements VibrationSystem {
             dataresult = VibrationSystem.a.CODEC.parse(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.getCompound("listener")));
             logger = Warden.LOGGER;
             Objects.requireNonNull(logger);
-            dataresult.resultOrPartial(logger::error).ifPresent((vibrationsystem_a) -> {
+            ((DataResult<VibrationSystem.a>) dataresult).resultOrPartial(logger::error).ifPresent((vibrationsystem_a) -> { // CraftBukkit - decompile error
                 this.vibrationData = vibrationsystem_a;
             });
         }
@@ -489,7 +489,7 @@ public class Warden extends EntityMonster implements VibrationSystem {
     public void increaseAngerAt(@Nullable Entity entity, int i, boolean flag) {
         if (!this.isNoAi() && this.canTargetEntity(entity)) {
             WardenAi.setDigCooldown(this);
-            boolean flag1 = !(this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse((Object) null) instanceof EntityHuman);
+            boolean flag1 = !(this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null) instanceof EntityHuman); // CraftBukkit - decompile error
             int j = this.angerManagement.increaseAnger(entity, i);
 
             if (entity instanceof EntityHuman && flag1 && AngerLevel.byAnger(j).isAngry()) {
@@ -510,7 +510,7 @@ public class Warden extends EntityMonster implements VibrationSystem {
     @Nullable
     @Override
     public EntityLiving getTarget() {
-        return (EntityLiving) this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse((Object) null);
+        return (EntityLiving) this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null); // CraftBukkit - decompile error
     }
 
     @Override
@@ -553,7 +553,7 @@ public class Warden extends EntityMonster implements VibrationSystem {
 
     public void setAttackTarget(EntityLiving entityliving) {
         this.getBrain().eraseMemory(MemoryModuleType.ROAR_TARGET);
-        this.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, (Object) entityliving);
+        this.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, entityliving); // CraftBukkit - decompile error
         this.getBrain().eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
         SonicBoom.setCooldown(this, 200);
     }

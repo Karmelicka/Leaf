@@ -67,4 +67,6 @@ public interface IRecipe<C extends IInventory> {
             return recipeitemstack.getItems().length == 0;
         });
     }
+
+    org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id); // CraftBukkit
 }

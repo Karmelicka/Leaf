@@ -57,8 +57,13 @@ public class LootEnchantFunction extends LootItemFunctionConditional {
 
         if (entity instanceof EntityLiving) {
             int i = EnchantmentManager.getMobLooting((EntityLiving) entity);
+            // CraftBukkit start - use lootingModifier if set by plugin
+            if (loottableinfo.hasParam(LootContextParameters.LOOTING_MOD)) {
+                i = loottableinfo.getParamOrNull(LootContextParameters.LOOTING_MOD);
+            }
+            // CraftBukkit end
 
-            if (i == 0) {
+            if (i <= 0) { // CraftBukkit - account for possible negative looting values from Bukkit
                 return itemstack;
             }
 

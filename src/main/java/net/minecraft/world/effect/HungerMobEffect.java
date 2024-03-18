@@ -15,7 +15,7 @@ class HungerMobEffect extends MobEffectList {
         if (entityliving instanceof EntityHuman) {
             EntityHuman entityhuman = (EntityHuman) entityliving;
 
-            entityhuman.causeFoodExhaustion(0.005F * (float) (i + 1));
+            entityhuman.causeFoodExhaustion(0.005F * (float) (i + 1), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.HUNGER_EFFECT); // CraftBukkit - EntityExhaustionEvent
         }
 
     }

@@ -145,7 +145,7 @@ public class NBTTagList extends NBTList<NBTBase> {
     private final List<NBTBase> list;
     private byte type;
 
-    NBTTagList(List<NBTBase> list, byte b0) {
+    public NBTTagList(List<NBTBase> list, byte b0) { // PAIL: package-private -> public
         this.list = list;
         this.type = b0;
     }

@@ -105,6 +105,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
     private volatile IChatBaseComponent delayedDisconnect;
     @Nullable
     BandwidthDebugMonitor bandwidthDebugMonitor;
+    public String hostname = ""; // CraftBukkit - add field
 
     public NetworkManager(EnumProtocolDirection enumprotocoldirection) {
         this.receiving = enumprotocoldirection;
@@ -194,7 +195,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
     }
 
     private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener packetlistener) {
-        packet.handle(packetlistener);
+        packet.handle((T) packetlistener); // CraftBukkit - decompile error
     }
 
     public void suspendInboundAfterProtocolChange() {
@@ -421,7 +422,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
         }
 
         if (this.isConnected()) {
-            this.channel.close().awaitUninterruptibly();
+            this.channel.close(); // We can't wait as this may be called from an event loop.
             this.disconnectedReason = ichatbasecomponent;
         }
 

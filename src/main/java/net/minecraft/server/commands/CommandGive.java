@@ -61,7 +61,7 @@ public class CommandGive {
 
                     if (flag && itemstack1.isEmpty()) {
                         itemstack1.setCount(1);
-                        entityitem = entityplayer.drop(itemstack1, false);
+                        entityitem = entityplayer.drop(itemstack1, false, false, false); // CraftBukkit - SPIGOT-2942: Add boolean to call event
                         if (entityitem != null) {
                             entityitem.makeFakeItem();
                         }

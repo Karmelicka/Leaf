@@ -15,6 +15,13 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.entity.player.EntityHuman;
 import org.slf4j.Logger;
 
+// CraftBukkit start
+import java.io.FileInputStream;
+import java.io.InputStream;
+import net.minecraft.server.level.EntityPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+// CraftBukkit end
+
 public class WorldNBTStorage {
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -59,6 +66,16 @@ public class WorldNBTStorage {
         }
 
         if (nbttagcompound != null) {
+            // CraftBukkit start
+            if (entityhuman instanceof EntityPlayer) {
+                CraftPlayer player = (CraftPlayer) entityhuman.getBukkitEntity();
+                // Only update first played if it is older than the one we have
+                long modified = new File(this.playerDir, entityhuman.getUUID().toString() + ".dat").lastModified();
+                if (modified < player.getFirstPlayed()) {
+                    player.setFirstPlayed(modified);
+                }
+            }
+            // CraftBukkit end
             int i = GameProfileSerializer.getDataVersion(nbttagcompound, -1);
 
             nbttagcompound = DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, nbttagcompound, i);
@@ -67,6 +84,22 @@ public class WorldNBTStorage {
 
         return nbttagcompound;
     }
+
+    // CraftBukkit start
+    public NBTTagCompound getPlayerData(String s) {
+        try {
+            File file1 = new File(this.playerDir, s + ".dat");
+
+            if (file1.exists()) {
+                return NBTCompressedStreamTools.readCompressed(file1.toPath(), NBTReadLimiter.unlimitedHeap());
+            }
+        } catch (Exception exception) {
+            LOGGER.warn("Failed to load player data for " + s);
+        }
+
+        return null;
+    }
+    // CraftBukkit end
 
     public String[] getSeenPlayers() {
         String[] astring = this.playerDir.list();
@@ -83,4 +116,10 @@ public class WorldNBTStorage {
 
         return astring;
     }
+
+    // CraftBukkit start
+    public File getPlayerDir() {
+        return playerDir;
+    }
+    // CraftBukkit end
 }

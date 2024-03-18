@@ -42,13 +42,21 @@ import net.minecraft.world.level.block.SuspiciousEffectHolder;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.gameevent.GameEvent;
 
+// CraftBukkit start
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityDropItemEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
+import org.bukkit.event.entity.EntityTransformEvent;
+// CraftBukkit end
+
 public class EntityMushroomCow extends EntityCow implements IShearable, VariantHolder<EntityMushroomCow.Type> {
 
     private static final DataWatcherObject<String> DATA_TYPE = DataWatcher.defineId(EntityMushroomCow.class, DataWatcherRegistry.STRING);
     private static final int MUTATE_CHANCE = 1024;
     private static final String TAG_STEW_EFFECTS = "stew_effects";
     @Nullable
-    private List<SuspiciousEffectHolder.a> stewEffects;
+    public List<SuspiciousEffectHolder.a> stewEffects;
     @Nullable
     private UUID lastLightningBoltUUID;
 
@@ -114,6 +122,11 @@ public class EntityMushroomCow extends EntityCow implements IShearable, VariantH
             this.playSound(soundeffect, 1.0F, 1.0F);
             return EnumInteractionResult.sidedSuccess(this.level().isClientSide);
         } else if (itemstack.is(Items.SHEARS) && this.readyForShearing()) {
+            // CraftBukkit start
+            if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
+                return EnumInteractionResult.PASS;
+            }
+            // CraftBukkit end
             this.shear(SoundCategory.PLAYERS);
             this.gameEvent(GameEvent.SHEAR, entityhuman);
             if (!this.level().isClientSide) {
@@ -161,7 +174,7 @@ public class EntityMushroomCow extends EntityCow implements IShearable, VariantH
 
             if (entitycow != null) {
                 ((WorldServer) this.level()).sendParticles(Particles.EXPLOSION, this.getX(), this.getY(0.5D), this.getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
-                this.discard();
+                // this.discard(); // CraftBukkit - moved down
                 entitycow.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
                 entitycow.setHealth(this.getHealth());
                 entitycow.yBodyRot = this.yBodyRot;
@@ -175,10 +188,25 @@ public class EntityMushroomCow extends EntityCow implements IShearable, VariantH
                 }
 
                 entitycow.setInvulnerable(this.isInvulnerable());
-                this.level().addFreshEntity(entitycow);
+                // CraftBukkit start
+                if (CraftEventFactory.callEntityTransformEvent(this, entitycow, EntityTransformEvent.TransformReason.SHEARED).isCancelled()) {
+                    return;
+                }
+                this.level().addFreshEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
+
+                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - from above and add Bukkit remove cause
+                // CraftBukkit end
 
                 for (int i = 0; i < 5; ++i) {
-                    this.level().addFreshEntity(new EntityItem(this.level(), this.getX(), this.getY(1.0D), this.getZ(), new ItemStack(this.getVariant().blockState.getBlock())));
+                    // CraftBukkit start
+                    EntityItem entityitem = new EntityItem(this.level(), this.getX(), this.getY(1.0D), this.getZ(), new ItemStack(this.getVariant().blockState.getBlock()));
+                    EntityDropItemEvent event = new EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
+                    Bukkit.getPluginManager().callEvent(event);
+                    if (event.isCancelled()) {
+                        continue;
+                    }
+                    this.level().addFreshEntity(entityitem);
+                    // CraftBukkit end
                 }
             }
         }

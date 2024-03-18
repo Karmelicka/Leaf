@@ -40,7 +40,7 @@ public class ScoreboardServer extends Scoreboard {
     protected void onScoreChanged(ScoreHolder scoreholder, ScoreboardObjective scoreboardobjective, ScoreboardScore scoreboardscore) {
         super.onScoreChanged(scoreholder, scoreboardobjective, scoreboardscore);
         if (this.trackedObjectives.contains(scoreboardobjective)) {
-            this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardScore(scoreholder.getScoreboardName(), scoreboardobjective.getName(), scoreboardscore.value(), scoreboardscore.display(), scoreboardscore.numberFormat()));
+            this.broadcastAll(new PacketPlayOutScoreboardScore(scoreholder.getScoreboardName(), scoreboardobjective.getName(), scoreboardscore.value(), scoreboardscore.display(), scoreboardscore.numberFormat())); // CraftBukkit
         }
 
         this.setDirty();
@@ -55,7 +55,7 @@ public class ScoreboardServer extends Scoreboard {
     @Override
     public void onPlayerRemoved(ScoreHolder scoreholder) {
         super.onPlayerRemoved(scoreholder);
-        this.server.getPlayerList().broadcastAll(new ClientboundResetScorePacket(scoreholder.getScoreboardName(), (String) null));
+        this.broadcastAll(new ClientboundResetScorePacket(scoreholder.getScoreboardName(), (String) null)); // CraftBukkit
         this.setDirty();
     }
 
@@ -63,7 +63,7 @@ public class ScoreboardServer extends Scoreboard {
     public void onPlayerScoreRemoved(ScoreHolder scoreholder, ScoreboardObjective scoreboardobjective) {
         super.onPlayerScoreRemoved(scoreholder, scoreboardobjective);
         if (this.trackedObjectives.contains(scoreboardobjective)) {
-            this.server.getPlayerList().broadcastAll(new ClientboundResetScorePacket(scoreholder.getScoreboardName(), scoreboardobjective.getName()));
+            this.broadcastAll(new ClientboundResetScorePacket(scoreholder.getScoreboardName(), scoreboardobjective.getName())); // CraftBukkit
         }
 
         this.setDirty();
@@ -76,7 +76,7 @@ public class ScoreboardServer extends Scoreboard {
         super.setDisplayObjective(displayslot, scoreboardobjective);
         if (scoreboardobjective1 != scoreboardobjective && scoreboardobjective1 != null) {
             if (this.getObjectiveDisplaySlotCount(scoreboardobjective1) > 0) {
-                this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective));
+                this.broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective)); // CraftBukkit
             } else {
                 this.stopTrackingObjective(scoreboardobjective1);
             }
@@ -84,7 +84,7 @@ public class ScoreboardServer extends Scoreboard {
 
         if (scoreboardobjective != null) {
             if (this.trackedObjectives.contains(scoreboardobjective)) {
-                this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective));
+                this.broadcastAll(new PacketPlayOutScoreboardDisplayObjective(displayslot, scoreboardobjective)); // CraftBukkit
             } else {
                 this.startTrackingObjective(scoreboardobjective);
             }
@@ -96,7 +96,7 @@ public class ScoreboardServer extends Scoreboard {
     @Override
     public boolean addPlayerToTeam(String s, ScoreboardTeam scoreboardteam) {
         if (super.addPlayerToTeam(s, scoreboardteam)) {
-            this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.ADD));
+            this.broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.ADD)); // CraftBukkit
             this.setDirty();
             return true;
         } else {
@@ -107,7 +107,7 @@ public class ScoreboardServer extends Scoreboard {
     @Override
     public void removePlayerFromTeam(String s, ScoreboardTeam scoreboardteam) {
         super.removePlayerFromTeam(s, scoreboardteam);
-        this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.REMOVE));
+        this.broadcastAll(PacketPlayOutScoreboardTeam.createPlayerPacket(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.REMOVE)); // CraftBukkit
         this.setDirty();
     }
 
@@ -121,7 +121,7 @@ public class ScoreboardServer extends Scoreboard {
     public void onObjectiveChanged(ScoreboardObjective scoreboardobjective) {
         super.onObjectiveChanged(scoreboardobjective);
         if (this.trackedObjectives.contains(scoreboardobjective)) {
-            this.server.getPlayerList().broadcastAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2));
+            this.broadcastAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2)); // CraftBukkit
         }
 
         this.setDirty();
@@ -140,21 +140,21 @@ public class ScoreboardServer extends Scoreboard {
     @Override
     public void onTeamAdded(ScoreboardTeam scoreboardteam) {
         super.onTeamAdded(scoreboardteam);
-        this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, true));
+        this.broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, true)); // CraftBukkit
         this.setDirty();
     }
 
     @Override
     public void onTeamChanged(ScoreboardTeam scoreboardteam) {
         super.onTeamChanged(scoreboardteam);
-        this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, false));
+        this.broadcastAll(PacketPlayOutScoreboardTeam.createAddOrModifyPacket(scoreboardteam, false)); // CraftBukkit
         this.setDirty();
     }
 
     @Override
     public void onTeamRemoved(ScoreboardTeam scoreboardteam) {
         super.onTeamRemoved(scoreboardteam);
-        this.server.getPlayerList().broadcastAll(PacketPlayOutScoreboardTeam.createRemovePacket(scoreboardteam));
+        this.broadcastAll(PacketPlayOutScoreboardTeam.createRemovePacket(scoreboardteam)); // CraftBukkit
         this.setDirty();
     }
 
@@ -205,6 +205,7 @@ public class ScoreboardServer extends Scoreboard {
 
         while (iterator.hasNext()) {
             EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+            if (entityplayer.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
             Iterator iterator1 = list.iterator();
 
             while (iterator1.hasNext()) {
@@ -241,6 +242,7 @@ public class ScoreboardServer extends Scoreboard {
 
         while (iterator.hasNext()) {
             EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+            if (entityplayer.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
             Iterator iterator1 = list.iterator();
 
             while (iterator1.hasNext()) {
@@ -284,6 +286,16 @@ public class ScoreboardServer extends Scoreboard {
     private PersistentScoreboard createData(NBTTagCompound nbttagcompound) {
         return this.createData().load(nbttagcompound);
     }
+
+    // CraftBukkit start - Send to players
+    private void broadcastAll(Packet packet) {
+        for (EntityPlayer entityplayer : (List<EntityPlayer>) this.server.getPlayerList().players) {
+            if (entityplayer.getBukkitEntity().getScoreboard().getHandle() == this) {
+                entityplayer.connection.send(packet);
+            }
+        }
+    }
+    // CraftBukkit end
 
     public static enum Action {
 

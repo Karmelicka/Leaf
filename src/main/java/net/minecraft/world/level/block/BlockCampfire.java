@@ -106,7 +106,7 @@ public class BlockCampfire extends BlockTileEntity implements IBlockWaterlogged 
     @Override
     public void entityInside(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
         if ((Boolean) iblockdata.getValue(BlockCampfire.LIT) && entity instanceof EntityLiving && !EnchantmentManager.hasFrostWalker((EntityLiving) entity)) {
-            entity.hurt(world.damageSources().inFire(), (float) this.fireDamage);
+            entity.hurt(world.damageSources().inFire().directBlock(world, blockposition), (float) this.fireDamage); // CraftBukkit
         }
 
         super.entityInside(iblockdata, world, blockposition, entity);
@@ -216,6 +216,11 @@ public class BlockCampfire extends BlockTileEntity implements IBlockWaterlogged 
         BlockPosition blockposition = movingobjectpositionblock.getBlockPos();
 
         if (!world.isClientSide && iprojectile.isOnFire() && iprojectile.mayInteract(world, blockposition) && !(Boolean) iblockdata.getValue(BlockCampfire.LIT) && !(Boolean) iblockdata.getValue(BlockCampfire.WATERLOGGED)) {
+            // CraftBukkit start
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, iprojectile).isCancelled()) {
+                return;
+            }
+            // CraftBukkit end
             world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockProperties.LIT, true), 11);
         }
 

@@ -201,7 +201,7 @@ public class TileEntityConduit extends TileEntity {
                 EntityHuman entityhuman = (EntityHuman) iterator.next();
 
                 if (blockposition.closerThan(entityhuman.blockPosition(), (double) j) && entityhuman.isInWaterOrRain()) {
-                    entityhuman.addEffect(new MobEffect(MobEffects.CONDUIT_POWER, 260, 0, true, true));
+                    entityhuman.addEffect(new MobEffect(MobEffects.CONDUIT_POWER, 260, 0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONDUIT); // CraftBukkit
                 }
             }
 
@@ -230,8 +230,11 @@ public class TileEntityConduit extends TileEntity {
         }
 
         if (tileentityconduit.destroyTarget != null) {
-            world.playSound((EntityHuman) null, tileentityconduit.destroyTarget.getX(), tileentityconduit.destroyTarget.getY(), tileentityconduit.destroyTarget.getZ(), SoundEffects.CONDUIT_ATTACK_TARGET, SoundCategory.BLOCKS, 1.0F, 1.0F);
-            tileentityconduit.destroyTarget.hurt(world.damageSources().magic(), 4.0F);
+            // CraftBukkit start
+            if (tileentityconduit.destroyTarget.hurt(world.damageSources().magic().directBlock(world, blockposition), 4.0F)) {  // CraftBukkit
+                world.playSound(null, tileentityconduit.destroyTarget.getX(), tileentityconduit.destroyTarget.getY(), tileentityconduit.destroyTarget.getZ(), SoundEffects.CONDUIT_ATTACK_TARGET, SoundCategory.BLOCKS, 1.0F, 1.0F);
+            }
+            // CraftBukkit end
         }
 
         if (entityliving != tileentityconduit.destroyTarget) {

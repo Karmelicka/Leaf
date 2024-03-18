@@ -29,6 +29,11 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AxisAlignedBB;
 import net.minecraft.world.phys.Vec3D;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityRemoveEvent;
+// CraftBukkit end
+
 public class EntityLightning extends Entity {
 
     private static final int START_LIFE = 2;
@@ -120,7 +125,7 @@ public class EntityLightning extends Entity {
                     }
                 }
 
-                this.discard();
+                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
             } else if (this.life < -this.random.nextInt(10)) {
                 --this.flashes;
                 this.life = 1;
@@ -129,7 +134,7 @@ public class EntityLightning extends Entity {
             }
         }
 
-        if (this.life >= 0) {
+        if (this.life >= 0 && !this.visualOnly) { // CraftBukkit - add !this.visualOnly
             if (!(this.level() instanceof WorldServer)) {
                 this.level().setSkyFlashTime(2);
             } else if (!this.visualOnly) {
@@ -163,8 +168,12 @@ public class EntityLightning extends Entity {
             IBlockData iblockdata = BlockFireAbstract.getState(this.level(), blockposition);
 
             if (this.level().getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level(), blockposition)) {
-                this.level().setBlockAndUpdate(blockposition, iblockdata);
-                ++this.blocksSetOnFire;
+                // CraftBukkit start - add "!visualOnly"
+                if (!visualOnly && !CraftEventFactory.callBlockIgniteEvent(this.level(), blockposition, this).isCancelled()) {
+                    this.level().setBlockAndUpdate(blockposition, iblockdata);
+                    ++this.blocksSetOnFire;
+                }
+                // CraftBukkit end
             }
 
             for (int j = 0; j < i; ++j) {
@@ -172,8 +181,12 @@ public class EntityLightning extends Entity {
 
                 iblockdata = BlockFireAbstract.getState(this.level(), blockposition1);
                 if (this.level().getBlockState(blockposition1).isAir() && iblockdata.canSurvive(this.level(), blockposition1)) {
-                    this.level().setBlockAndUpdate(blockposition1, iblockdata);
-                    ++this.blocksSetOnFire;
+                    // CraftBukkit start - add "!visualOnly"
+                    if (!visualOnly && !CraftEventFactory.callBlockIgniteEvent(this.level(), blockposition1, this).isCancelled()) {
+                        this.level().setBlockAndUpdate(blockposition1, iblockdata);
+                        ++this.blocksSetOnFire;
+                    }
+                    // CraftBukkit end
                 }
             }
 
@@ -237,8 +250,9 @@ public class EntityLightning extends Entity {
             iblockdata = world.getBlockState(blockposition1);
         } while (!(iblockdata.getBlock() instanceof WeatheringCopper));
 
+        BlockPosition blockposition1Final = blockposition1; // CraftBukkit - decompile error
         WeatheringCopper.getPrevious(iblockdata).ifPresent((iblockdata1) -> {
-            world.setBlockAndUpdate(blockposition1, iblockdata1);
+            world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
         });
         world.levelEvent(3002, blockposition1, -1);
         return Optional.of(blockposition1);

@@ -24,6 +24,10 @@ import net.minecraft.world.level.World;
 import net.minecraft.world.phys.MovingObjectPositionEntity;
 import net.minecraft.world.phys.Vec3D;
 
+// CraftBukkit start
+import org.bukkit.event.entity.EntityRemoveEvent;
+// CraftBukkit end
+
 public class EntityThrownTrident extends EntityArrow {
 
     private static final DataWatcherObject<Byte> ID_LOYALTY = DataWatcher.defineId(EntityThrownTrident.class, DataWatcherRegistry.BYTE);
@@ -64,7 +68,7 @@ public class EntityThrownTrident extends EntityArrow {
                     this.spawnAtLocation(this.getPickupItem(), 0.1F);
                 }
 
-                this.discard();
+                this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
             } else {
                 this.setNoPhysics(true);
                 Vec3D vec3d = entity.getEyePosition().subtract(this.position());
@@ -153,7 +157,7 @@ public class EntityThrownTrident extends EntityArrow {
                 if (entitylightning != null) {
                     entitylightning.moveTo(Vec3D.atBottomCenterOf(blockposition));
                     entitylightning.setCause(entity1 instanceof EntityPlayer ? (EntityPlayer) entity1 : null);
-                    this.level().addFreshEntity(entitylightning);
+                    ((WorldServer) this.level()).strikeLightning(entitylightning, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRIDENT); // CraftBukkit
                     soundeffect = SoundEffects.TRIDENT_THUNDER;
                     f1 = 5.0F;
                 }

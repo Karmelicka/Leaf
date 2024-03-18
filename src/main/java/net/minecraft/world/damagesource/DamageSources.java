@@ -41,9 +41,15 @@ public class DamageSources {
     private final DamageSource stalagmite;
     private final DamageSource outsideBorder;
     private final DamageSource genericKill;
+    // CraftBukkit start
+    private final DamageSource melting;
+    private final DamageSource poison;
 
     public DamageSources(IRegistryCustom iregistrycustom) {
         this.damageTypes = iregistrycustom.registryOrThrow(Registries.DAMAGE_TYPE);
+        this.melting = this.source(DamageTypes.ON_FIRE).melting();
+        this.poison = this.source(DamageTypes.MAGIC).poison();
+        // CraftBukkit end
         this.inFire = this.source(DamageTypes.IN_FIRE);
         this.lightningBolt = this.source(DamageTypes.LIGHTNING_BOLT);
         this.onFire = this.source(DamageTypes.ON_FIRE);
@@ -80,6 +86,16 @@ public class DamageSources {
     private DamageSource source(ResourceKey<DamageType> resourcekey, @Nullable Entity entity, @Nullable Entity entity1) {
         return new DamageSource(this.damageTypes.getHolderOrThrow(resourcekey), entity, entity1);
     }
+
+    // CraftBukkit start
+    public DamageSource melting() {
+        return this.melting;
+    }
+
+    public DamageSource poison() {
+        return this.poison;
+    }
+    // CraftBukkit end
 
     public DamageSource inFire() {
         return this.inFire;

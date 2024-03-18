@@ -2,7 +2,16 @@ package net.minecraft.world.item.crafting;
 
 import net.minecraft.resources.MinecraftKey;
 
-public record RecipeHolder<T extends IRecipe<?>> (MinecraftKey id, T value) {
+// CraftBukkit start
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.inventory.Recipe;
+
+public record RecipeHolder<T extends IRecipe<?>>(MinecraftKey id, T value) {
+
+    public final Recipe toBukkitRecipe() {
+        return this.value.toBukkitRecipe(CraftNamespacedKey.fromMinecraft(this.id));
+    }
+    // CraftBukkit end
 
     public boolean equals(Object object) {
         if (this == object) {

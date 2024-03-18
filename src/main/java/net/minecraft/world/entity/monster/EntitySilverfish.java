@@ -34,6 +34,11 @@ import net.minecraft.world.level.block.BlockMonsterEggs;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.joml.Vector3f;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityRemoveEvent;
+// CraftBukkit end
+
 public class EntitySilverfish extends EntityMonster {
 
     @Nullable
@@ -176,6 +181,11 @@ public class EntitySilverfish extends EntityMonster {
                             Block block = iblockdata.getBlock();
 
                             if (block instanceof BlockMonsterEggs) {
+                                // CraftBukkit start
+                                if (!CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState())) {
+                                    continue;
+                                }
+                                // CraftBukkit end
                                 if (world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                                     world.destroyBlock(blockposition1, true, this.silverfish);
                                 } else {
@@ -245,9 +255,14 @@ public class EntitySilverfish extends EntityMonster {
                 IBlockData iblockdata = world.getBlockState(blockposition);
 
                 if (BlockMonsterEggs.isCompatibleHostBlock(iblockdata)) {
+                    // CraftBukkit start
+                    if (!CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition, BlockMonsterEggs.infestedStateByHost(iblockdata))) {
+                        return;
+                    }
+                    // CraftBukkit end
                     world.setBlock(blockposition, BlockMonsterEggs.infestedStateByHost(iblockdata), 3);
                     this.mob.spawnAnim();
-                    this.mob.discard();
+                    this.mob.discard(EntityRemoveEvent.Cause.ENTER_BLOCK); // CraftBukkit - add Bukkit remove cause
                 }
 
             }

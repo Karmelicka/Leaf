@@ -47,6 +47,13 @@ import net.minecraft.world.phys.MovingObjectPositionEntity;
 import net.minecraft.world.phys.Vec3D;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+// CraftBukkit start
+import net.minecraft.world.entity.item.EntityItem;
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
+import org.bukkit.event.player.PlayerPickupArrowEvent;
+// CraftBukkit end
+
 public abstract class EntityArrow extends IProjectile {
 
     private static final double ARROW_BASE_DAMAGE = 2.0D;
@@ -219,7 +226,7 @@ public abstract class EntityArrow extends IProjectile {
                 }
 
                 if (object != null && !flag) {
-                    this.onHit((MovingObjectPosition) object);
+                    this.preOnHit((MovingObjectPosition) object); // CraftBukkit - projectile hit event
                     this.hasImpulse = true;
                 }
 
@@ -304,7 +311,7 @@ public abstract class EntityArrow extends IProjectile {
     protected void tickDespawn() {
         ++this.life;
         if (this.life >= 1200) {
-            this.discard();
+            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
         }
 
     }
@@ -337,7 +344,7 @@ public abstract class EntityArrow extends IProjectile {
             }
 
             if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
-                this.discard();
+                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
                 return;
             }
 
@@ -367,7 +374,13 @@ public abstract class EntityArrow extends IProjectile {
         boolean flag1 = entity.getType().is(TagsEntity.DEFLECTS_ARROWS);
 
         if (this.isOnFire() && !flag && !flag1) {
-            entity.setSecondsOnFire(5);
+            // CraftBukkit start
+            EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
+            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
+            if (!combustEvent.isCancelled()) {
+                entity.setSecondsOnFire(combustEvent.getDuration(), false);
+            }
+            // CraftBukkit end
         }
 
         if (entity.hurt(damagesource, (float) i)) {
@@ -418,7 +431,7 @@ public abstract class EntityArrow extends IProjectile {
 
             this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
             if (this.getPierceLevel() <= 0) {
-                this.discard();
+                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
             }
         } else if (flag1) {
             this.deflect();
@@ -432,7 +445,7 @@ public abstract class EntityArrow extends IProjectile {
                     this.spawnAtLocation(this.getPickupItem(), 0.1F);
                 }
 
-                this.discard();
+                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
             }
         }
 
@@ -545,9 +558,24 @@ public abstract class EntityArrow extends IProjectile {
     @Override
     public void playerTouch(EntityHuman entityhuman) {
         if (!this.level().isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0) {
-            if (this.tryPickup(entityhuman)) {
+            // CraftBukkit start
+            ItemStack itemstack = this.getPickupItem();
+            if (this.pickup == PickupStatus.ALLOWED && !itemstack.isEmpty() && entityhuman.getInventory().canHold(itemstack) > 0) {
+                EntityItem item = new EntityItem(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
+                PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.level().getCraftServer(), item), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
+                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
+                this.level().getCraftServer().getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return;
+                }
+                itemstack = item.getItem();
+            }
+
+            if ((this.pickup == EntityArrow.PickupStatus.ALLOWED && entityhuman.getInventory().add(itemstack)) || (this.pickup == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.getAbilities().instabuild)) {
+                // CraftBukkit end
                 entityhuman.take(this, 1);
-                this.discard();
+                this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
             }
 
         }

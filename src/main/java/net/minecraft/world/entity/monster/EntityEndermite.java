@@ -29,6 +29,10 @@ import net.minecraft.world.level.World;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.joml.Vector3f;
 
+// CraftBukkit start
+import org.bukkit.event.entity.EntityRemoveEvent;
+// CraftBukkit end
+
 public class EntityEndermite extends EntityMonster {
 
     private static final int MAX_LIFE = 2400;
@@ -122,7 +126,7 @@ public class EntityEndermite extends EntityMonster {
             }
 
             if (this.life >= 2400) {
-                this.discard();
+                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
             }
         }
 

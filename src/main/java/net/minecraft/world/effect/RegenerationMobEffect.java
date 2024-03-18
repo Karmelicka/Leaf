@@ -12,7 +12,7 @@ class RegenerationMobEffect extends MobEffectList {
     public void applyEffectTick(EntityLiving entityliving, int i) {
         super.applyEffectTick(entityliving, i);
         if (entityliving.getHealth() < entityliving.getMaxHealth()) {
-            entityliving.heal(1.0F);
+            entityliving.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.MAGIC_REGEN); // CraftBukkit
         }
 
     }

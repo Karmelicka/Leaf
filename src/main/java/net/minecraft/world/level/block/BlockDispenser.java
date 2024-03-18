@@ -49,6 +49,7 @@ public class BlockDispenser extends BlockTileEntity {
         object2objectopenhashmap.defaultReturnValue(new DispenseBehaviorItem());
     });
     private static final int TRIGGER_DURATION = 4;
+    public static boolean eventFired = false; // CraftBukkit
 
     @Override
     public MapCodec<? extends BlockDispenser> codec() {
@@ -85,7 +86,7 @@ public class BlockDispenser extends BlockTileEntity {
     }
 
     public void dispenseFrom(WorldServer worldserver, IBlockData iblockdata, BlockPosition blockposition) {
-        TileEntityDispenser tileentitydispenser = (TileEntityDispenser) worldserver.getBlockEntity(blockposition, TileEntityTypes.DISPENSER).orElse((Object) null);
+        TileEntityDispenser tileentitydispenser = (TileEntityDispenser) worldserver.getBlockEntity(blockposition, TileEntityTypes.DISPENSER).orElse(null); // CraftBukkit - decompile error
 
         if (tileentitydispenser == null) {
             BlockDispenser.LOGGER.warn("Ignoring dispensing attempt for Dispenser without matching block entity at {}", blockposition);
@@ -101,6 +102,7 @@ public class BlockDispenser extends BlockTileEntity {
                 IDispenseBehavior idispensebehavior = this.getDispenseMethod(itemstack);
 
                 if (idispensebehavior != IDispenseBehavior.NOOP) {
+                    eventFired = false; // CraftBukkit - reset event status
                     tileentitydispenser.setItem(i, idispensebehavior.dispense(sourceblock, itemstack));
                 }
 

@@ -150,7 +150,7 @@ public class Camel extends EntityHorseAbstract implements IJumpable, ISaddleable
     @Override
     protected void customServerAiStep() {
         this.level().getProfiler().push("camelBrain");
-        BehaviorController<?> behaviorcontroller = this.getBrain();
+        BehaviorController<Camel> behaviorcontroller = (BehaviorController<Camel>) this.getBrain(); // CraftBukkit - decompile error
 
         behaviorcontroller.tick((WorldServer) this.level(), this);
         this.level().getProfiler().pop();
@@ -462,9 +462,15 @@ public class Camel extends EntityHorseAbstract implements IJumpable, ISaddleable
     }
 
     @Override
-    protected void actuallyHurt(DamageSource damagesource, float f) {
+    // CraftBukkit start - void -> boolean
+    protected boolean actuallyHurt(DamageSource damagesource, float f) {
+        boolean hurt = super.actuallyHurt(damagesource, f);
+        if (!hurt) {
+            return hurt;
+        }
+        // CraftBukkit end
         this.standUpInstantly();
-        super.actuallyHurt(damagesource, f);
+        return hurt; // CraftBukkit
     }
 
     @Override
