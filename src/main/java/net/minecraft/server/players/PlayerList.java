@@ -1533,7 +1533,7 @@ public abstract class PlayerList {
         // Paper end
         boolean flag = this.verifyChatTrusted(message);
 
-        this.server.logChatMessage((unsignedFunction == null ? message.decoratedContent() : unsignedFunction.apply(this.server.console)), params, flag || !GaleGlobalConfiguration.get().logToConsole.chat.notSecureMarker ? null : "Not Secure"); // Paper // Gale - do not log Not Secure marker
+        this.server.logChatMessage((unsignedFunction == null ? message.decoratedContent() : unsignedFunction.apply(this.server.console)), params, flag ? null : (true ? null : "Not Secure")); // Paper // Mirai start - configurable chat message signatures
         OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(message);
         boolean flag1 = false;
 
@@ -1562,7 +1562,8 @@ public abstract class PlayerList {
     }
 
     public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
-        return message.hasSignature() && !message.hasExpiredServer(Instant.now());
+        return true;
+//        return message.hasSignature() && !message.hasExpiredServer(Instant.now());
     }
 
     // CraftBukkit start

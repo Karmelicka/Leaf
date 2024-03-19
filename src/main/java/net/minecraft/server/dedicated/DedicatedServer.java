@@ -681,13 +681,14 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface 
 
     @Override
     public boolean enforceSecureProfile() {
-        DedicatedServerProperties dedicatedserverproperties = this.getProperties();
-
-        // Paper start - Add setting for proxy online mode status
-        return dedicatedserverproperties.enforceSecureProfile
-            && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
-            && this.services.canValidateProfileKeys();
-        // Paper end - Add setting for proxy online mode status
+        return  false;
+//        DedicatedServerProperties dedicatedserverproperties = this.getProperties();
+//
+//        // Paper start - Add setting for proxy online mode status
+//        return dedicatedserverproperties.enforceSecureProfile
+//            && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
+//            && this.services.canValidateProfileKeys();
+//        // Paper end - Add setting for proxy online mode status
     }
 
     @Override

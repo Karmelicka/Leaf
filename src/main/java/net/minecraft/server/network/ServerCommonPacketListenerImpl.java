@@ -2,9 +2,11 @@ package net.minecraft.server.network;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
+
 import java.util.Objects;
 import javax.annotation.Nullable;
 
+import io.papermc.paper.adventure.PaperAdventure;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import net.minecraft.ChatFormatting;
@@ -25,6 +27,7 @@ import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
 import net.minecraft.network.protocol.common.ServerboundPongPacket;
 import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
 import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket;
+import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
@@ -36,7 +39,9 @@ import org.slf4j.Logger;
 
 // CraftBukkit start
 import io.netty.buffer.ByteBuf;
+
 import java.util.concurrent.ExecutionException;
+
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -75,6 +80,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         this.player = player;
         this.cserver = minecraftserver.server;
     }
+
     protected final ServerPlayer player;
     protected final org.bukkit.craftbukkit.CraftServer cserver;
     public boolean processedDisconnect;
@@ -89,6 +95,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         // Paper start - Fix kick event leave message not being sent
         this.onDisconnect(reason, null);
     }
+
     public void onDisconnect(Component reason, @Nullable net.kyori.adventure.text.Component quitMessage) {
         // Paper end - Fix kick event leave message not being sent
         if (this.isSingleplayerOwner()) {
@@ -111,24 +118,25 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
             }
         } else {
             // Gale end - Purpur - send multiple keep-alive packets
-        if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
-            int i = (int) (Util.getMillis() - this.keepAliveTime);
+            if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
+                int i = (int) (Util.getMillis() - this.keepAliveTime);
 
-            this.latency = (this.latency * 3 + i) / 4;
-            this.keepAlivePending = false;
-        } else if (!this.isSingleplayerOwner()) {
-            // Paper start - This needs to be handled on the main thread for plugins
-            server.submit(() -> {
-                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
-            });
-            // Paper end - This needs to be handled on the main thread for plugins
-        }
+                this.latency = (this.latency * 3 + i) / 4;
+                this.keepAlivePending = false;
+            } else if (!this.isSingleplayerOwner()) {
+                // Paper start - This needs to be handled on the main thread for plugins
+                server.submit(() -> {
+                    this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
+                });
+                // Paper end - This needs to be handled on the main thread for plugins
+            }
         } // Gale - Purpur - send multiple keep-alive packets
 
     }
 
     @Override
-    public void handlePong(ServerboundPongPacket packet) {}
+    public void handlePong(ServerboundPongPacket packet) {
+    }
 
     // CraftBukkit start
     private static final ResourceLocation CUSTOM_REGISTER = new ResourceLocation("register");
@@ -147,7 +155,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
         }
         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
         ResourceLocation identifier = packet.payload().id();
-        ByteBuf payload = ((ServerboundCustomPayloadPacket.UnknownPayload)packet.payload()).data();
+        ByteBuf payload = ((ServerboundCustomPayloadPacket.UnknownPayload) packet.payload()).data();
 
         if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_REGISTER)) {
             try {
@@ -160,13 +168,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t register custom payload", ex);
                 this.disconnect("Invalid payload REGISTER!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
             }
-        // Purpur start
+            // Purpur start
         } else if (identifier.equals(PURPUR_CLIENT)) {
             try {
                 player.purpurClient = true;
             } catch (Exception ignore) {
             }
-        // Purpur end
+            // Purpur end
         } else if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_UNREGISTER)) {
             try {
                 String channels = payload.toString(com.google.common.base.Charsets.UTF_8);
@@ -251,19 +259,19 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
             }
         } else {
             // Gale end - Purpur - send multiple keep-alive packets
-        if (this.keepAlivePending) {
-            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
-                ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // more info
-                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
+            if (this.keepAlivePending) {
+                if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
+                    ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // more info
+                    this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
+                }
+            } else {
+                if (elapsedTime >= 15000L) { // 15 seconds
+                    this.keepAlivePending = true;
+                    this.keepAliveTime = currentTime;
+                    this.keepAliveChallenge = currentTime;
+                    this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
+                }
             }
-        } else {
-            if (elapsedTime >= 15000L) { // 15 seconds
-                this.keepAlivePending = true;
-                this.keepAliveTime = currentTime;
-                this.keepAliveChallenge = currentTime;
-                this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
-            }
-        }
         } // Gale - Purpur - send multiple keep-alive packets
         // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
 
@@ -279,10 +287,25 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
     }
 
     public void send(Packet<?> packet) {
+        if (true) {
+            if (packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket chat) {
+                packet = new ClientboundSystemChatPacket(PaperAdventure.asAdventure(chat.chatType().resolve(this.player.level().registryAccess())
+                        .get().decorate(chat.unsignedContent() != null ? chat.unsignedContent()
+                                : Component.literal(chat.body().content()))), false);
+                this.send(packet);
+                return;
+            }
+        }
         this.send(packet, (PacketSendListener) null);
     }
 
     public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
+        if (true) {
+            if (packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket chat && callbacks != null) {
+                this.send(chat);
+                return;
+            }
+        }
         // CraftBukkit start
         if (packet == null || this.processedDisconnect) { // Spigot
             return;
@@ -307,7 +330,8 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
     }
 
     // CraftBukkit start
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated
+    @io.papermc.paper.annotation.DoNotUse // Paper
     public void disconnect(String s) { // Paper
         this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); // Paper
     }
@@ -319,7 +343,8 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
     }
 
     // Paper start
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated
+    @io.papermc.paper.annotation.DoNotUse // Paper
     public void disconnect(final Component reason) {
         this.disconnect(io.papermc.paper.adventure.PaperAdventure.asAdventure(reason), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
     }

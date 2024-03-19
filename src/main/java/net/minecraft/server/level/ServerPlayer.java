@@ -2262,7 +2262,7 @@ public class ServerPlayer extends Player {
     }
 
     public void sendServerStatus(ServerStatus metadata) {
-        this.connection.send(new ClientboundServerDataPacket(metadata.description(), metadata.favicon().map(ServerStatus.Favicon::iconBytes), metadata.enforcesSecureChat()));
+        this.connection.send(new ClientboundServerDataPacket(metadata.description(), metadata.favicon().map(ServerStatus.Favicon::iconBytes), true));
     }
 
     @Override
